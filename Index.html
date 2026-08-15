@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sidenote — study together</title>
+<style>
+  :root{
+    --ink:#20241f; --paper:#f8f4ea; --paper-dim:#efe9d8;
+    --chalk:#1f3b32; --chalk-2:#28493e;
+    --amber:#e8a13a; --amber-soft:#f6dfb2;
+    --teal:#3e8e7e; --teal-soft:#d9ece7;
+    --coral:#c65d43; --coral-soft:#f1d9d1;
+    --blue:#3d6fa5; --blue-soft:#dbe6f1;
+    --line:#ded5bd; --ink-soft:#6b6455;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+  h1,h2,h3,.serif{font-family:Georgia,'Iowan Old Style','Times New Roman',serif;}
+  button{font-family:inherit;}
+  #app{min-height:100vh;display:flex;flex-direction:column;}
+
+  .topbar{background:var(--chalk); color:#f3efe1; padding:12px 22px; display:flex; align-items:center; gap:8px; box-shadow:0 2px 10px rgba(0,0,0,0.15); flex-wrap:wrap;}
+  .brand{font-size:19px; font-weight:700; letter-spacing:.3px; display:flex; align-items:center; gap:8px; margin-right:10px;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);}
+  .nav-link{background:none; border:none; color:#d9d3bf; font-size:13px; font-weight:600; padding:7px 11px; border-radius:7px; cursor:pointer;}
+  .nav-link:hover{background:rgba(255,255,255,0.08); color:#fff;}
+  .nav-link.active{background:rgba(232,161,58,0.22); color:#ffd48a;}
+  .topbar-spacer{flex:1;}
+  .topbar-btn{background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#f3efe1; padding:7px 13px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;}
+  .topbar-btn:hover{background:rgba(255,255,255,0.16);}
+  .whoami{font-size:13px; color:#e4dfcd;}
+  .whoami b{color:#fff;}
+
+  main{flex:1; width:100%;}
+  .wrap{max-width:980px; margin:0 auto; padding:30px 22px 60px;}
+  .page-head{display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:20px; gap:14px; flex-wrap:wrap;}
+  .page-head h1{margin:0 0 4px; font-size:28px;}
+  .page-head p{margin:0; color:var(--ink-soft); font-size:14px;}
+  .btn{background:var(--chalk); color:#fff; border:none; padding:10px 18px; border-radius:9px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;}
+  .btn:hover{background:var(--chalk-2);}
+  .btn-amber{background:var(--amber); color:#3a2a06;}
+  .btn-amber:hover{background:#f2b357;}
+  .btn-ghost{background:none; border:1px solid var(--line); color:var(--ink);}
+  .btn-ghost:hover{background:var(--paper-dim);}
+  .btn-coral{background:var(--coral); color:#fff;}
+  .breadcrumb{font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;}
+  .breadcrumb a{color:var(--blue); cursor:pointer; text-decoration:none;}
+  .breadcrumb a:hover{text-decoration:underline;}
+
+  .video-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px;}
+  .video-card{background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; cursor:pointer; transition:transform .15s, box-shadow .15s; display:flex; flex-direction:column;}
+  .video-card:hover{transform:translateY(-2px); box-shadow:0 8px 20px rgba(32,36,31,0.12);}
+  .video-card img{width:100%; aspect-ratio:16/9; object-fit:cover; background:var(--paper-dim); display:block;}
+  .video-card-body{padding:11px 13px 13px; display:flex; flex-direction:column; gap:7px;}
+  .video-card-title{font-size:14px; font-weight:700; line-height:1.3;}
+  .chip{font-size:10px; padding:2px 8px; border-radius:8px; font-weight:700; background:var(--paper-dim); color:var(--ink-soft);}
+  .chip-private{background:var(--coral-soft); color:#8a3d29;}
+  .chip-public{background:var(--teal-soft); color:#2b5f53;}
+  .empty-state{border:2px dashed var(--line); border-radius:14px; padding:50px 20px; text-align:center; color:var(--ink-soft);}
+
+  .topic-grid{display:flex; flex-direction:column; gap:10px;}
+  .topic-card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px; cursor:pointer; transition:box-shadow .15s, border-color .15s;}
+  .topic-card:hover{border-color:var(--amber); box-shadow:0 6px 16px rgba(32,36,31,0.08);}
+  .topic-title{font-size:16px; font-weight:700; margin-bottom:3px;}
+  .topic-rule{font-size:13px; color:var(--ink-soft); line-height:1.4; margin-bottom:6px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .topic-meta{font-size:11.5px; color:var(--ink-soft); display:flex; gap:10px; align-items:center;}
+  .set-count{background:var(--amber-soft); color:#7a5313; padding:1px 8px; border-radius:8px; font-weight:700;}
+
+  .rule-card{background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin-bottom:22px;}
+  .rule-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .rule-card h2{margin:0 0 8px; font-size:22px;}
+  .rule-body{font-size:14.5px; line-height:1.6; color:#3a362c; white-space:pre-wrap;}
+  .rule-owner{font-size:12px; color:var(--ink-soft); margin-top:10px;}
+
+  .set-row{display:flex; align-items:center; gap:12px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; cursor:pointer;}
+  .set-row:hover{border-color:var(--amber);}
+  .set-thumb{width:78px; aspect-ratio:16/9; object-fit:cover; border-radius:6px; background:var(--paper-dim); flex-shrink:0;}
+  .set-info{flex:1; min-width:0;}
+  .set-video-title{font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .set-owner{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .set-open{background:var(--chalk); color:#fff; border:none; padding:7px 13px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0;}
+
+  .modal-backdrop{position:fixed; inset:0; background:rgba(20,20,15,0.55); z-index:500; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .modal{background:#fff; border-radius:14px; max-width:460px; width:100%; max-height:86vh; overflow-y:auto; padding:22px 24px; box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+  .modal h2{margin:0 0 4px; font-size:20px;}
+  .modal .sub{color:var(--ink-soft); font-size:13px; margin:0 0 16px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;}
+  .field input[type=text], .field input[type=url], .field textarea, .field select{
+    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px; font-family:inherit; background:var(--paper); color:var(--ink);}
+  .field textarea{resize:vertical;}
+  .chiplist{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+  .chip-toggle{padding:4px 10px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:12px; cursor:pointer;}
+  .chip-toggle.on{background:var(--chalk); color:#fff; border-color:var(--chalk);}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px;}
+
+  .identity-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; background:radial-gradient(ellipse at top, #2a4b40, var(--chalk) 60%);}
+  .identity-card{background:#fbf8ef; border-radius:16px; padding:32px; max-width:420px; width:100%; box-shadow:0 30px 70px rgba(0,0,0,0.35);}
+  .identity-card h1{margin:0 0 4px; font-size:24px;}
+  .identity-card .sub{color:var(--ink-soft); font-size:13px; margin:0 0 20px;}
+  .person-list{display:flex; flex-direction:column; gap:8px; margin-bottom:16px;}
+  .person-row{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; cursor:pointer; background:#fff;}
+  .person-row:hover{border-color:var(--amber); background:#fffaf0;}
+  .avatar{width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px; flex-shrink:0;}
+  .person-name{font-weight:700; font-size:14px;}
+
+  .video-page{display:flex; gap:0; align-items:flex-start; max-width:1400px; margin:0 auto; padding:18px 18px 40px;}
+  .player-col{flex:1; min-width:0;}
+  .back-link{background:none; border:none; color:var(--ink-soft); font-size:13px; cursor:pointer; padding:0 0 10px; display:flex; align-items:center; gap:5px;}
+  .back-link:hover{color:var(--ink);}
+  .player-wrap{position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden;}
+  #yt-player-el{width:100%; height:100%;}
+  .video-title-row{margin-top:12px;}
+  .video-title-row h2{margin:0 0 6px; font-size:19px;}
+
+  #sn-overlay{position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:5;}
+  .sn-float{position:absolute; right:-100%; white-space:nowrap; max-width:70%; display:flex; align-items:center; gap:6px; font-size:14px; font-weight:600; color:#fff;
+    background:rgba(10,12,10,0.82); border:1.5px solid var(--amber); border-radius:8px; padding:6px 12px; box-shadow:0 2px 10px rgba(0,0,0,0.5);
+    animation:sn-slide 9s linear forwards; pointer-events:auto; cursor:pointer; overflow:hidden; text-overflow:ellipsis;}
+  @keyframes sn-slide{0%{right:-50%; opacity:0;} 5%{opacity:1;} 88%{opacity:1;} 100%{right:105%; opacity:0;}}
+
+  .panel-col{width:380px; flex-shrink:0; margin-left:18px; position:sticky; top:18px;}
+  .panel{background:#fff; border:1px solid var(--line); border-radius:14px; max-height:calc(100vh - 36px); display:flex; flex-direction:column; overflow:hidden;}
+  .panel-head{padding:13px 15px; background:var(--chalk); color:#fff; font-weight:700; font-size:14px;}
+  .panel-body{padding:13px; overflow-y:auto; display:flex; flex-direction:column; gap:12px;}
+
+  .sets-filter{display:flex; flex-wrap:wrap; gap:6px;}
+  .set-chip{padding:5px 10px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:11.5px; cursor:pointer;}
+  .set-chip.on{background:var(--amber); border-color:var(--amber); color:#3a2a06; font-weight:700;}
+
+  .new-btn{background:var(--amber-soft); color:#7a5313; border:1.5px dashed var(--amber); border-radius:9px; padding:9px; font-size:13px; font-weight:700; cursor:pointer;}
+  .new-btn:hover{background:#f2d79a;}
+  .new-btn[disabled]{opacity:.5; cursor:not-allowed;}
+
+  .prob-form{display:flex; flex-direction:column; gap:8px; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px;}
+  .prob-form textarea, .prob-form input, .prob-form select{width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:7px; font-size:12.5px; font-family:inherit; background:#fff;}
+  .locked-time{font-size:11.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  .tiny-btn{background:#fff; border:1px solid var(--line); border-radius:6px; padding:3px 8px; font-size:11px; cursor:pointer;}
+  .tiny-btn:hover{border-color:var(--amber);}
+  .hint-row{display:flex; gap:6px; align-items:center;}
+  .hint-num{font-size:11px; font-weight:700; color:var(--amber); width:14px;}
+  .form-btns{display:flex; justify-content:flex-end; gap:8px;}
+
+  .problem-list{display:flex; flex-direction:column; gap:10px;}
+  .p-empty{color:var(--ink-soft); font-size:12.5px; padding:4px 0;}
+  .p-card{border:1px solid var(--line); border-radius:11px; padding:11px; display:flex; flex-direction:column; gap:7px; transition:box-shadow .3s, border-color .3s;}
+  .p-flash{border-color:var(--amber); box-shadow:0 0 0 3px var(--amber-soft);}
+  .p-top{display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11px;}
+  .p-time{color:#b1780f; font-weight:700; cursor:pointer;}
+  .p-time:hover{text-decoration:underline;}
+  .p-topic{padding:1px 8px; border-radius:8px; font-weight:700; background:var(--blue-soft); color:var(--blue);}
+  .p-tag{padding:1px 8px; border-radius:8px; font-weight:700;}
+  .p-discuss{color:#2b5f53; background:var(--teal-soft); padding:1px 7px; border-radius:6px;}
+  .p-owner{color:var(--ink-soft); margin-left:auto;}
+  .p-text{font-size:13.5px; line-height:1.4;}
+  .p-rule-link{align-self:flex-start; background:none; border:none; color:var(--blue); font-size:11.5px; cursor:pointer; padding:0;}
+  .p-rule-link:hover{text-decoration:underline;}
+  .p-rule-inline{background:var(--blue-soft); border:1px solid #c3d4e6; border-radius:7px; padding:8px 10px; font-size:12px; color:#2c4d70; white-space:pre-wrap;}
+  .p-controls{display:flex; gap:6px; flex-wrap:wrap;}
+  .p-mini-btn{background:none; border:1px solid var(--line); color:var(--ink-soft); border-radius:7px; padding:4px 9px; font-size:11px; cursor:pointer;}
+  .p-mini-btn:hover{border-color:var(--amber); color:#7a5313;}
+  .p-edit:hover{border-color:var(--blue); color:var(--blue);}
+  .p-delete:hover{border-color:var(--coral); color:var(--coral);}
+  .p-expanded{display:flex; flex-direction:column; gap:9px; padding-top:7px; border-top:1px dashed var(--line);}
+
+  .hints-block{display:flex; flex-direction:column; gap:6px;}
+  .hint-shown{background:var(--teal-soft); border:1px solid #bfe0d7; border-radius:7px; padding:6px 9px; font-size:12px; color:#215347;}
+  .hint-reveal{align-self:flex-start; background:var(--teal-soft); color:#215347; border:1px dashed var(--teal); border-radius:7px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;}
+
+  .comment-toggle{background:none; border:none; color:var(--ink-soft); font-size:11px; cursor:pointer; text-align:left; padding:0;}
+  .comment-toggle:hover{color:var(--ink);}
+  .comments-block{display:flex; flex-direction:column; gap:5px; margin-top:4px; padding-left:10px; border-left:2px solid var(--line);}
+  .comment-item{font-size:12px;}
+  .comment-user{font-weight:700; margin-right:5px;}
+  .comment-add{display:flex; gap:5px; margin-top:2px;}
+  .comment-add input{flex:1; padding:5px 8px; border:1px solid var(--line); border-radius:6px; font-size:11.5px;}
+
+  .answers-list{display:flex; flex-direction:column; gap:7px;}
+  .answer-item{background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:8px 10px;}
+  .answer-top{display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;}
+  .answer-user{font-weight:700;}
+  .answer-time{color:var(--ink-soft);}
+  .answer-text{font-size:13px;}
+
+  .answer-input-row{display:flex; gap:6px; align-items:flex-end;}
+  .answer-input-row textarea{flex:1; padding:7px 9px; border:1px solid var(--line); border-radius:7px; font-size:12.5px; font-family:inherit;}
+  .mic-btn{background:#fff; border:1px solid var(--line); border-radius:7px; width:30px; height:28px; cursor:pointer; font-size:13px;}
+  .mic-btn.rec{background:var(--coral-soft); border-color:var(--coral); animation:pulse 1.2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.5;}}
+  .send-btn{background:var(--chalk); color:#fff; border:none; border-radius:7px; padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer;}
+
+  @media (max-width: 880px){
+    .video-page{flex-direction:column;}
+    .panel-col{width:100%; margin-left:0; margin-top:16px; position:static;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ── SUPABASE (shared backend — also used by the browser extension) ───────
+  const SB_URL = 'https://fprrbxxwfkddkjjblueb.supabase.co';
+  const SB_KEY = 'sb_publishable_GM2tjFx2LN43guCzYHuzUA_M_ZpW7Hl';
+
+  async function sb(path, opts){
+    opts = opts || {};
+    const res = await fetch(SB_URL + '/rest/v1/' + path, {
+      method: opts.method || 'GET',
+      headers: Object.assign({
+        'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': opts.prefer || 'return=representation'
+      }, opts.headers || {}),
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+    if(!res.ok){ const t = await res.text(); console.error('Supabase error', res.status, t); throw new Error(t); }
+    const txt = await res.text();
+    return txt ? JSON.parse(txt) : null;
+  }
+  function sbSelect(table, query){ return sb(table + (query ? '?' + query : '')); }
+  function sbInsert(table, rows){ return sb(table, { method: 'POST', body: rows }); }
+  function sbUpdate(table, id, patch){ return sb(table + '?id=eq.' + id, { method: 'PATCH', body: patch }); }
+  function sbDelete(table, query){ return sb(table + '?' + query, { method: 'DELETE', prefer: 'return=minimal' }); }
+  function toMs(iso){ return iso ? new Date(iso).getTime() : Date.now(); }
+
+  const TAG_COLORS = ['#e8a13a','#8f7fd1','#3e8e7e','#c65d43','#5a8fc7','#c76e9c'];
+  const AVATAR_COLORS = ['#c65d43','#3e8e7e','#5a8fc7','#8f7fd1','#c76e9c','#b1780f'];
+  const DEFAULT_TAGS = ['warm-up','discuss','vocab','math','general'];
+
+  function colorFor(str, palette){ let h=0; for(let i=0;i<(str||'').length;i++) h=(h*31+str.charCodeAt(i))>>>0; return palette[h % palette.length]; }
+  function escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtTime(s){ s=Math.floor(s||0); const m=Math.floor(s/60), ss=(s%60).toString().padStart(2,'0'); return m+':'+ss; }
+  function timeAgo(ms){ const s=Math.floor((Date.now()-ms)/1000); if(s<60) return 'just now'; if(s<3600) return Math.floor(s/60)+'m ago'; if(s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+
+  // window.storage (artifact-local, per-browser) is only used for "which
+  // person am I on this device" — everything else now lives in Supabase.
+  async function stGet(key, shared){ try{ const r = await window.storage.get(key, !!shared); return r ? r.value : null; } catch(e){ return null; } }
+  async function stSet(key, value, shared){ try{ await window.storage.set(key, value, !!shared); } catch(e){} }
+
+  // ── STATE ────────────────────────────────────────────────────────────────
+  let identityId = null;
+  let users = [];
+  let videos = [];
+  let tags = DEFAULT_TAGS.slice();
+  let topics = [];
+
+  let view = 'home';
+  let peopleModalOpen = false;
+  let addVideoModalOpen = false;
+  let newTopicModalOpen = false;
+
+  let currentTopicId = null;
+  let currentVideoId = null;
+  let currentVideoData = null;
+  let cameFromTopic = null;
+
+  let catalogSets = {};        // key -> {topicId, videoId, ownerId, count} — cross-video, for the Catalog
+  let catalogLoading = false;
+
+  let ytPlayer = null, ytReady = false, pollTimer = null, lastFloatSecond = -1;
+
+  let activeSet = null;
+  let expandedProblem = {}; let expandedComments = {}; let hintsRevealed = {}; let expandedRule = {};
+  let editingProblemId = null; let formTime = 0;
+
+  let recognizer = null, recordingProblemId = null, wasPlayingBeforeVoice = false;
+
+  function me(){ return users.find(u=>u.id===identityId) || null; }
+  function userById(id){ return users.find(u=>u.id===id); }
+  function userName(id){ const u=userById(id); return u ? u.name : 'Someone'; }
+  function userColor(id){ const u=userById(id); return u ? u.color : '#999'; }
+  function topicById(id){ return topics.find(t=>t.id===id); }
+
+  // ── LOAD / MAP HELPERS ──────────────────────────────────────────────────
+  async function loadUsers(){ return await sbSelect('users','order=created_at'); }
+  async function loadTags(){ const rows = await sbSelect('tags','select=name&order=name'); return rows.map(r=>r.name); }
+  async function loadTopics(){
+    const rows = await sbSelect('topics','order=created_at');
+    rows.forEach(t=>{ t.ownerId = t.owner_id; t.createdAt = toMs(t.created_at); });
+    return rows;
+  }
+  async function loadVideos(){
+    const rows = await sbSelect('videos','order=created_at');
+    const allowed = rows.length ? await sbSelect('video_allowed_users','select=video_id,user_id') : [];
+    rows.forEach(v=>{
+      v.embedId = v.embed_id; v.ownerId = v.owner_id; v.createdAt = toMs(v.created_at);
+      v.allowedUserIds = allowed.filter(a=>a.video_id===v.id).map(a=>a.user_id);
+    });
+    return rows;
+  }
+  async function loadProblemsForVideo(videoId){
+    const problems = await sbSelect('problems','video_id=eq.'+videoId+'&order=time_seconds');
+    if(!problems.length) return [];
+    const ids = problems.map(p=>p.id);
+    const idList = '(' + ids.join(',') + ')';
+    const [hints, answers] = await Promise.all([
+      sbSelect('hints','problem_id=in.'+idList+'&order=level'),
+      sbSelect('answers','problem_id=in.'+idList+'&order=created_at')
+    ]);
+    const answerIds = answers.map(a=>a.id);
+    const allTargets = ids.concat(answerIds);
+    const comments = allTargets.length ? await sbSelect('comments','target_id=in.(' + allTargets.join(',') + ')') : [];
+    problems.forEach(p=>{
+      p.topicId = p.topic_id; p.time = p.time_seconds; p.needsAnswer = p.needs_answer;
+      p.ownerId = p.owner_id; p.createdAt = toMs(p.created_at); p.color = colorFor(p.tag, TAG_COLORS);
+      p.hints = hints.filter(h=>h.problem_id===p.id).sort((a,b)=>a.level-b.level).map(h=>h.text);
+      p.answers = answers.filter(a=>a.problem_id===p.id).map(a=>({
+        id:a.id, userId:a.user_id, type:a.type, text:a.text, hintsUsed:a.hints_used, createdAt: toMs(a.created_at),
+        comments: comments.filter(c=>c.target_type==='answer' && c.target_id===a.id)
+                           .map(c=>({id:c.id, userId:c.user_id, text:c.text, createdAt: toMs(c.created_at)}))
+      }));
+      p.comments = comments.filter(c=>c.target_type==='problem' && c.target_id===p.id)
+                            .map(c=>({id:c.id, userId:c.user_id, text:c.text, createdAt: toMs(c.created_at)}));
+    });
+    return problems;
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────────────────
+  async function init(){
+    try{
+      const [u, v, t, tp, myId] = await Promise.all([ loadUsers(), loadVideos(), loadTags(), loadTopics(), stGet('my-identity', false) ]);
+      users = u; videos = v; tags = t.length?t:DEFAULT_TAGS.slice(); topics = tp;
+      identityId = myId && users.some(x=>x.id===myId) ? myId : null;
+    }catch(e){
+      document.getElementById('app').innerHTML = '<div class="wrap"><div class="empty-state">Couldn\'t reach the shared database. Check your connection and reload.<br><small>'+escH(e.message||'')+'</small></div></div>';
+      return;
+    }
+    render();
+  }
+
+  // ── ROOT RENDER ──────────────────────────────────────────────────────────
+  function render(){
+    const app = document.getElementById('app');
+    if(!identityId){ app.innerHTML = renderIdentityScreen(true); wireIdentityScreen(true); return; }
+    let html = renderTopbar() + '<main>';
+    if(view==='video' && currentVideoId) html += renderVideoPage();
+    else if(view==='topic' && currentTopicId) html += renderTopicPage();
+    else if(view==='catalog') html += renderCatalog();
+    else html += renderHome();
+    html += '</main>';
+    if(peopleModalOpen) html += '<div class="modal-backdrop" id="people-backdrop"><div class="modal">' + renderIdentityScreen(false) + '</div></div>';
+    if(addVideoModalOpen) html += renderAddVideoModal();
+    if(newTopicModalOpen) html += renderNewTopicModal();
+    app.innerHTML = html;
+    wireTopbar();
+    if(view==='video' && currentVideoId) wireVideoPage();
+    else if(view==='topic' && currentTopicId) wireTopicPage();
+    else if(view==='catalog') wireCatalog();
+    else wireHome();
+    if(peopleModalOpen) wireIdentityScreen(false);
+    if(addVideoModalOpen) wireAddVideoModal();
+    if(newTopicModalOpen) wireNewTopicModal();
+  }
+
+  // ── TOPBAR ───────────────────────────────────────────────────────────────
+  function renderTopbar(){
+    const m = me();
+    return (
+      '<div class="topbar">' +
+        '<div class="brand"><span class="dot"></span>Sidenote</div>' +
+        '<button class="nav-link '+(view==='home'?'active':'')+'" id="nav-home">Videos</button>' +
+        '<button class="nav-link '+(view==='catalog'||view==='topic'?'active':'')+'" id="nav-catalog">📚 Catalog</button>' +
+        '<div class="topbar-spacer"></div>' +
+        (m ? ('<div class="whoami">You\'re <b>'+escH(m.name)+'</b></div><button class="topbar-btn" id="tb-switch">Switch person</button>') : '') +
+      '</div>'
+    );
+  }
+  function wireTopbar(){
+    document.getElementById('nav-home').onclick = () => { stopPoll(); view='home'; render(); };
+    document.getElementById('nav-catalog').onclick = async () => { stopPoll(); view='catalog'; render(); await loadCatalogData(); };
+    const b = document.getElementById('tb-switch');
+    if(b) b.onclick = () => { peopleModalOpen = true; render(); };
+  }
+
+  // ── IDENTITY / PEOPLE SCREEN ─────────────────────────────────────────────
+  function renderIdentityScreen(blocking){
+    const wrapOpen = blocking ? '<div class="identity-wrap"><div class="identity-card">' : '';
+    const wrapClose = blocking ? '</div></div>' : '';
+    return (
+      wrapOpen +
+      (blocking ? '<h1>Who\'s here?</h1><p class="sub">Pick your name, or add yourself to this family.</p>' :
+                   '<h2>Switch person</h2><p class="sub">Pick who you are, or add someone new.</p>') +
+      '<div class="person-list">' +
+        (users.length ? users.map(u =>
+          '<div class="person-row" data-pick="'+u.id+'">' +
+            '<div class="avatar" style="background:'+u.color+'">'+escH(u.name.slice(0,1).toUpperCase())+'</div>' +
+            '<div class="person-name">'+escH(u.name)+'</div>' +
+          '</div>'
+        ).join('') : '<div class="p-empty">No one here yet — add the first person below.</div>') +
+      '</div>' +
+      '<div class="field"><label>Name</label><input type="text" id="id-name" placeholder="e.g. Mom, Alex..." maxlength="30"/></div>' +
+      '<button class="btn btn-amber" id="id-add" style="width:100%">Add &amp; continue</button>' +
+      (blocking ? '' : '<div class="modal-actions"><button class="btn btn-ghost" id="id-cancel">Close</button></div>') +
+      wrapClose
+    );
+  }
+  function wireIdentityScreen(blocking){
+    document.querySelectorAll('[data-pick]').forEach(row=>{
+      row.onclick = async () => { identityId = row.dataset.pick; await stSet('my-identity', identityId, false); peopleModalOpen = false; render(); };
+    });
+    const addBtn = document.getElementById('id-add');
+    if(addBtn) addBtn.onclick = async () => {
+      const name = document.getElementById('id-name').value.trim();
+      if(!name) return;
+      addBtn.disabled = true;
+      try{
+        const rows = await sbInsert('users', [{ name, color: colorFor(name, AVATAR_COLORS) }]);
+        const newUser = rows[0];
+        users.push(newUser);
+        identityId = newUser.id;
+        await stSet('my-identity', identityId, false);
+        peopleModalOpen = false;
+      }catch(e){ alert('Could not add person: ' + e.message); }
+      render();
+    };
+    const cancelBtn = document.getElementById('id-cancel');
+    if(cancelBtn) cancelBtn.onclick = () => { peopleModalOpen = false; render(); };
+    const backdrop = document.getElementById('people-backdrop');
+    if(backdrop) backdrop.onclick = (e) => { if(e.target.id==='people-backdrop'){ peopleModalOpen=false; render(); } };
+  }
+
+  // ── HOME (video library) ─────────────────────────────────────────────────
+  function visibleVideos(){ return videos.filter(v => v.visibility==='public' || v.ownerId===identityId || (v.allowedUserIds||[]).includes(identityId)); }
+  function renderHome(){
+    const vids = visibleVideos();
+    return (
+      '<div class="wrap">' +
+        '<div class="page-head"><div><h1>Your videos</h1><p>Every video anyone\'s added problems to — including from the browser extension.</p></div>' +
+          '<button class="btn btn-amber" id="hb-add-video">+ Add video</button></div>' +
+        (vids.length ? '<div class="video-grid">' + vids.map(videoCardHTML).join('') + '</div>' :
+          '<div class="empty-state">No videos yet. Add a YouTube link to get started.</div>') +
+      '</div>'
+    );
+  }
+  function videoCardHTML(v){
+    const thumb = 'https://img.youtube.com/vi/'+v.embedId+'/hqdefault.jpg';
+    return (
+      '<div class="video-card" data-open="'+v.id+'">' +
+        '<img src="'+thumb+'" alt=""/>' +
+        '<div class="video-card-body">' +
+          '<div class="video-card-title">'+escH(v.title)+'</div>' +
+          '<div class="chiplist"><span class="chip '+(v.visibility==='public'?'chip-public':'chip-private')+'">'+(v.visibility==='public'?'public':'private')+'</span></div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+  function wireHome(){
+    document.getElementById('hb-add-video').onclick = () => { addVideoModalOpen = true; render(); };
+    document.querySelectorAll('[data-open]').forEach(card=>{ card.onclick = () => openVideo(card.dataset.open, null); });
+  }
+
+  // ── ADD VIDEO MODAL ─────────────────────────────────────────────────────
+  let addVideoState = { visibility:'public', allowed:[] };
+  function extractYouTubeId(url){
+    try{
+      const u = new URL(url.trim());
+      if(u.hostname.includes('youtu.be')) return u.pathname.slice(1).split(/[/?#]/)[0];
+      if(u.pathname.startsWith('/shorts/')) return u.pathname.replace('/shorts/','').split(/[/?#]/)[0];
+      if(u.searchParams.get('v')) return u.searchParams.get('v');
+      return null;
+    }catch(e){ return null; }
+  }
+  function renderAddVideoModal(){
+    addVideoState = { visibility:'public', allowed:[] };
+    return (
+      '<div class="modal-backdrop" id="av-backdrop"><div class="modal">' +
+        '<h2>Add a video</h2><p class="sub">Paste any YouTube link.</p>' +
+        '<div class="field"><label>YouTube URL</label><input type="url" id="av-url" placeholder="https://www.youtube.com/watch?v=..."/></div>' +
+        '<div class="field"><label>Title</label><input type="text" id="av-title" maxlength="120" placeholder="What is this video about?"/></div>' +
+        '<div class="field"><label>Who can see this</label><select id="av-visibility"><option value="public">Everyone</option><option value="private">Only specific people</option></select></div>' +
+        '<div class="field" id="av-allowed-wrap" style="display:none"><label>Allowed people</label><div class="chiplist">' +
+          users.map(u=>'<button type="button" class="chip-toggle" data-user="'+u.id+'">'+escH(u.name)+'</button>').join('') +
+        '</div></div>' +
+        '<div class="modal-actions"><button class="btn btn-ghost" id="av-cancel">Cancel</button><button class="btn btn-amber" id="av-save">Add video</button></div>' +
+      '</div></div>'
+    );
+  }
+  function wireAddVideoModal(){
+    document.getElementById('av-cancel').onclick = () => { addVideoModalOpen=false; render(); };
+    document.getElementById('av-backdrop').onclick = (e)=>{ if(e.target.id==='av-backdrop'){ addVideoModalOpen=false; render(); } };
+    const visSel = document.getElementById('av-visibility');
+    visSel.onchange = () => { addVideoState.visibility = visSel.value; document.getElementById('av-allowed-wrap').style.display = visSel.value==='private' ? '' : 'none'; };
+    document.querySelectorAll('[data-user]').forEach(btn=>{
+      btn.onclick = () => { btn.classList.toggle('on'); const uidv = btn.dataset.user; addVideoState.allowed = addVideoState.allowed.includes(uidv) ? addVideoState.allowed.filter(x=>x!==uidv) : [...addVideoState.allowed, uidv]; };
+    });
+    document.getElementById('av-save').onclick = async () => {
+      const url = document.getElementById('av-url').value.trim();
+      const title = document.getElementById('av-title').value.trim() || 'Untitled video';
+      const embedId = extractYouTubeId(url);
+      if(!embedId){ alert('That doesn\'t look like a valid YouTube URL.'); return; }
+      try{
+        const existing = await sbSelect('videos','embed_id=eq.'+embedId+'&limit=1');
+        let v;
+        if(existing && existing.length){
+          v = existing[0];
+        } else {
+          const rows = await sbInsert('videos', [{ url, title, embed_id: embedId, visibility: addVideoState.visibility, owner_id: identityId }]);
+          v = rows[0];
+          if(addVideoState.visibility==='private' && addVideoState.allowed.length){
+            await sbInsert('video_allowed_users', addVideoState.allowed.map(uidv=>({ video_id: v.id, user_id: uidv })));
+          }
+        }
+        v.embedId = v.embed_id; v.ownerId = v.owner_id; v.createdAt = toMs(v.created_at);
+        v.allowedUserIds = addVideoState.visibility==='private' ? addVideoState.allowed : [];
+        if(!videos.some(x=>x.id===v.id)) videos.push(v);
+        addVideoModalOpen = false;
+        openVideo(v.id, null);
+      }catch(e){ alert('Could not add video: ' + e.message); }
+    };
+  }
+
+  // ── CATALOG (table of contents) ─────────────────────────────────────────
+  async function loadCatalogData(){
+    catalogLoading = true; render();
+    try{
+      const rows = await sbSelect('problems','select=video_id,topic_id,owner_id');
+      catalogSets = {};
+      rows.forEach(r=>{
+        if(!r.topic_id) return;
+        const key = r.topic_id+'|'+r.video_id+'|'+r.owner_id;
+        if(!catalogSets[key]) catalogSets[key] = { topicId: r.topic_id, videoId: r.video_id, ownerId: r.owner_id, count: 0 };
+        catalogSets[key].count++;
+      });
+    }catch(e){ console.error(e); }
+    catalogLoading = false; render();
+  }
+  function setsForTopic(topicId){ return Object.values(catalogSets).filter(s=>s.topicId===topicId); }
+  function renderCatalog(){
+    return (
+      '<div class="wrap">' +
+        '<div class="page-head"><div><h1>Catalog</h1><p>Topics with a rule to learn, and the problem sets people have built for them.</p></div>' +
+          '<button class="btn btn-amber" id="cb-new-topic">+ New Topic</button></div>' +
+        (catalogLoading ? '<div class="p-empty">Loading…</div>' : (
+          topics.length ? '<div class="topic-grid">' + topics.map(topicCardHTML).join('') + '</div>' :
+          '<div class="empty-state">No topics yet. A topic holds a rule/explanation, and any number of problem sets people build for it.</div>'
+        )) +
+      '</div>'
+    );
+  }
+  function topicCardHTML(t){
+    const n = catalogLoading ? null : setsForTopic(t.id).length;
+    return (
+      '<div class="topic-card" data-topic="'+t.id+'">' +
+        '<div class="topic-title">'+escH(t.title)+'</div>' +
+        '<div class="topic-rule">'+escH(t.rule)+'</div>' +
+        '<div class="topic-meta">by '+escH(userName(t.ownerId))+ (n!=null ? ' <span class="set-count">'+n+' problem set'+(n!==1?'s':'')+'</span>' : '') + '</div>' +
+      '</div>'
+    );
+  }
+  function wireCatalog(){
+    document.getElementById('cb-new-topic').onclick = () => { newTopicModalOpen = true; render(); };
+    document.querySelectorAll('[data-topic]').forEach(card=>{
+      card.onclick = () => { currentTopicId = card.dataset.topic; view = 'topic'; render(); };
+    });
+  }
+  function renderNewTopicModal(){
+    return (
+      '<div class="modal-backdrop" id="nt-backdrop"><div class="modal">' +
+        '<h2>New topic</h2><p class="sub">A topic is a rule or concept — problems from any video can live under it.</p>' +
+        '<div class="field"><label>Title</label><input type="text" id="nt-title" maxlength="80" placeholder="e.g. Adding fractions"/></div>' +
+        '<div class="field"><label>Rule / explanation</label><textarea id="nt-rule" rows="4" maxlength="800" placeholder="Explain the rule before kids see any problems..."></textarea></div>' +
+        '<div class="modal-actions"><button class="btn btn-ghost" id="nt-cancel">Cancel</button><button class="btn btn-amber" id="nt-save">Create topic</button></div>' +
+      '</div></div>'
+    );
+  }
+  function wireNewTopicModal(){
+    document.getElementById('nt-cancel').onclick = () => { newTopicModalOpen=false; render(); };
+    document.getElementById('nt-backdrop').onclick = (e)=>{ if(e.target.id==='nt-backdrop'){ newTopicModalOpen=false; render(); } };
+    document.getElementById('nt-save').onclick = async () => {
+      const title = document.getElementById('nt-title').value.trim();
+      const rule = document.getElementById('nt-rule').value.trim();
+      if(!title || !rule) return;
+      try{
+        const rows = await sbInsert('topics', [{ title, rule, owner_id: identityId }]);
+        const t = rows[0]; t.ownerId = t.owner_id; t.createdAt = toMs(t.created_at);
+        topics.push(t);
+        newTopicModalOpen = false;
+        currentTopicId = t.id; view = 'topic';
+        render();
+      }catch(e){ alert('Could not create topic: ' + e.message); }
+    };
+  }
+
+  // ── TOPIC PAGE ───────────────────────────────────────────────────────────
+  function renderTopicPage(){
+    const t = topicById(currentTopicId);
+    if(!t) return '<div class="wrap">Topic not found.</div>';
+    const isOwner = t.ownerId === identityId;
+    const sets = catalogLoading ? [] : setsForTopic(t.id);
+    return (
+      '<div class="wrap">' +
+        '<div class="breadcrumb"><a id="bc-catalog">Catalog</a> / '+escH(t.title)+'</div>' +
+        '<div class="rule-card">' +
+          '<div class="rule-card-top"><h2>'+escH(t.title)+'</h2>' +
+            (isOwner ? '<div><button class="tiny-btn" id="tp-edit">✎ Edit</button> <button class="tiny-btn" id="tp-delete">🗑 Delete</button></div>' : '') +
+          '</div>' +
+          '<div class="rule-body">'+escH(t.rule)+'</div>' +
+          '<div class="rule-owner">Added by '+escH(userName(t.ownerId))+'</div>' +
+        '</div>' +
+        '<div class="page-head"><h1 style="font-size:19px">Problem sets</h1><button class="btn btn-amber" id="tp-add-set">+ Add problems to this topic</button></div>' +
+        (catalogLoading ? '<div class="p-empty">Loading…</div>' : (
+          sets.length ? '<div class="topic-grid">' + sets.map(setRowHTML).join('') + '</div>' :
+          '<div class="empty-state">No one has added problems for this topic yet — from here, or from the extension while watching a video.</div>'
+        )) +
+      '</div>'
+    );
+  }
+  function setRowHTML(s){
+    const v = videos.find(x=>x.id===s.videoId);
+    if(!v) return '';
+    return (
+      '<div class="set-row" data-video="'+s.videoId+'" data-owner="'+s.ownerId+'">' +
+        '<img class="set-thumb" src="https://img.youtube.com/vi/'+v.embedId+'/mqdefault.jpg" alt=""/>' +
+        '<div class="set-info"><div class="set-video-title">'+escH(v.title)+'</div><div class="set-owner">'+escH(userName(s.ownerId))+' · '+s.count+' problem'+(s.count!==1?'s':'')+'</div></div>' +
+        '<button class="set-open">Open</button>' +
+      '</div>'
+    );
+  }
+  function wireTopicPage(){
+    document.getElementById('bc-catalog').onclick = () => { view='catalog'; render(); loadCatalogData(); };
+    const editBtn = document.getElementById('tp-edit');
+    if(editBtn) editBtn.onclick = () => { newTopicModalOpen = true; render(); openEditTopicModal(); };
+    const delBtn = document.getElementById('tp-delete');
+    if(delBtn) delBtn.onclick = async () => {
+      const t = topicById(currentTopicId);
+      const inUse = await sbSelect('problems','topic_id=eq.'+t.id+'&select=id&limit=1');
+      if(inUse && inUse.length){ alert('Can\'t delete — problems are still using this topic. Delete those problems first, or leave the topic in place.'); return; }
+      if(!confirm('Delete this topic?')) return;
+      await sbDelete('topics','id=eq.'+t.id);
+      topics = topics.filter(x=>x.id!==t.id);
+      view='catalog'; render();
+    };
+    document.getElementById('tp-add-set').onclick = () => { openSetPicker(); };
+    document.querySelectorAll('.set-row').forEach(row=>{
+      row.onclick = () => openVideo(row.dataset.video, { topicId: currentTopicId, ownerId: row.dataset.owner });
+    });
+  }
+  function openEditTopicModal(){
+    const t = topicById(currentTopicId);
+    setTimeout(() => {
+      document.getElementById('nt-title').value = t.title;
+      document.getElementById('nt-rule').value = t.rule;
+      document.querySelector('.modal h2').textContent = 'Edit topic';
+      const saveBtn = document.getElementById('nt-save');
+      saveBtn.textContent = 'Save changes';
+      saveBtn.onclick = async () => {
+        const title = document.getElementById('nt-title').value.trim();
+        const rule = document.getElementById('nt-rule').value.trim();
+        if(!title || !rule) return;
+        await sbUpdate('topics', t.id, { title, rule });
+        Object.assign(t, { title, rule });
+        newTopicModalOpen = false;
+        render();
+      };
+    }, 0);
+  }
+  function openSetPicker(){
+    const vids = visibleVideos();
+    if(!vids.length){ alert('Add a video first from the Videos page.'); return; }
+    const list = vids.map((v,i)=> (i+1)+'. '+v.title).join('\n');
+    const choice = prompt('Which video? Type the number:\n'+list);
+    const idx = parseInt(choice,10) - 1;
+    if(isNaN(idx) || !vids[idx]) return;
+    openVideo(vids[idx].id, { topicId: currentTopicId, ownerId: identityId });
+  }
+
+  // ── OPEN VIDEO / YOUTUBE PLAYER ─────────────────────────────────────────
+  async function openVideo(id, presetSet){
+    stopPoll();
+    currentVideoId = id;
+    currentVideoData = { problems: [] };
+    expandedProblem = {}; expandedComments = {}; hintsRevealed = {}; expandedRule = {}; editingProblemId = null;
+    lastFloatSecond = -1;
+    activeSet = presetSet || null;
+    cameFromTopic = presetSet ? presetSet.topicId : null;
+    view = 'video';
+    render();
+    try{ currentVideoData.problems = await loadProblemsForVideo(id); }catch(e){ console.error(e); }
+    render();
+    loadYouTubeAPI(() => mountPlayer());
+  }
+  function loadYouTubeAPI(cb){
+    if(window.YT && window.YT.Player){ cb(); return; }
+    if(window.__sn_yt_loading){ window.__sn_yt_callbacks.push(cb); return; }
+    window.__sn_yt_loading = true; window.__sn_yt_callbacks = [cb];
+    window.onYouTubeIframeAPIReady = () => { window.__sn_yt_callbacks.forEach(f=>f()); };
+    const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
+  }
+  function mountPlayer(){
+    const video = videos.find(v=>v.id===currentVideoId);
+    if(!video) return;
+    const el = document.getElementById('yt-player-el');
+    if(!el) return;
+    ytPlayer = new YT.Player('yt-player-el', { videoId: video.embedId, playerVars: { rel: 0, origin: window.location.origin || undefined }, events: { onReady: () => { ytReady = true; startPoll(); } } });
+  }
+  function startPoll(){
+    stopPoll();
+    pollTimer = setInterval(() => {
+      if(!ytPlayer || !ytReady || typeof ytPlayer.getCurrentTime !== 'function') return;
+      let t; try{ t = Math.floor(ytPlayer.getCurrentTime()); } catch(e){ return; }
+      if(t !== lastFloatSecond){ lastFloatSecond = t; checkTime(t); }
+    }, 500);
+  }
+  function stopPoll(){ if(pollTimer) clearInterval(pollTimer); pollTimer = null; ytReady = false; }
+
+  function displayedProblems(){
+    const all = currentVideoData.problems || [];
+    if(!activeSet) return all;
+    return all.filter(p => p.topicId===activeSet.topicId && p.ownerId===activeSet.ownerId);
+  }
+  function checkTime(t){ displayedProblems().forEach(p => { if(p.time === t) floatProblem(p); }); }
+  function floatProblem(p){
+    const overlay = document.getElementById('sn-overlay'); if(!overlay) return;
+    const el = document.createElement('div'); el.className = 'sn-float';
+    el.style.borderColor = p.color || colorFor(p.tag, TAG_COLORS);
+    el.style.top = (15 + Math.random()*60) + '%';
+    el.innerHTML = '<span>🧩</span><span style="color:'+(p.color||colorFor(p.tag,TAG_COLORS))+';font-weight:700">#'+escH(p.tag)+'</span><span>'+escH(p.text)+'</span>';
+    el.onclick = () => scrollToProblem(p.id);
+    overlay.appendChild(el);
+    setTimeout(()=>el.remove(), 9000);
+  }
+
+  // ── VIDEO PAGE ───────────────────────────────────────────────────────────
+  function distinctSets(){
+    const map = {};
+    (currentVideoData.problems||[]).forEach(p=>{
+      const key = p.topicId+'|'+p.ownerId;
+      if(!map[key]) map[key] = { topicId: p.topicId, ownerId: p.ownerId, count: 0 };
+      map[key].count++;
+    });
+    return Object.values(map);
+  }
+  function renderVideoPage(){
+    const video = videos.find(v=>v.id===currentVideoId);
+    if(!video) return '<div class="wrap">Loading video…</div>';
+    const problems = displayedProblems().slice().sort((a,b)=>a.time-b.time);
+    const sets = distinctSets();
+    return (
+      '<div class="video-page">' +
+        '<div class="player-col">' +
+          (cameFromTopic ? '<button class="back-link" id="vp-back">← Back to topic</button>' : '<button class="back-link" id="vp-back">← All videos</button>') +
+          '<div class="player-wrap"><div id="yt-player-el"></div><div id="sn-overlay"></div></div>' +
+          '<div class="video-title-row"><h2>'+escH(video.title)+'</h2></div>' +
+        '</div>' +
+        '<div class="panel-col"><div class="panel">' +
+          '<div class="panel-head">🧩 Problems</div>' +
+          '<div class="panel-body" id="panel-body">' +
+            (sets.length > 1 || activeSet ? (
+              '<div class="sets-filter">' +
+                '<button class="set-chip '+(!activeSet?'on':'')+'" data-all="1">All</button>' +
+                sets.map(s => {
+                  const t = topicById(s.topicId);
+                  const on = activeSet && activeSet.topicId===s.topicId && activeSet.ownerId===s.ownerId;
+                  return '<button class="set-chip '+(on?'on':'')+'" data-topic="'+s.topicId+'" data-owner="'+s.ownerId+'">'+escH(t?t.title:'(deleted topic)')+' · '+escH(userName(s.ownerId))+' ('+s.count+')</button>';
+                }).join('') +
+              '</div>'
+            ) : '') +
+            (editingProblemId ? '' : ('<button class="new-btn" id="pb-new" '+(topics.length?'':'disabled')+'>+ New Problem</button>' + (topics.length ? '' : '<div class="p-empty">Create a topic in the Catalog first.</div>'))) +
+            (editingProblemId ? '<div id="prob-form-slot"></div>' : '') +
+            '<div class="problem-list">' +
+              (problems.length ? problems.map(problemCardHTML).join('') : '<div class="p-empty">No problems in this set yet.</div>') +
+            '</div>' +
+          '</div>' +
+        '</div></div>' +
+      '</div>'
+    );
+  }
+  function wireVideoPage(){
+    document.getElementById('vp-back').onclick = () => {
+      stopPoll();
+      if(cameFromTopic){ currentTopicId = cameFromTopic; view='topic'; currentVideoId=null; }
+      else { view='home'; currentVideoId=null; }
+      render();
+    };
+    const newBtn = document.getElementById('pb-new');
+    if(newBtn && !newBtn.disabled) newBtn.onclick = openNewForm;
+    document.querySelectorAll('.set-chip').forEach(btn=>{
+      btn.onclick = () => { activeSet = btn.dataset.all ? null : { topicId: btn.dataset.topic, ownerId: btn.dataset.owner }; lastFloatSecond = -1; render(); };
+    });
+    if(editingProblemId) renderForm();
+    wireProblemCards();
+  }
+
+  // ── PROBLEM FORM ─────────────────────────────────────────────────────────
+  function findProblem(id){ return (currentVideoData.problems||[]).find(p=>p.id===id); }
+  function openNewForm(){
+    if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+    formTime = ytPlayer && ytPlayer.getCurrentTime ? Math.floor(ytPlayer.getCurrentTime()) : 0;
+    editingProblemId = '__new__';
+    render();
+  }
+  function openEditForm(id){
+    const p = findProblem(id);
+    formTime = p ? p.time : 0;
+    editingProblemId = id;
+    render();
+  }
+  function renderForm(){
+    const slot = document.getElementById('prob-form-slot');
+    if(!slot) return;
+    const isNew = editingProblemId === '__new__';
+    const existing = isNew ? null : findProblem(editingProblemId);
+    const hints = isNew ? [] : (existing?.hints || []);
+    const defaultTopic = isNew ? (activeSet ? activeSet.topicId : (topics[0] && topics[0].id)) : existing.topicId;
+    slot.innerHTML =
+      '<div class="prob-form">' +
+        '<textarea id="pf-text" rows="2" maxlength="400" placeholder="Problem text...">' + (isNew?'':escH(existing.text)) + '</textarea>' +
+        '<select id="pf-topic">' + topics.map(t=>'<option value="'+t.id+'"'+(t.id===defaultTopic?' selected':'')+'>'+escH(t.title)+'</option>').join('') + '</select>' +
+        '<select id="pf-tag">' + tags.map(t=>'<option value="'+escH(t)+'"'+(!isNew && t===existing.tag?' selected':'')+'>#'+escH(t)+'</option>').join('') + '<option value="__new__">+ New tag…</option></select>' +
+        '<input id="pf-tag-new" placeholder="New tag name" style="display:none"/>' +
+        '<label style="font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:6px"><input type="checkbox" id="pf-needs" '+((isNew||existing.needsAnswer)?'checked':'')+'/> Needs an answer</label>' +
+        '<div class="locked-time">⏱ locked at '+fmtTime(formTime)+' (paused here) <button type="button" class="tiny-btn" id="pf-relock">↻ use current</button></div>' +
+        '<div style="border-top:1px dashed var(--line);padding-top:8px">' +
+          '<div style="font-size:11px;color:var(--ink-soft);margin-bottom:6px">💡 Hints (optional, revealed one at a time)</div>' +
+          '<div id="pf-hints">' + hints.map((h,i)=>hintRowHTML(h,i)).join('') + '</div>' +
+          '<button type="button" class="tiny-btn" id="pf-add-hint">+ Add hint</button>' +
+        '</div>' +
+        '<div class="form-btns"><button class="btn btn-ghost" id="pf-cancel">Cancel</button><button class="btn btn-amber" id="pf-save">'+(isNew?'Add Problem':'Save Changes')+'</button></div>' +
+      '</div>';
+    document.getElementById('pf-tag').onchange = (e)=>{ document.getElementById('pf-tag-new').style.display = e.target.value==='__new__'?'':'none'; };
+    document.getElementById('pf-relock').onclick = () => {
+      if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+      formTime = ytPlayer && ytPlayer.getCurrentTime ? Math.floor(ytPlayer.getCurrentTime()) : 0;
+      renderForm();
+    };
+    document.getElementById('pf-add-hint').onclick = () => {
+      const rows = document.getElementById('pf-hints');
+      rows.insertAdjacentHTML('beforeend', hintRowHTML('', rows.children.length));
+      wireHintRemovers();
+    };
+    wireHintRemovers();
+    document.getElementById('pf-cancel').onclick = () => { editingProblemId = null; render(); };
+    document.getElementById('pf-save').onclick = () => saveForm(isNew);
+  }
+  function hintRowHTML(text,i){ return '<div class="hint-row" data-i="'+i+'"><span class="hint-num">'+(i+1)+'</span><input class="pf-hint-input" value="'+escH(text)+'" maxlength="200" placeholder="Hint text" style="flex:1"/><button type="button" class="tiny-btn pf-hint-rm">✕</button></div>'; }
+  function wireHintRemovers(){ document.querySelectorAll('.pf-hint-rm').forEach(btn=>{ btn.onclick = () => btn.closest('.hint-row').remove(); }); }
+
+  async function saveForm(isNew){
+    const text = document.getElementById('pf-text').value.trim();
+    if(!text) return;
+    const topicId = document.getElementById('pf-topic').value;
+    let tag = document.getElementById('pf-tag').value;
+    const saveBtn = document.getElementById('pf-save'); saveBtn.disabled = true;
+    try{
+      if(tag==='__new__'){
+        tag = document.getElementById('pf-tag-new').value.trim() || 'general';
+        if(!tags.includes(tag)){ try{ await sbInsert('tags', [{ name: tag }]); }catch(e){} tags.push(tag); }
+      }
+      const needs = document.getElementById('pf-needs').checked;
+      const hints = Array.from(document.querySelectorAll('.pf-hint-input')).map(i=>i.value.trim()).filter(Boolean);
+
+      if(!currentVideoData.problems) currentVideoData.problems = [];
+      if(isNew){
+        const rows = await sbInsert('problems', [{ video_id: currentVideoId, topic_id: topicId, time_seconds: formTime, text, tag, needs_answer: needs, owner_id: identityId }]);
+        const p = rows[0];
+        if(hints.length) await sbInsert('hints', hints.map((h,i)=>({ problem_id: p.id, level: i+1, text: h })));
+        p.topicId = p.topic_id; p.time = p.time_seconds; p.needsAnswer = p.needs_answer; p.ownerId = p.owner_id; p.createdAt = toMs(p.created_at);
+        p.color = colorFor(tag, TAG_COLORS); p.hints = hints; p.answers = []; p.comments = [];
+        currentVideoData.problems.push(p);
+        activeSet = { topicId, ownerId: identityId };
+      } else {
+        const p = findProblem(editingProblemId);
+        await sbUpdate('problems', p.id, { topic_id: topicId, time_seconds: formTime, text, tag, needs_answer: needs });
+        await sbDelete('hints','problem_id=eq.'+p.id);
+        if(hints.length) await sbInsert('hints', hints.map((h,i)=>({ problem_id: p.id, level: i+1, text: h })));
+        Object.assign(p, { text, tag, topicId, needsAnswer: needs, hints, color: colorFor(tag, TAG_COLORS), time: formTime });
+      }
+      editingProblemId = null;
+    }catch(e){ alert('Could not save: ' + e.message); }
+    render();
+  }
+
+  // ── PROBLEM CARD ─────────────────────────────────────────────────────────
+  function problemCardHTML(p){
+    const isOpen = !!expandedProblem[p.id];
+    const answers = (p.answers||[]).slice().sort((a,b)=>a.createdAt-b.createdAt);
+    const comments = p.comments||[];
+    const commentsOpen = !!expandedComments['problem_'+p.id];
+    const isOwner = p.ownerId === identityId;
+    const t = topicById(p.topicId);
+    const ruleOpen = !!expandedRule[p.id];
+    return (
+      '<div class="p-card" id="pcard-'+p.id+'" data-id="'+p.id+'">' +
+        '<div class="p-top">' +
+          '<span class="p-time" data-time="'+p.time+'">'+fmtTime(p.time)+'</span>' +
+          (t ? '<span class="p-topic">'+escH(t.title)+'</span>' : '') +
+          '<span class="p-tag" style="background:'+(p.color||colorFor(p.tag,TAG_COLORS))+'22;color:'+(p.color||colorFor(p.tag,TAG_COLORS))+'">#'+escH(p.tag)+'</span>' +
+          (!p.needsAnswer?'<span class="p-discuss">discuss only</span>':'') +
+          '<span class="p-owner">by '+escH(userName(p.ownerId))+'</span>' +
+        '</div>' +
+        '<div class="p-text">'+escH(p.text)+'</div>' +
+        (t ? '<button class="p-rule-link" data-id="'+p.id+'">📘 '+(ruleOpen?'Hide rule':'View rule: '+escH(t.title))+'</button>' : '') +
+        (t && ruleOpen ? '<div class="p-rule-inline">'+escH(t.rule)+'</div>' : '') +
+        '<div class="p-controls">' +
+          '<button class="p-mini-btn p-pause" data-id="'+p.id+'">⏸ Pause</button>' +
+          '<button class="p-mini-btn p-replay" data-id="'+p.id+'">▶ Replay</button>' +
+          '<button class="p-mini-btn p-expand" data-id="'+p.id+'">'+(isOpen?'▾ Hide':'▸ '+answers.length+' answer'+(answers.length!==1?'s':''))+'</button>' +
+          (isOwner?'<button class="p-mini-btn p-edit" data-id="'+p.id+'">✎ Edit</button>':'') +
+          (isOwner?'<button class="p-mini-btn p-delete" data-id="'+p.id+'">🗑</button>':'') +
+        '</div>' +
+        (isOpen ? (
+          '<div class="p-expanded">' +
+            hintsBlockHTML(p) +
+            '<div><button class="comment-toggle" data-target="problem_'+p.id+'">💬 '+comments.length+' comment'+(comments.length!==1?'s':'')+' on this problem'+(commentsOpen?' ▾':' ▸')+'</button>' +
+              (commentsOpen ? commentBlockHTML(comments, 'problem_'+p.id) : '') + '</div>' +
+            '<div class="answers-list">' + (answers.length ? answers.map(answerHTML).join('') : '<div class="p-empty">No answers yet.</div>') + '</div>' +
+            answerInputHTML(p) +
+          '</div>'
+        ) : '') +
+      '</div>'
+    );
+  }
+  function hintsBlockHTML(p){
+    if(!p.hints || !p.hints.length) return '';
+    const revealed = hintsRevealed[p.id] || 0;
+    let html = '<div class="hints-block">';
+    for(let i=0;i<p.hints.length;i++){
+      if(i<revealed) html += '<div class="hint-shown"><b>Hint '+(i+1)+':</b> '+escH(p.hints[i])+'</div>';
+      else if(i===revealed){ html += '<button class="hint-reveal" data-id="'+p.id+'">💡 Show hint '+(i+1)+' of '+p.hints.length+'</button>'; break; }
+    }
+    return html + '</div>';
+  }
+  function answerHTML(a){
+    const key = 'answer_'+a.id;
+    const comments = a.comments || [];
+    const open = !!expandedComments[key];
+    return (
+      '<div class="answer-item">' +
+        '<div class="answer-top"><span class="answer-user" style="color:'+escH(userColor(a.userId))+'">'+escH(userName(a.userId))+(a.type==='audio'?' 🎤':'')+'</span><span class="answer-time">'+timeAgo(a.createdAt)+'</span></div>' +
+        '<div class="answer-text">'+escH(a.text)+'</div>' +
+        '<button class="comment-toggle" data-target="'+key+'" data-answer="'+a.id+'">💬 '+comments.length+(open?' ▾':' ▸')+'</button>' +
+        (open ? commentBlockHTML(comments, key, a.id) : '') +
+      '</div>'
+    );
+  }
+  function commentBlockHTML(comments, key, answerId){
+    return (
+      '<div class="comments-block">' +
+        comments.map(c=>'<div class="comment-item"><span class="comment-user" style="color:'+escH(userColor(c.userId))+'">'+escH(userName(c.userId))+'</span><span>'+escH(c.text)+'</span></div>').join('') +
+        '<div class="comment-add"><input placeholder="Add a comment..." data-comment-target="'+key+'" data-answer-id="'+(answerId||'')+'" maxlength="300"/><button class="tiny-btn" data-comment-send="'+key+'" data-answer-id2="'+(answerId||'')+'">Send</button></div>' +
+      '</div>'
+    );
+  }
+  function answerInputHTML(p){
+    const isRecording = recordingProblemId === p.id;
+    return (
+      '<div class="answer-input-row">' +
+        '<textarea data-id="'+p.id+'" class="pcard-answer-input" rows="2" maxlength="500" placeholder="'+(isRecording?'🎤 Listening…':'Type your answer...')+'"></textarea>' +
+        '<div style="display:flex;flex-direction:column;gap:4px"><button class="mic-btn '+(isRecording?'rec':'')+'" data-id="'+p.id+'">🎤</button><button class="send-btn" data-id="'+p.id+'">Send</button></div>' +
+      '</div>'
+    );
+  }
+
+  function wireProblemCards(){
+    document.querySelectorAll('.p-time').forEach(el=>{ el.onclick = () => { if(ytPlayer && ytPlayer.seekTo) ytPlayer.seekTo(parseInt(el.dataset.time,10), true); }; });
+    document.querySelectorAll('.p-expand').forEach(btn=>{ btn.onclick = () => { expandedProblem[btn.dataset.id] = !expandedProblem[btn.dataset.id]; render(); }; });
+    document.querySelectorAll('.p-rule-link').forEach(btn=>{ btn.onclick = () => { expandedRule[btn.dataset.id] = !expandedRule[btn.dataset.id]; render(); }; });
+    document.querySelectorAll('.p-pause').forEach(btn=>{
+      btn.onclick = () => { if(!ytPlayer) return; const state = ytPlayer.getPlayerState ? ytPlayer.getPlayerState() : null; if(state===1){ ytPlayer.pauseVideo(); btn.textContent='▶ Play'; } else { ytPlayer.playVideo(); btn.textContent='⏸ Pause'; } };
+    });
+    document.querySelectorAll('.p-replay').forEach(btn=>{
+      btn.onclick = () => { const p = findProblem(btn.dataset.id); if(p && ytPlayer && ytPlayer.seekTo){ ytPlayer.seekTo(Math.max(0,p.time-2), true); ytPlayer.playVideo(); } };
+    });
+    document.querySelectorAll('.p-edit').forEach(btn=>{ btn.onclick = () => openEditForm(btn.dataset.id); });
+    document.querySelectorAll('.p-delete').forEach(btn=>{
+      btn.onclick = async () => {
+        if(!confirm('Delete this problem? Its answers and comments go too.')) return;
+        const p = findProblem(btn.dataset.id);
+        try{
+          const targets = [p.id].concat((p.answers||[]).map(a=>a.id));
+          await sbDelete('comments','target_id=in.(' + targets.join(',') + ')');
+          await sbDelete('problems','id=eq.'+p.id);
+          currentVideoData.problems = (currentVideoData.problems||[]).filter(x=>x.id!==p.id);
+        }catch(e){ alert('Could not delete: ' + e.message); }
+        render();
+      };
+    });
+    document.querySelectorAll('.hint-reveal').forEach(btn=>{ btn.onclick = () => { hintsRevealed[btn.dataset.id] = (hintsRevealed[btn.dataset.id]||0)+1; render(); }; });
+    document.querySelectorAll('.comment-toggle').forEach(btn=>{ btn.onclick = () => { expandedComments[btn.dataset.target] = !expandedComments[btn.dataset.target]; render(); }; });
+    document.querySelectorAll('[data-comment-send]').forEach(btn=>{ btn.onclick = () => sendComment(btn.dataset.commentSend, btn.dataset.answerId2); });
+    document.querySelectorAll('[data-comment-target]').forEach(inp=>{ inp.onkeydown = (e)=>{ if(e.key==='Enter') sendComment(inp.dataset.commentTarget, inp.dataset.answerId); }; });
+    document.querySelectorAll('.mic-btn').forEach(btn=>{ btn.onclick = () => toggleVoice(btn.dataset.id); });
+    document.querySelectorAll('.send-btn').forEach(btn=>{ btn.onclick = () => sendAnswer(btn.dataset.id); });
+    document.querySelectorAll('.pcard-answer-input').forEach(inp=>{ inp.onkeydown = (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendAnswer(inp.dataset.id); } }; });
+  }
+
+  async function sendAnswer(problemId){
+    const inp = document.querySelector('.pcard-answer-input[data-id="'+problemId+'"]');
+    if(!inp) return;
+    const text = inp.value.trim();
+    if(!text) return;
+    const p = findProblem(problemId);
+    if(!p) return;
+    try{
+      const rows = await sbInsert('answers', [{ problem_id: problemId, user_id: identityId, type: recordingProblemId===problemId?'audio':'text', text, hints_used: hintsRevealed[problemId]||0 }]);
+      const a = rows[0]; a.userId = a.user_id; a.createdAt = toMs(a.created_at); a.comments = [];
+      if(!p.answers) p.answers = [];
+      p.answers.push(a);
+      expandedProblem[problemId] = true;
+    }catch(e){ alert('Could not save answer: ' + e.message); }
+    render();
+  }
+  async function sendComment(targetKey, answerId){
+    const inp = document.querySelector('[data-comment-target="'+targetKey+'"]');
+    if(!inp) return;
+    const text = inp.value.trim();
+    if(!text) return;
+    const targetType = targetKey.startsWith('problem_') ? 'problem' : 'answer';
+    const targetId = targetType==='problem' ? targetKey.slice('problem_'.length) : answerId;
+    try{
+      const rows = await sbInsert('comments', [{ target_type: targetType, target_id: targetId, user_id: identityId, text }]);
+      const c = rows[0]; c.userId = c.user_id; c.createdAt = toMs(c.created_at);
+      if(targetType==='problem'){
+        const p = findProblem(targetId); if(!p.comments) p.comments=[]; p.comments.push(c);
+      } else {
+        const pid = Array.from(document.querySelectorAll('.p-card')).map(el=>el.dataset.id).find(id=>{ const p = findProblem(id); return p && (p.answers||[]).some(a=>a.id===answerId); });
+        const p = findProblem(pid); const a = p && (p.answers||[]).find(a=>a.id===answerId);
+        if(a){ if(!a.comments) a.comments=[]; a.comments.push(c); }
+      }
+      expandedComments[targetKey] = true;
+    }catch(e){ alert('Could not save comment: ' + e.message); }
+    render();
+  }
+
+  // ── VOICE INPUT ──────────────────────────────────────────────────────────
+  function toggleVoice(problemId){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){ alert('Voice input is not supported in this browser.'); return; }
+    if(recordingProblemId === problemId){ recognizer && recognizer.stop(); return; }
+    if(recognizer) recognizer.stop();
+    recordingProblemId = problemId;
+    wasPlayingBeforeVoice = ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState()===1;
+    if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+    render();
+    recognizer = new SR();
+    recognizer.lang = 'en-US'; recognizer.interimResults = true; recognizer.continuous = true;
+    let finalText = '';
+    recognizer.onresult = (e) => {
+      let interim = '';
+      for(let i=e.resultIndex;i<e.results.length;i++){ const t = e.results[i][0].transcript; if(e.results[i].isFinal) finalText += t + ' '; else interim += t; }
+      const inp = document.querySelector('.pcard-answer-input[data-id="'+problemId+'"]');
+      if(inp) inp.value = (finalText+interim).trim();
+    };
+    recognizer.onerror = () => stopVoice();
+    recognizer.onend = () => stopVoice();
+    recognizer.start();
+  }
+  function stopVoice(){
+    if(!recordingProblemId) return;
+    const wasPlaying = wasPlayingBeforeVoice;
+    recordingProblemId = null; recognizer = null;
+    if(ytPlayer && wasPlaying && ytPlayer.playVideo) ytPlayer.playVideo();
+    render();
+  }
+
+  function scrollToProblem(id){
+    expandedProblem[id] = true; render();
+    setTimeout(()=>{ const el = document.getElementById('pcard-'+id); if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.classList.add('p-flash'); setTimeout(()=>el.classList.remove('p-flash'),1500); } }, 60);
+  }
+
+  init();
+})();
+
+</script>
+</body>
+</html>
