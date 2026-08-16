@@ -698,7 +698,7 @@
     if(!video) return;
     const el = document.getElementById('yt-player-el');
     if(!el) return;
-    ytPlayer = new YT.Player('yt-player-el', { videoId: video.embedId, playerVars: { rel: 0 }, events: { onReady: () => { ytReady = true; startPoll(); } } });
+    ytPlayer = new YT.Player('yt-player-el', { videoId: video.embedId, playerVars: { rel: 0, origin: window.location.origin }, events: { onReady: () => { ytReady = true; startPoll(); } } });
   }
   function startPoll(){
     stopPoll();
@@ -791,6 +791,7 @@
   // ── PROBLEM FORM ─────────────────────────────────────────────────────────
   function findProblem(id){ return (currentVideoData.problems||[]).find(p=>p.id===id); }
   function openNewForm(){
+    if(!ytReady){ alert('The video is still loading — give it a second and try again.'); return; }
     if(ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
     formTime = ytPlayer && ytPlayer.getCurrentTime ? Math.floor(ytPlayer.getCurrentTime()) : 0;
     editingProblemId = '__new__';
@@ -963,7 +964,7 @@
     document.querySelectorAll('.p-expand').forEach(btn=>{ btn.onclick = () => { expandedProblem[btn.dataset.id] = !expandedProblem[btn.dataset.id]; render(); }; });
     document.querySelectorAll('.p-rule-link').forEach(btn=>{ btn.onclick = () => { expandedRule[btn.dataset.id] = !expandedRule[btn.dataset.id]; render(); }; });
     document.querySelectorAll('.p-pause').forEach(btn=>{
-      btn.onclick = () => { if(!ytPlayer) return; const state = ytPlayer.getPlayerState ? ytPlayer.getPlayerState() : null; if(state===1){ ytPlayer.pauseVideo(); btn.textContent='▶ Play'; } else { ytPlayer.playVideo(); btn.textContent='⏸ Pause'; } };
+      btn.onclick = () => { if(!ytPlayer || !ytReady) return; const state = ytPlayer.getPlayerState ? ytPlayer.getPlayerState() : null; if(state===1){ ytPlayer.pauseVideo(); btn.textContent='▶ Play'; } else { ytPlayer.playVideo(); btn.textContent='⏸ Pause'; } };
     });
     document.querySelectorAll('.p-replay').forEach(btn=>{
       btn.onclick = () => { const p = findProblem(btn.dataset.id); if(p && ytPlayer && ytPlayer.seekTo){ ytPlayer.seekTo(Math.max(0,p.time-2), true); ytPlayer.playVideo(); } };
@@ -1071,3 +1072,4 @@
 </script>
 </body>
 </html>
+
