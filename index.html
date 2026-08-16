@@ -698,7 +698,7 @@
     if(!video) return;
     const el = document.getElementById('yt-player-el');
     if(!el) return;
-    ytPlayer = new YT.Player('yt-player-el', { videoId: video.embedId, playerVars: { rel: 0, origin: window.location.origin || undefined }, events: { onReady: () => { ytReady = true; startPoll(); } } });
+    ytPlayer = new YT.Player('yt-player-el', { videoId: video.embedId, playerVars: { rel: 0 }, events: { onReady: () => { ytReady = true; startPoll(); } } });
   }
   function startPoll(){
     stopPoll();
