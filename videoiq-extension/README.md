@@ -62,6 +62,38 @@ Under the note box in the panel there is a style bar:
 
 ---
 
+## GitHub Sync (two people, each saved separately)
+
+Both people's danmu are saved into one GitHub repo. **Each account writes only its own file**, so nobody can overwrite the other person's notes:
+
+```
+danmu/<youtubeVideoId>/<githubLogin>.json     e.g. danmu/dQw4w9WgXcQ/alice.json
+                                                     danmu/dQw4w9WgXcQ/bob.json
+```
+
+### One-time setup
+1. **Create a repo for the data**, e.g. `yourname/danmu-data` (private is fine).
+2. **Give the second person access:** repo → Settings → Collaborators → add their GitHub account (they accept the invite).
+3. **Each person creates their own token:**
+   - *Simplest:* GitHub → Settings → Developer settings → Personal access tokens → **Tokens (classic)** → scope **`repo`**.
+     Note that a classic `repo` token can access *all* your repos.
+   - *Tighter:* put the repo in a (free) GitHub **organization** you both belong to, then each makes a
+     **fine-grained token** for that org with only that repo and **Contents: Read and write**.
+     (Fine-grained tokens can't reach a repo owned by another *personal* account.)
+4. In the extension panel click **⚙** → **🐙 GitHub sync** → enter `owner/repo`, optional branch, your token → **Connect**.
+
+Once connected, your GitHub login becomes your danmu name. Notes you'd already written are uploaded.
+
+### Using it
+- Every note you add, edit or delete is saved to **your** file about 2 seconds later ("🐙 Saved to GitHub").
+- The other person's danmu (marked 🐙) load when you open a video and refresh **every 15 seconds** while the tab is visible. They float on the video at their timestamps, with their chosen style.
+- **↩ Reply** on someone's note jumps to that moment and starts a `@theirname ` danmu. Notes that @mention you are highlighted in gold.
+- The 👥 selector lets you hide a person's danmu on the video or shift their timing. That only affects your screen.
+- **⟳ Sync now** in ⚙ forces a save and reload. Opening the same video on a new computer restores your own notes from GitHub.
+- The token is stored only in this browser (`chrome.storage.local`), separately from settings, and is never included in exports.
+
+---
+
 ## Sharing Notes
 
 **Student → Teacher:**
@@ -78,7 +110,7 @@ Notes are merged non-destructively — you keep yours, you add theirs.
 
 ## Privacy
 
-All notes are stored **locally in your browser** (`chrome.storage.local`). Nothing is sent to any server. Sharing only happens when you manually export/import JSON files.
+All notes are stored **locally in your browser** (`chrome.storage.local`). Nothing leaves your browser unless you turn on **GitHub sync** (your notes go to the repo you chose) or **Post publicly**, or export a JSON file yourself.
 
 ---
 
@@ -88,6 +120,7 @@ All notes are stored **locally in your browser** (`chrome.storage.local`). Nothi
 videoiq-extension/
 ├── manifest.json    — Extension config
 ├── content.js       — Main logic injected into YouTube
+├── github.js        — GitHub sync (one file per person per video)
 ├── danmu.css        — Styles for overlay and panel
 ├── popup.html       — Extension popup UI
 ├── popup.js         — Popup logic (stats, export, import)

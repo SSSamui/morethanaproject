@@ -81,11 +81,24 @@
   // Cloud post authors for this video: [{id, author_name, color, notes, posted_at}]
   let cloudAuthors = [];
 
+  // GitHub-synced authors for this video (same shape as cloudAuthors) — one per other account
+  let ghAuthors   = [];
+  let ghShas      = {};          // login → sha of the file we last loaded
+  let ghOwnMerged = new Set();   // videoIds whose own GitHub file we already merged into local notes
+  let ghPending   = new Set();   // videoIds with unsaved local changes
+  let ghSaveTimer = null;
+  let ghPollTimer = null;
+  const GH_POLL_MS = 15000;
+
+  // Everyone else's notes loaded for this video, from any backend
+  function remoteAuthors() { return cloudAuthors.concat(ghAuthors); }
+
   // ── BOOT ─────────────────────────────────────────────────────────────────────
   function boot() {
-    chrome.storage.local.get([LOCAL_KEY, SETTINGS_KEY], (res) => {
+    chrome.storage.local.get([LOCAL_KEY, SETTINGS_KEY], async (res) => {
       localNotes = res[LOCAL_KEY] || {};
       settings   = Object.assign(settings, res[SETTINGS_KEY] || {});
+      if (window.VIQ_GH) await VIQ_GH.load();
       waitForVideo();
     });
   }
@@ -130,6 +143,8 @@
         startLoop();
         watchNavigation();
         loadCloudPosts();
+        loadGhPosts();
+        startGhPolling();
       }
       if (n > 50) clearInterval(t);
     }, 600);
@@ -166,6 +181,113 @@
     bar.classList.toggle('hidden', state === 'hidden');
   }
 
+  // ── GITHUB SYNC ──────────────────────────────────────────────────────────────
+  // Pull every author's file for this video. Other people → ghAuthors (read-only).
+  // Our own file → merged into local notes once per video (restores notes on a new device).
+  async function loadGhPosts(silent) {
+    if (!window.VIQ_GH?.isConfigured() || !videoId) return;
+    const vid = videoId, me = VIQ_GH.getConfig().login;
+    if (!silent) setCloudBar('loading', '🐙 Loading danmu from GitHub…');
+    try {
+      const files = await VIQ_GH.listVideo(vid);
+      if (vid !== videoId) return;           // navigated away meanwhile
+      let changed = false;
+
+      const own = files.find(f => f.login === me);
+      if (own && !ghOwnMerged.has(vid)) {
+        const doc = await VIQ_GH.readFile(own.path);
+        ghOwnMerged.add(vid);
+        if (doc && vid === videoId) changed = mergeOwnRemote(vid, doc) || changed;
+      } else if (!own) ghOwnMerged.add(vid);
+
+      const others = files.filter(f => f.login !== me);
+      const next = [];
+      for (const f of others) {
+        const prev = ghAuthors.find(a => a.author_name === f.login);
+        if (prev && ghShas[f.login] === f.sha) { next.push(prev); continue; }
+        const doc = await VIQ_GH.readFile(f.path);
+        if (!doc) continue;
+        ghShas[f.login] = f.sha;
+        next.push({
+          id: 'gh_' + f.login, author_name: f.login,
+          color: prev?.color || doc.color || '#a78bfa',   // keep a local recolor across polls
+          notes: Array.isArray(doc.notes) ? doc.notes : [],
+          posted_at: doc.updatedAt, _source: 'gh'
+        });
+        changed = true;
+      }
+      if (vid !== videoId) return;
+      if (next.length !== ghAuthors.length) changed = true;
+      ghAuthors = next;
+
+      if (changed) { rebuildActive(); refreshSideList(); buildUserSelector(); }
+      if (!silent) {
+        const n = ghAuthors.reduce((s, p) => s + p.notes.length, 0);
+        setCloudBar('loaded', ghAuthors.length
+          ? '🐙 ' + n + ' danmu from ' + ghAuthors.map(p => '<span style="color:' + escH(p.color) + '">@' + escH(p.author_name) + '</span>').join(', ')
+          : '🐙 Synced with GitHub — no one else has danmu on this video yet');
+        setTimeout(() => setCloudBar('hidden', ''), 4000);
+      }
+    } catch (e) {
+      console.warn('VideoIQ GitHub load:', e.message);
+      if (!silent) setCloudBar('error', '⚠ GitHub: ' + escH(e.message));
+    }
+  }
+
+  function mergeOwnRemote(vid, doc) {
+    if (!Array.isArray(doc.notes)) return false;
+    if (!localNotes[vid]) localNotes[vid] = [];
+    const ids = new Set(localNotes[vid].map(n => n.id));
+    let added = 0;
+    doc.notes.forEach(n => {
+      if (ids.has(n.id)) return;
+      localNotes[vid].push(Object.assign({}, n, { user: settings.username, color: settings.color, videoId: vid }));
+      added++;
+    });
+    if (added) save();
+    return added > 0;
+  }
+
+  function startGhPolling() {
+    clearInterval(ghPollTimer);
+    ghPollTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') loadGhPosts(true);
+    }, GH_POLL_MS);
+  }
+
+  // Debounced push of OUR notes for the video(s) that changed
+  function scheduleGhSave() {
+    if (!window.VIQ_GH?.isConfigured() || !videoId) return;
+    ghPending.add(videoId);
+    clearTimeout(ghSaveTimer);
+    ghSaveTimer = setTimeout(flushGhSave, 2000);
+  }
+
+  async function flushGhSave() {
+    clearTimeout(ghSaveTimer);
+    if (!window.VIQ_GH?.isConfigured()) return;
+    const vids = [...ghPending]; ghPending.clear();
+    for (const vid of vids) {
+      const mine = (localNotes[vid] || []).filter(n => n.user === settings.username);
+      try {
+        await VIQ_GH.saveMine(vid, {
+          user: VIQ_GH.getConfig().login,
+          color: settings.color,
+          videoId: vid,
+          videoTitle: vid === videoId ? document.title.replace(' - YouTube','').trim() : '',
+          updatedAt: new Date().toISOString(),
+          notes: mine.map(n => ({ id: n.id, text: n.text, time: n.time, ts: n.ts,
+                                  isSummary: n.isSummary || false, style: n.style || null }))
+        });
+        if (vid === videoId) flashHint('🐙 Saved to GitHub');
+      } catch (e) {
+        ghPending.add(vid);   // keep it; retried on the next change or poll
+        flashHint('❌ GitHub save failed: ' + e.message);
+        console.warn('VideoIQ GitHub save:', e);
+      }
+    }
+  }
+
   // ── MERGE LOCAL + CLOUD ──────────────────────────────────────────────────────
   // allDanmu   = every note from everyone, sorted by adjusted time → used by sidebar
   // activeDanmu = only notes checked for VIDEO overlay → used by floating danmu
@@ -174,7 +296,7 @@
 
     // Flatten cloud posts into note objects, applying per-user offset
     const cloudNotes = [];
-    cloudAuthors.forEach(post => {
+    remoteAuthors().forEach(post => {
       const off = userOffsets[post.author_name] || 0;
       (post.notes || []).forEach(n => {
         const adjustedTime = Math.max(0, (n.time || 0) + off);
@@ -188,6 +310,7 @@
           isSummary: n.isSummary || false,
           style:     n.style || null,
           _cloud:    true,
+          _source:   post._source || 'cloud',
           _postId:   post.id,
           _offset:   off || undefined
         });
@@ -220,7 +343,9 @@
         if (!newId || newId === videoId) return;
         videoId = newId;
         videoEl = document.querySelector('video');
+        if (ghPending.size) flushGhSave();   // don't lose edits made just before leaving
         cloudAuthors = []; visibleUsers = null; userOffsets = {};
+        ghAuthors = []; ghShas = {};
         activeDanmu = [];
         editingId = null; pausedForNote = false; summaryMode = false;
         const onReady = () => {
@@ -228,6 +353,7 @@
           refreshSideList(); buildUserSelector();
           updateShortsBadge();
           loadCloudPosts();
+          loadGhPosts();
         };
         if (videoEl) onReady();
         else {
@@ -378,6 +504,7 @@
           <div class="viq-setting-row">
             <label><input type="checkbox" id="viq-toggle-video" ${settings.showOnVideo?'checked':''}/> Float danmu on video</label>
           </div>
+          <div class="viq-gh-section" id="viq-gh-section"></div>
           <div id="viq-author-colors" class="viq-author-colors"></div>
           <button class="viq-btn-save" id="viq-save-settings">Save</button>
         </div>
@@ -530,6 +657,7 @@
     document.getElementById('viq-settings-btn').onclick = () => {
       document.getElementById('viq-settings-panel').classList.toggle('hidden');
       buildAuthorColorRows();
+      buildGhSection();
     };
     document.getElementById('viq-save-settings').onclick = doSaveSettings;
 
@@ -659,7 +787,8 @@
   // Shows each cloud author as a row with: toggle, color, name, offset slider
   function buildUserSelector() {
     const el = document.getElementById('viq-user-selector'); if (!el) return;
-    if (!cloudAuthors.length) {
+    const authors = remoteAuthors();
+    if (!authors.length) {
       el.classList.add('hidden');
       return;
     }
@@ -667,7 +796,7 @@
 
     el.innerHTML =
       '<div class="viq-us-title">👥 Others\' notes loaded — check to show on video, drag to adjust timing</div>' +
-      cloudAuthors.map(post => {
+      authors.map(post => {
         const name   = post.author_name;
         const color  = post.color;
         const offset = userOffsets[name] || 0;
@@ -696,7 +825,7 @@
       cb.onchange = () => {
         const checked = new Set();
         el.querySelectorAll('.viq-us-check').forEach(c => { if (c.checked) checked.add(c.dataset.author); });
-        const allNames = cloudAuthors.map(p => p.author_name);
+        const allNames = authors.map(p => p.author_name);
         // If all checked → visibleUsers = null (all on video)
         visibleUsers = (checked.size === allNames.length) ? null : checked;
         rebuildActive();
@@ -874,6 +1003,7 @@
     rebuildActive();
     if (settings.showOnVideo && !isSummary) launchFloat(note);
     refreshSideList();
+    scheduleGhSave();
   }
 
   function startEdit(id) {
@@ -897,7 +1027,7 @@
 
   function commitEdit(text) {
     const note = (localNotes[videoId]||[]).find(n => n.id === editingId); if (!note) return;
-    note.text = text; save(); rebuildActive();
+    note.text = text; save(); rebuildActive(); scheduleGhSave();
   }
 
   function cancelEdit() {
@@ -913,7 +1043,7 @@
   function deleteNote(id) {
     if (!localNotes[videoId]) return;
     localNotes[videoId] = localNotes[videoId].filter(n => n.id !== id);
-    save(); rebuildActive(); refreshSideList();
+    save(); rebuildActive(); refreshSideList(); scheduleGhSave();
   }
 
   // ── EXPORT ───────────────────────────────────────────────────────────────────
@@ -1029,7 +1159,7 @@
     const c = document.getElementById('viq-author-colors'); if (!c) return;
     const others = {};
     (localNotes[videoId]||[]).forEach(n=>{if(n.user!==settings.username) others[n.user]=others[n.user]||n.color||'#8892aa';});
-    cloudAuthors.forEach(p=>{if(p.author_name!==settings.username) others[p.author_name]=others[p.author_name]||p.color||'#8892aa';});
+    remoteAuthors().forEach(p=>{if(p.author_name!==settings.username) others[p.author_name]=others[p.author_name]||p.color||'#8892aa';});
     if (!Object.keys(others).length) { c.innerHTML=''; return; }
     c.innerHTML = '<div class="viq-author-colors-title">Other authors\' colors</div>' +
       Object.entries(others).map(([user,color])=>
@@ -1048,7 +1178,7 @@
         const pick=c.querySelector('.viq-author-color-pick-live[data-user="'+user+'"]');
         const col=pick?pick.value:'#8892aa';
         for (const v in localNotes) localNotes[v].forEach(n=>{if(n.user===user) n.color=col;});
-        cloudAuthors.forEach(p=>{if(p.author_name===user) p.color=col;});
+        remoteAuthors().forEach(p=>{if(p.author_name===user) p.color=col;});
         save(); rebuildActive(); refreshSideList(); buildAuthorColorRows(); buildUserSelector();
         flashHint('✓ Recolored '+user);
       };
@@ -1152,9 +1282,12 @@
     // dim notes that are NOT shown on video (unchecked in selector)
     const onVideo   = isOwn || visibleUsers === null || (visibleUsers && visibleUsers.has(user));
     const offBadge  = d._offset ? '<span class="viq-offset-badge">'+(d._offset>0?'+':'')+d._offset+'s</span>' : '';
-    const cloudBadge= d._cloud  ? '<span class="viq-cloud-badge" title="Public post">☁</span>' : '';
+    const cloudBadge= !d._cloud ? '' : d._source === 'gh'
+      ? '<span class="viq-cloud-badge" title="Synced from GitHub">🐙</span>'
+      : '<span class="viq-cloud-badge" title="Public post">☁</span>';
+    const mentionsMe = !isOwn && new RegExp('@' + escRe(settings.username) + '\\b', 'i').test(d.text||'');
     const eyeBadge  = (!onVideo && !isOwn) ? '<span class="viq-hidden-badge" title="Not shown on video">👁</span>' : '';
-    const cls = [isOwn?'own':'other', isSummary?'summary-note':'', isEditing?'editing':'', !onVideo&&!isOwn?'note-dimmed':''].filter(Boolean).join(' ');
+    const cls = [isOwn?'own':'other', isSummary?'summary-note':'', isEditing?'editing':'', !onVideo&&!isOwn?'note-dimmed':'', mentionsMe?'mentions-me':''].filter(Boolean).join(' ');
     return (
       '<div class="viq-list-item '+cls+'" data-time="'+d.time+'" data-id="'+d.id+'">' +
         '<div class="viq-item-main">' +
@@ -1164,7 +1297,9 @@
           offBadge+cloudBadge+eyeBadge+
           '<span class="viq-item-text '+(isOwn?'editable':'')+'" data-id="'+d.id+'">'+escH(d.text)+'</span>' +
         '</div>' +
-        '<div class="viq-item-actions">'+(isOwn?'<button class="viq-del" data-id="'+d.id+'">✕</button>':'')+'</div>' +
+        '<div class="viq-item-actions">'+(isOwn
+          ? '<button class="viq-del" data-id="'+d.id+'">✕</button>'
+          : '<button class="viq-reply" data-user="'+escH(user)+'" data-time="'+d.time+'" title="Reply to '+escH(user)+'">↩</button>')+'</div>' +
       '</div>'
     );
   }
@@ -1215,9 +1350,86 @@
     list.querySelectorAll('.viq-item-text.editable').forEach(el=>{ el.onclick=e=>{e.stopPropagation();startEdit(parseInt(el.dataset.id));}; });
     list.querySelectorAll('.viq-list-item').forEach(el=>{ el.ondblclick=()=>{if(videoEl) videoEl.currentTime=parseInt(el.dataset.time)||0;}; });
     list.querySelectorAll('.viq-item-time').forEach(el=>{ el.onclick=e=>{e.stopPropagation();if(videoEl) videoEl.currentTime=parseInt(el.dataset.time)||0;}; });
+    list.querySelectorAll('.viq-reply').forEach(btn=>{ btn.onclick=e=>{e.stopPropagation();replyTo(btn.dataset.user, parseInt(btn.dataset.time)||0);}; });
     list.querySelectorAll('.viq-del').forEach(btn=>{
       btn.onclick=e=>{e.stopPropagation();if(editingId===parseInt(btn.dataset.id)) cancelEdit();deleteNote(parseInt(btn.dataset.id));};
     });
+  }
+
+  // ── GITHUB SETTINGS ───────────────────────────────────────────────────────────
+  function buildGhSection() {
+    const box = document.getElementById('viq-gh-section'); if (!box || !window.VIQ_GH) return;
+    const c = VIQ_GH.getConfig();
+    const nameInp = document.getElementById('viq-username');
+    if (nameInp) {   // while connected, your GitHub login is your name (keeps each person's file separate)
+      nameInp.disabled = VIQ_GH.isConfigured();
+      nameInp.title = nameInp.disabled ? 'Using your GitHub login while GitHub sync is on' : '';
+    }
+    if (VIQ_GH.isConfigured()) {
+      box.innerHTML =
+        '<div class="viq-gh-title">🐙 GitHub sync</div>' +
+        '<div class="viq-gh-status ok">Connected as <b>@' + escH(c.login) + '</b> → ' + escH(c.repo) +
+          (c.branch ? ' (' + escH(c.branch) + ')' : '') + '</div>' +
+        '<div class="viq-gh-btns">' +
+          '<button class="viq-recolor-btn" id="viq-gh-sync">⟳ Sync now</button>' +
+          '<button class="viq-recolor-btn" id="viq-gh-off">Disconnect</button>' +
+        '</div>';
+      document.getElementById('viq-gh-sync').onclick = () => {
+        (localNotes[videoId] || []).some(n => n.user === settings.username) && ghPending.add(videoId);
+        flushGhSave().then(() => loadGhPosts());
+      };
+      document.getElementById('viq-gh-off').onclick = () => {
+        VIQ_GH.disconnect(); ghAuthors = []; ghShas = {};
+        rebuildActive(); refreshSideList(); buildUserSelector(); buildGhSection();
+      };
+      return;
+    }
+    box.innerHTML =
+      '<div class="viq-gh-title">🐙 GitHub sync <span class="viq-gh-sub">— share danmu with a friend</span></div>' +
+      '<input id="viq-gh-repo"   class="viq-input" placeholder="owner/repo  (e.g. sssamui/danmu-data)" value="' + escH(c.repo) + '"/>' +
+      '<input id="viq-gh-branch" class="viq-input" placeholder="branch (blank = default)" value="' + escH(c.branch) + '"/>' +
+      '<input id="viq-gh-token"  class="viq-input" type="password" placeholder="GitHub token" autocomplete="off"/>' +
+      '<div class="viq-gh-btns"><button class="viq-recolor-btn" id="viq-gh-connect">Connect</button></div>' +
+      '<div class="viq-gh-status" id="viq-gh-msg"></div>';
+    document.getElementById('viq-gh-connect').onclick = ghConnect;
+  }
+
+  async function ghConnect() {
+    const g = id => document.getElementById(id);
+    const msg = g('viq-gh-msg');
+    msg.className = 'viq-gh-status'; msg.textContent = 'Connecting…';
+    try {
+      const login = await VIQ_GH.connect({ repo: g('viq-gh-repo').value, branch: g('viq-gh-branch').value, token: g('viq-gh-token').value });
+      // Your GitHub login becomes your danmu name; re-label notes you wrote under the old name
+      const old = settings.username;
+      if (old !== login) {
+        for (const v in localNotes) localNotes[v].forEach(n => { if (n.user === old) n.user = login; });
+        settings.username = login;
+        const ni = g('viq-username'); if (ni) ni.value = login;
+      }
+      save();
+      ghOwnMerged = new Set(); ghShas = {};
+      buildGhSection();
+      rebuildActive(); refreshSideList();
+      // Upload what you already wrote on this video, then pull the other person's danmu
+      if ((localNotes[videoId] || []).some(n => n.user === login)) ghPending.add(videoId);
+      await loadGhPosts();
+      await flushGhSave();
+    } catch (e) {
+      VIQ_GH.disconnect();
+      msg.className = 'viq-gh-status err'; msg.textContent = '❌ ' + e.message;
+    }
+  }
+
+  // Reply: jump to the note's moment and start a "@name " danmu there
+  function replyTo(user, time) {
+    if (videoEl) { videoEl.currentTime = time; videoEl.pause(); pausedForNote = true; }
+    if (settings.minimized) setMinimized(false);
+    const inp = document.getElementById('viq-quick-input'); if (!inp) return;
+    if (editingId !== null) cancelEdit();
+    inp.value = '@' + user + ' ';
+    inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
+    updateHint();
   }
 
   // ── SETTINGS ─────────────────────────────────────────────────────────────────
@@ -1243,6 +1455,7 @@
     return m+':'+ss;
   }
   function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
   function clamp(v,lo,hi) { return Math.max(lo,Math.min(v,hi)); }
 
   boot();

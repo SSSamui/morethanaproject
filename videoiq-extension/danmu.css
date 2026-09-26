@@ -567,3 +567,24 @@
   font-family: "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;
 }
 .viq-emoji:hover { background: #2a3048; }
+
+/* ── GITHUB SYNC ──────────────────────────────────────────────────────────── */
+.viq-gh-section {
+  display: flex; flex-direction: column; gap: 6px;
+  padding-top: 8px; border-top: 1px solid #2a3048;
+}
+.viq-gh-section:empty { display: none; }
+.viq-gh-title { font-size: 11px; font-weight: 700; color: #e8eaf0; }
+.viq-gh-sub   { font-weight: 400; color: #8892aa; }
+.viq-gh-btns  { display: flex; gap: 6px; justify-content: flex-end; }
+.viq-gh-status     { font-size: 11px; color: #8892aa; min-height: 13px; word-break: break-word; }
+.viq-gh-status.ok  { color: #34d399; }
+.viq-gh-status.err { color: #f87171; }
+
+/* reply button + notes that @mention you */
+.viq-reply {
+  background: none; border: none; color: #8892aa; cursor: pointer;
+  font-size: 13px; padding: 0 4px; opacity: .6; transition: all .15s;
+}
+.viq-reply:hover { opacity: 1; color: #4f9eff; }
+.viq-list-item.mentions-me { background: rgba(251,191,36,.08); box-shadow: inset 3px 0 0 #fbbf24; }
