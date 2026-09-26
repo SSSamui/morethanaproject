@@ -71,10 +71,25 @@ window.VIQ_GH = (() => {
   async function connect({ repo, branch, token }) {
     cfg = { repo: repo.trim().replace(/^https:\/\/github\.com\//, '').replace(/\/+$/, ''),
             branch: (branch || '').trim(), token: token.trim(), login: '' };
-    if (!/^[\w.-]+\/[\w.-]+$/.test(cfg.repo)) throw new Error('Repo must look like owner/name');
-    const me = await req('/user');
-    const r  = await req(repoPath());
-    if (r.permissions && !r.permissions.push) throw new Error('@' + me.login + ' has no write access to ' + cfg.repo);
+    if (!/^[\w.-]+\/[\w.-]+$/.test(cfg.repo)) throw new Error('Repo must look like owner/name, e.g. yourGitHubName/danmu-data');
+    if (!cfg.token) throw new Error('Paste your GitHub token first (it starts with ghp_ or github_pat_)');
+    if (!/^(ghp_|github_pat_|gho_|ghu_)/.test(cfg.token))
+      throw new Error('That does not look like a GitHub token — it should start with ghp_ (classic) or github_pat_ (fine-grained)');
+
+    let me;
+    try { me = await req('/user'); }
+    catch (e) {
+      if (e.status === 401) throw new Error('GitHub rejected this token (Bad credentials). It may be copied incompletely, expired, or deleted — create a new one and paste the whole thing.');
+      throw e;
+    }
+    let r;
+    try { r = await req(repoPath()); }
+    catch (e) {
+      if (e.status === 404) throw new Error('Signed in as @' + me.login + ', but repo "' + cfg.repo + '" was not found. ' +
+        'The owner part must be a GitHub username (yours is "' + me.login + '"), the repo must exist, and this token must be allowed to access it.');
+      throw e;
+    }
+    if (r.permissions && !r.permissions.push) throw new Error('@' + me.login + ' can read ' + cfg.repo + ' but cannot write to it — ask the owner to add you as a collaborator (and accept the invite).');
     cfg.login = me.login;
     persist();
     return cfg.login;
