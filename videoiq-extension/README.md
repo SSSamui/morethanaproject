@@ -21,6 +21,22 @@ Add personal floating comments (danmu) to any YouTube video. Compare your notes 
   Your note floats across the screen like classic danmu, tied to that exact timestamp.
 - **Side panel**: Type in the box at the bottom of the VideoIQ panel (right side of the page). Notes appear in the list immediately.
 
+### Danmu Style (font, color, size, position, emoji)
+Under the note box in the panel there is a style bar:
+
+| Control | Options |
+|---|---|
+| Font | Default, Arial, Serif, Mono, Comic, Impact, 黑体 Hei, 楷体 Kai |
+| Size | Small / Medium / Large / Huge |
+| Color | Any color (color picker) |
+| Position | ⬅ Scroll right → left · ➡ Scroll left → right · ⬆ Stay on top · ⬇ Stay on bottom |
+| Duration | For top/bottom danmu: how many seconds it stays (2–15s) |
+| 😊 | Emotion emoji picker — inserts at the cursor (also in the minimized bar) |
+
+- **▶ Preview** shows a sample danmu on the video with the current style.
+- Your style is **saved automatically** and used for every new danmu until you change it again (it survives page reloads and new videos).
+- Each note remembers the style it was written with; public posts carry their style too.
+
 ### Viewing & Comparing
 - The side panel lists all notes sorted by timestamp
 - **Click any note** → video jumps to that moment

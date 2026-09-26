@@ -502,3 +502,68 @@
 
 /* ── OFFSET HINT TEXT ────────────────────────────────────────────────────────── */
 .viq-us-offset-hint { color: #4f9eff; font-style: italic; margin-left: 3px; }
+
+/* ── DANMU POSITION MODES ─────────────────────────────────────────────────── */
+.viq-float-ltr {
+  right: auto; left: 0;
+  animation: viq-slide-ltr 7s linear forwards;
+}
+@keyframes viq-slide-ltr {
+  0%   { left: 0;    transform: translateX(-100%); opacity: 0; }
+  5%   { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { left: 100%; transform: translateX(0);     opacity: 0; }
+}
+.viq-float-top, .viq-float-bottom {
+  right: auto; left: 50%; transform: translateX(-50%);
+  max-width: 90%; overflow: hidden; text-overflow: ellipsis;
+  animation: viq-fixed 5s linear forwards;
+}
+@keyframes viq-fixed {
+  0%   { opacity: 0; }
+  4%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── DANMU STYLE BAR ──────────────────────────────────────────────────────── */
+.viq-style-bar { display: flex; flex-direction: column; gap: 5px; }
+.viq-style-row { display: flex; gap: 5px; align-items: center; }
+.viq-st-select {
+  flex: 1; min-width: 0; background: #0d0f14; color: #e8eaf0;
+  border: 1px solid #2a3048; border-radius: 5px; padding: 3px 4px;
+  font-size: 11px; font-family: 'Segoe UI', sans-serif; outline: none; cursor: pointer;
+}
+.viq-st-select:focus { border-color: #4f9eff; }
+.viq-st-select.hidden { display: none; }
+.viq-st-mode { flex: 2; }
+.viq-st-color {
+  width: 28px; height: 24px; padding: 0; border: 1px solid #2a3048;
+  border-radius: 5px; background: #0d0f14; cursor: pointer; flex-shrink: 0;
+}
+.viq-st-emoji, .viq-st-preview {
+  background: #1e2436; border: 1px solid #2a3048; border-radius: 5px;
+  color: #8892aa; cursor: pointer; flex-shrink: 0; transition: all .15s;
+  font-family: 'Segoe UI', sans-serif;
+}
+.viq-st-emoji   { font-size: 14px; padding: 1px 6px; line-height: 20px; }
+.viq-st-preview { font-size: 10px; font-weight: 600; padding: 4px 8px; white-space: nowrap; }
+.viq-st-emoji:hover, .viq-st-preview:hover { border-color: #4f9eff; color: #e8eaf0; }
+.viq-st-sample {
+  font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; padding: 2px 8px; border-radius: 4px;
+  background: #000; text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+}
+
+/* ── EMOTION EMOJI PICKER ─────────────────────────────────────────────────── */
+.viq-emoji-picker {
+  display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px;
+  padding: 6px 8px; background: #0d0f14; border-bottom: 1px solid #2a3048;
+}
+.viq-emoji-picker.hidden { display: none; }
+.viq-emoji {
+  background: none; border: none; cursor: pointer; border-radius: 5px;
+  font-size: 18px; line-height: 1; padding: 4px 0;
+  font-family: "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;
+}
+.viq-emoji:hover { background: #2a3048; }

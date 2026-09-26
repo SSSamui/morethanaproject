@@ -1,4 +1,4 @@
-// VideoIQ Danmu — content.js  v8
+// VideoIQ Danmu — content.js  v9
 // Local-first. No account needed. Optionally post publicly with a name.
 (function () {
   'use strict';
@@ -10,8 +10,52 @@
     username: 'Me', color: '#4f9eff',
     showOwn: true, showOnVideo: true,
     panelX: null, panelY: null, minimized: false,
-    defaultPublic: true
+    defaultPublic: true,
+    // Danmu style — remembered until the user changes it again
+    danmuStyle: null
   };
+
+  // ── DANMU STYLE OPTIONS ──────────────────────────────────────────────────────
+  const EMOJI_FALLBACK = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+  const FONTS = [
+    { id: 'default', label: 'Default',   css: "'Segoe UI',system-ui" },
+    { id: 'arial',   label: 'Arial',     css: 'Arial,Helvetica' },
+    { id: 'serif',   label: 'Serif',     css: 'Georgia,"Times New Roman",serif' },
+    { id: 'mono',    label: 'Mono',      css: '"Courier New",Consolas,monospace' },
+    { id: 'comic',   label: 'Comic',     css: '"Comic Sans MS","Comic Neue",cursive' },
+    { id: 'impact',  label: 'Impact',    css: 'Impact,"Arial Black"' },
+    { id: 'hei',     label: '黑体 Hei',   css: '"Microsoft YaHei","PingFang SC","Noto Sans SC",SimHei' },
+    { id: 'kai',     label: '楷体 Kai',   css: 'KaiTi,STKaiti,"Kaiti SC",serif' }
+  ];
+  const SIZES = [
+    { id: 's',  label: 'Small',  px: 14 },
+    { id: 'm',  label: 'Medium', px: 18 },
+    { id: 'l',  label: 'Large',  px: 24 },
+    { id: 'xl', label: 'Huge',   px: 32 }
+  ];
+  const MODES = [
+    { id: 'rtl',    label: '⬅ Scroll right → left' },
+    { id: 'ltr',    label: '➡ Scroll left → right' },
+    { id: 'top',    label: '⬆ Stay on top' },
+    { id: 'bottom', label: '⬇ Stay on bottom' }
+  ];
+  const DURATIONS = [2, 3, 5, 8, 10, 15];
+  const EMOJIS = [
+    ['😀','happy'],['😂','laughing'],['🤣','rofl'],['😊','smile'],['😍','love'],['🥰','adore'],
+    ['😎','cool'],['🤩','amazed'],['😮','surprised'],['😱','shocked'],['🤯','mind blown'],['🤔','thinking'],
+    ['😐','neutral'],['🙄','eye roll'],['😴','sleepy'],['😢','sad'],['😭','crying'],['😡','angry'],
+    ['😤','frustrated'],['😨','scared'],['😳','embarrassed'],['🥺','pleading'],['😅','relieved'],['🤗','hug'],
+    ['👍','like'],['👎','dislike'],['👏','applause'],['🙏','thanks'],['❤️','heart'],['💔','heartbroken'],
+    ['🔥','fire'],['💯','perfect'],['🎉','celebrate'],['✨','sparkle'],['❓','question'],['❗','important']
+  ];
+  const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5 };
+
+  // Current style for new danmu (color falls back to the user's color)
+  function curStyle() {
+    const st = Object.assign({}, DEFAULT_STYLE, settings.danmuStyle || {});
+    if (!st.color) st.color = settings.color;
+    return st;
+  }
 
   let localNotes  = {};    // { videoId: [note…] } — saved locally
   let publicPosts = [];    // posts loaded from cloud for this video
@@ -142,6 +186,7 @@
           time:      adjustedTime,
           ts:        fmtTime(adjustedTime),
           isSummary: n.isSummary || false,
+          style:     n.style || null,
           _cloud:    true,
           _postId:   post.id,
           _offset:   off || undefined
@@ -261,6 +306,7 @@
         <!-- collapsed input bar -->
         <div id="viq-mini-bar" class="viq-mini-bar hidden">
           <input id="viq-mini-input" class="viq-mini-input" placeholder="Note at ..." maxlength="200"/>
+          <button id="viq-mini-emoji"   class="viq-mini-btn viq-emoji-toggle" title="Emotion emoji">😊</button>
           <button id="viq-mini-pause"   class="viq-mini-btn" title="Pause">⏸</button>
           <button id="viq-mini-summary" class="viq-mini-btn" title="Summary">📋</button>
           <button id="viq-mini-send"    class="viq-mini-btn viq-mini-send" title="Send">↵</button>
@@ -272,6 +318,11 @@
           <button class="viq-icon-btn" id="viq-settings-btn" title="Settings">⚙</button>
         </div>
         <button class="viq-icon-btn" id="viq-minimize-btn" title="Minimize">–</button>
+      </div>
+
+      <!-- EMOTION EMOJI PICKER -->
+      <div id="viq-emoji-picker" class="viq-emoji-picker hidden">
+        ${EMOJIS.map(([e,name]) => '<button class="viq-emoji" data-emoji="'+e+'" title="'+name+'">'+e+'</button>').join('')}
       </div>
 
       <!-- CLOUD STATUS BAR — shown while loading or when others' notes are found -->
@@ -360,14 +411,112 @@
               <button id="viq-cancel-edit" class="viq-cancel-btn hidden">✕</button>
             </div>
           </div>
+          ${styleBarHTML()}
           <div class="viq-add-hint" id="viq-time-hint">⏱ at 0:00</div>
         </div>
       </div>
     `;
   }
 
+  // ── DANMU STYLE BAR ──────────────────────────────────────────────────────────
+  function styleBarHTML() {
+    const st  = curStyle();
+    const opt = (list, cur, lbl) => list.map(o =>
+      '<option value="' + escH(o.id) + '"' + (o.id === cur ? ' selected' : '') + '>' + escH(lbl(o)) + '</option>').join('');
+    const fixed = st.mode === 'top' || st.mode === 'bottom';
+    return `
+      <div class="viq-style-bar" id="viq-style-bar">
+        <div class="viq-style-row">
+          <select id="viq-st-font" class="viq-st-select" title="Font">${opt(FONTS, st.font, o => o.label)}</select>
+          <select id="viq-st-size" class="viq-st-select" title="Size">${opt(SIZES, st.size, o => o.label)}</select>
+          <input  id="viq-st-color" type="color" class="viq-st-color" value="${escH(st.color)}" title="Danmu color"/>
+          <button id="viq-emoji-btn" class="viq-st-emoji viq-emoji-toggle" title="Emotion emoji">😊</button>
+        </div>
+        <div class="viq-style-row">
+          <select id="viq-st-mode" class="viq-st-select viq-st-mode" title="Position">${opt(MODES, st.mode, o => o.label)}</select>
+          <select id="viq-st-dur" class="viq-st-select ${fixed ? '' : 'hidden'}" title="How long it stays on screen">
+            ${DURATIONS.map(d => '<option value="' + d + '"' + (d === Number(st.duration) ? ' selected' : '') + '>' + d + 's</option>').join('')}
+          </select>
+          <button id="viq-st-preview" class="viq-st-preview" title="Preview on video">▶ Preview</button>
+        </div>
+        <div class="viq-st-sample" id="viq-st-sample">Aa 弹幕 😊</div>
+      </div>`;
+  }
+
+  function wireStyleBar() {
+    const g = id => document.getElementById(id);
+    const onChange = () => {
+      const mode = g('viq-st-mode').value;
+      settings.danmuStyle = {
+        font:     g('viq-st-font').value,
+        size:     g('viq-st-size').value,
+        color:    g('viq-st-color').value,
+        mode,
+        duration: parseInt(g('viq-st-dur').value, 10) || DEFAULT_STYLE.duration
+      };
+      g('viq-st-dur').classList.toggle('hidden', mode !== 'top' && mode !== 'bottom');
+      save();   // persisted — stays until the next change
+      updateStyleSample();
+    };
+    ['viq-st-font','viq-st-size','viq-st-mode','viq-st-dur'].forEach(id => g(id).onchange = onChange);
+    g('viq-st-color').oninput = onChange;
+    g('viq-st-preview').onclick = () =>
+      launchFloat({ user: settings.username, color: settings.color, text: 'Preview 预览 😊', style: curStyle() });
+    updateStyleSample();
+  }
+
+  function updateStyleSample() {
+    const el = document.getElementById('viq-st-sample'); if (!el) return;
+    const st = curStyle();
+    el.style.color      = st.color;
+    el.style.fontFamily = (FONTS.find(f => f.id === st.font) || FONTS[0]).css + ',' + EMOJI_FALLBACK;
+    el.style.fontSize   = Math.min((SIZES.find(z => z.id === st.size) || SIZES[1]).px, 24) + 'px';
+  }
+
+  // ── EMOJI PICKER ─────────────────────────────────────────────────────────────
+  let emojiTarget = null;   // the input that last had focus (main textarea or mini input)
+
+  function wireEmojiPicker() {
+    const picker = document.getElementById('viq-emoji-picker');
+    ['viq-quick-input','viq-mini-input'].forEach(id => {
+      document.getElementById(id).addEventListener('focus', e => { emojiTarget = e.target; });
+    });
+    document.querySelectorAll('.viq-emoji-toggle').forEach(btn => {
+      btn.onclick = e => {
+        e.stopPropagation();
+        if (!emojiTarget || emojiTarget.offsetParent === null)
+          emojiTarget = document.getElementById(settings.minimized ? 'viq-mini-input' : 'viq-quick-input');
+        // Show the grid next to whichever input is in use: under the header when
+        // minimized, right above the style bar when the panel is open.
+        const anchor = settings.minimized
+          ? document.getElementById('viq-drag-handle').nextSibling
+          : document.getElementById('viq-style-bar');
+        if (picker.nextSibling !== anchor) anchor.parentNode.insertBefore(picker, anchor);
+        picker.classList.toggle('hidden');
+      };
+    });
+    picker.querySelectorAll('.viq-emoji').forEach(b => {
+      b.onmousedown = e => e.preventDefault();   // keep caret position in the input
+      b.onclick = e => { e.stopPropagation(); insertAtCaret(emojiTarget, b.dataset.emoji); };
+    });
+    document.addEventListener('click', e => {
+      if (!picker.contains(e.target)) picker.classList.add('hidden');
+    });
+  }
+
+  function insertAtCaret(inp, text) {
+    if (!inp) return;
+    const a = inp.selectionStart ?? inp.value.length, b = inp.selectionEnd ?? inp.value.length;
+    if (inp.maxLength > 0 && inp.value.length - (b - a) + text.length > inp.maxLength) return;
+    inp.value = inp.value.slice(0, a) + text + inp.value.slice(b);
+    inp.focus();
+    inp.setSelectionRange(a + text.length, a + text.length);
+  }
+
   // ── WIRE ─────────────────────────────────────────────────────────────────────
   function wirePanel() {
+    wireStyleBar();
+    wireEmojiPicker();
     makeDraggable(sidePanel, document.getElementById('viq-drag-handle'));
     document.getElementById('viq-minimize-btn').onclick = toggleMinimized;
 
@@ -482,7 +631,8 @@
     // Strip internal fields before posting
     const clean = myNotes.map(n => ({
       text: n.text, time: n.time, ts: n.ts,
-      isSummary: n.isSummary || false
+      isSummary: n.isSummary || false,
+      style: n.style || null
     }));
 
     try {
@@ -714,7 +864,8 @@
     const note = {
       id: Date.now(), user: settings.username, color: settings.color,
       text, time: Math.floor(time), ts: fmtTime(time),
-      isSummary: isSummary||false, videoId
+      isSummary: isSummary||false, videoId,
+      style: curStyle()
     };
     if (!localNotes[videoId]) localNotes[videoId] = [];
     localNotes[videoId].push(note);
@@ -905,15 +1056,43 @@
   }
 
   // ── FLOATING DANMU ────────────────────────────────────────────────────────────
-  function launchFloat(entry) {
+  // Lanes for top/bottom danmu so simultaneous ones stack instead of overlapping
+  const fixedLanes = { top: [], bottom: [] };
+
+  function launchFloat(entry, opts) {
     if (!danmuContainer) return;
+    const st   = Object.assign({}, DEFAULT_STYLE, entry.style || {});
+    const font = FONTS.find(f => f.id === st.font) || FONTS[0];
+    const px   = (SIZES.find(z => z.id === st.size) || SIZES[1]).px;
+    const mode = MODES.some(m => m.id === st.mode) ? st.mode : 'rtl';
+    const dur  = clamp(Number(st.duration) || DEFAULT_STYLE.duration, 1, 60);
+
     const el = document.createElement('div');
-    el.className   = 'viq-float';
-    el.textContent = '[' + (entry.user||entry.username) + '] ' + entry.text;
-    el.style.color = entry.color;
-    el.style.top   = (10 + Math.random() * 70) + '%';
+    el.className   = 'viq-float viq-float-' + mode;
+    el.textContent = (opts && opts.noName ? '' : '[' + (entry.user||entry.username) + '] ') + entry.text;
+    el.style.color      = st.color || entry.color;
+    el.style.fontFamily = font.css + ',' + EMOJI_FALLBACK;
+    el.style.fontSize   = px + 'px';
+
+    let lifeMs;
+    if (mode === 'top' || mode === 'bottom') {
+      const lanes  = fixedLanes[mode];
+      const now    = Date.now();
+      const laneH  = Math.round(px * 1.6);
+      const maxL   = Math.max(1, Math.floor((danmuContainer.clientHeight || 360) * 0.45 / laneH));
+      let lane = lanes.findIndex((until, i) => i < maxL && until <= now);
+      if (lane === -1) lane = lanes.length < maxL ? lanes.length
+                              : lanes.indexOf(Math.min(...lanes.slice(0, maxL)));
+      lanes[lane] = now + dur * 1000;
+      el.style[mode] = (8 + lane * laneH) + 'px';
+      el.style.animationDuration = dur + 's';
+      lifeMs = dur * 1000;
+    } else {
+      el.style.top = (10 + Math.random() * 70) + '%';
+      lifeMs = 7000;
+    }
     danmuContainer.appendChild(el);
-    setTimeout(() => el.remove(), 7000);
+    setTimeout(() => el.remove(), lifeMs + 200);
   }
   function clearDanmuOverlay() { if (danmuContainer) danmuContainer.innerHTML = ''; }
 
@@ -1047,7 +1226,8 @@
     settings.color       = document.getElementById('viq-color').value;
     settings.showOwn     = document.getElementById('viq-toggle-own').checked;
     settings.showOnVideo = document.getElementById('viq-toggle-video').checked;
-    save(); rebuildActive();
+    save(); rebuildActive(); updateStyleSample();
+    const stc = document.getElementById('viq-st-color'); if (stc) stc.value = curStyle().color;
     document.getElementById('viq-settings-panel').classList.add('hidden');
     refreshSideList();
   }
