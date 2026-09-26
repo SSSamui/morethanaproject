@@ -62,30 +62,34 @@ Under the note box in the panel there is a style bar:
 
 ---
 
-## GitHub Sync (two people, each saved separately)
+## GitHub Sync (everyone's danmu in one shared repo)
 
-Both people's danmu are saved into one GitHub repo. **Each account writes only its own file**, so nobody can overwrite the other person's notes:
+All danmu are saved in **one repo** owned by one person. Inside it, **each person has their own file**, named after the name they chose, so nobody overwrites anyone else:
 
 ```
-danmu/<youtubeVideoId>/<githubLogin>.json     e.g. danmu/dQw4w9WgXcQ/alice.json
-                                                     danmu/dQw4w9WgXcQ/bob.json
+danmu/<youtubeVideoId>/<name>.json     e.g. danmu/dQw4w9WgXcQ/Lin.json
+                                              danmu/dQw4w9WgXcQ/Friend.json
 ```
 
-### One-time setup
-1. **Create a repo for the data**, e.g. `yourname/danmu-data` (private is fine).
-2. **Give the second person access:** repo → Settings → Collaborators → add their GitHub account (they accept the invite).
-3. **Each person creates their own token:**
-   - *Simplest:* GitHub → Settings → Developer settings → Personal access tokens → **Tokens (classic)** → scope **`repo`**.
-     Note that a classic `repo` token can access *all* your repos.
-   - *Tighter:* put the repo in a (free) GitHub **organization** you both belong to, then each makes a
-     **fine-grained token** for that org with only that repo and **Contents: Read and write**.
-     (Fine-grained tokens can't reach a repo owned by another *personal* account.)
-4. In the extension panel click **⚙** → **🐙 GitHub sync** → enter `owner/repo`, optional branch, your token → **Connect**.
+Only the repo owner needs a GitHub account. Friends don't need GitHub at all.
 
-Once connected, your GitHub login becomes your danmu name. Notes you'd already written are uploaded.
+### One-time setup (repo owner)
+1. On github.com: **+** → **New repository** → name it e.g. `danmu-data` (private is fine) → tick *Add a README* → Create.
+2. Make **one token for that repo only**: your picture → **Settings** → **Developer settings** → **Personal access tokens** →
+   **Fine-grained tokens** → **Generate new token**
+   - Repository access: **Only select repositories** → `danmu-data`
+   - Permissions → Repository permissions → **Contents: Read and write**
+   - Generate, then copy the token (starts with `github_pat_`)
+3. Send your friend the repo name (`yourGitHubName/danmu-data`) and the token privately.
+   The token can only touch that one repo.
+
+### Each person
+1. In the extension panel click **⚙**, type **your own name** in *Your name* (it must be different from your friend's).
+2. Under **🐙 GitHub sync** enter the same `owner/danmu-data` and the same token → **Connect**.
+   You'll see "Saving as <your name>". To change your name later, Disconnect first.
 
 ### Using it
-- Every note you add, edit or delete is saved to **your** file about 2 seconds later ("🐙 Saved to GitHub").
+- Every note you add, edit or delete is saved to **your** file in the shared repo about 2 seconds later ("🐙 Saved to GitHub").
 - The other person's danmu (marked 🐙) load when you open a video and refresh **every 15 seconds** while the tab is visible. They float on the video at their timestamps, with their chosen style.
 - **↩ Reply** on someone's note jumps to that moment and starts a `@theirname ` danmu. Notes that @mention you are highlighted in gold.
 - The 👥 selector lets you hide a person's danmu on the video or shift their timing. That only affects your screen.

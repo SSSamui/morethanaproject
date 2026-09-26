@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "VideoIQ Danmu",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "Personal danmu on YouTube. Work locally, sync with friends through GitHub.",
   "permissions": [
     "storage",

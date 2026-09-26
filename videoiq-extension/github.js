@@ -1,11 +1,12 @@
 // VideoIQ — github.js
 // Saves danmu to a GitHub repo through the REST "contents" API.
-// Every person writes ONLY their own file, so accounts never overwrite each other:
+// Everyone's danmu live in ONE shared repo. Each person (by their danmu name)
+// writes ONLY their own file, so people never overwrite each other:
 //
-//   danmu/<videoId>/<githubLogin>.json
+//   danmu/<videoId>/<name>.json
 //
-// Everyone with access to the repo reads all files in danmu/<videoId>/ to see
-// each other's danmu.
+// Only the repo owner needs a GitHub account: friends can use a token the owner
+// made for that one repo. Everyone reads all files in danmu/<videoId>/.
 
 window.VIQ_GH = (() => {
   'use strict';
@@ -14,18 +15,20 @@ window.VIQ_GH = (() => {
   const ROOT   = 'danmu';
   const CFG_KEY = 'videoiq_github';   // kept apart from settings so the token never ends up in exports
 
-  let cfg  = { repo: '', branch: '', token: '', login: '' };
+  // author = danmu name used for our file; login = GitHub account the token belongs to
+  let cfg  = { repo: '', branch: '', token: '', login: '', author: '' };
   const shaCache = {};                // path → blob sha of our last known version
 
   function load() {
     return new Promise(res => chrome.storage.local.get([CFG_KEY], r => {
       cfg = Object.assign(cfg, r[CFG_KEY] || {});
+      if (!cfg.author && cfg.login) cfg.author = cfg.login;   // configs saved by v3.2
       res(cfg);
     }));
   }
   function persist() { chrome.storage.local.set({ [CFG_KEY]: cfg }); }
 
-  function isConfigured() { return !!(cfg.repo && cfg.token && cfg.login); }
+  function isConfigured() { return !!(cfg.repo && cfg.token && cfg.author); }
   function getConfig()    { return Object.assign({}, cfg); }
 
   async function req(path, opts = {}) {
@@ -52,8 +55,8 @@ window.VIQ_GH = (() => {
 
   const repoPath = () => '/repos/' + cfg.repo.split('/').map(encodeURIComponent).join('/');
   const refQ     = (sep) => cfg.branch ? sep + 'ref=' + encodeURIComponent(cfg.branch) : '';
-  const filePath = (videoId, login) =>
-    ROOT + '/' + encodeURIComponent(videoId) + '/' + encodeURIComponent(login) + '.json';
+  const filePath = (videoId, author) =>
+    ROOT + '/' + encodeURIComponent(videoId) + '/' + encodeURIComponent(author) + '.json';
 
   // UTF-8 safe base64 (danmu contain emoji / Chinese)
   function b64encode(str) {
@@ -68,9 +71,10 @@ window.VIQ_GH = (() => {
   }
 
   // Verify token + repo access, remember who we are
-  async function connect({ repo, branch, token }) {
+  async function connect({ repo, branch, token, author }) {
     cfg = { repo: repo.trim().replace(/^https:\/\/github\.com\//, '').replace(/\/+$/, ''),
-            branch: (branch || '').trim(), token: token.trim(), login: '' };
+            branch: (branch || '').trim(), token: token.trim(), login: '', author: (author || '').trim() };
+    if (!cfg.author || cfg.author === 'Me') throw new Error('Type your own name in "Your name" first — it names your file, so each person must use a different name');
     if (!/^[\w.-]+\/[\w.-]+$/.test(cfg.repo)) throw new Error('Repo must look like owner/name, e.g. yourGitHubName/danmu-data');
     if (!cfg.token) throw new Error('Paste your GitHub token first (it starts with ghp_ or github_pat_)');
     if (!/^(ghp_|github_pat_|gho_|ghu_)/.test(cfg.token))
@@ -86,21 +90,21 @@ window.VIQ_GH = (() => {
     try { r = await req(repoPath()); }
     catch (e) {
       if (e.status === 404) throw new Error('Signed in as @' + me.login + ', but repo "' + cfg.repo + '" was not found. ' +
-        'The owner part must be a GitHub username (yours is "' + me.login + '"), the repo must exist, and this token must be allowed to access it.');
+        'The part before "/" must be the GitHub username of the repo\'s owner, the repo must exist, and this token must be allowed to access it.');
       throw e;
     }
-    if (r.permissions && !r.permissions.push) throw new Error('@' + me.login + ' can read ' + cfg.repo + ' but cannot write to it — ask the owner to add you as a collaborator (and accept the invite).');
+    if (r.permissions && !r.permissions.push) throw new Error('This token can read ' + cfg.repo + ' but cannot write to it — use a token with Contents: Read and write.');
     cfg.login = me.login;
     persist();
-    return cfg.login;
+    return cfg.author;
   }
 
   function disconnect() {
-    cfg = { repo: '', branch: '', token: '', login: '' };
+    cfg = { repo: '', branch: '', token: '', login: '', author: '' };
     persist();
   }
 
-  // List every author's file for a video. Returns [{login, sha, path}]
+  // List every person's file for a video. Returns [{login: <name>, sha, path}]
   async function listVideo(videoId) {
     const dir = await req(repoPath() + '/contents/' + ROOT + '/' + encodeURIComponent(videoId) + refQ('?'),
                           { allow404: true });
@@ -119,11 +123,11 @@ window.VIQ_GH = (() => {
 
   // Write (create or replace) our own file for a video
   async function saveMine(videoId, doc) {
-    const path = filePath(videoId, cfg.login);
+    const path = filePath(videoId, cfg.author);
     const put = () => req(repoPath() + '/contents/' + path, {
       method: 'PUT',
       body: JSON.stringify({
-        message: 'danmu: @' + cfg.login + ' updated ' + videoId,
+        message: 'danmu: ' + cfg.author + ' updated ' + videoId,
         content: b64encode(JSON.stringify(doc, null, 2)),
         ...(shaCache[path] ? { sha: shaCache[path] } : {}),
         ...(cfg.branch ? { branch: cfg.branch } : {})

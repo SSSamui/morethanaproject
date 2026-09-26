@@ -186,7 +186,7 @@
   // Our own file → merged into local notes once per video (restores notes on a new device).
   async function loadGhPosts(silent) {
     if (!window.VIQ_GH?.isConfigured() || !videoId) return;
-    const vid = videoId, me = VIQ_GH.getConfig().login;
+    const vid = videoId, me = VIQ_GH.getConfig().author;
     if (!silent) setCloudBar('loading', '🐙 Loading danmu from GitHub…');
     try {
       const files = await VIQ_GH.listVideo(vid);
@@ -271,7 +271,7 @@
       const mine = (localNotes[vid] || []).filter(n => n.user === settings.username);
       try {
         await VIQ_GH.saveMine(vid, {
-          user: VIQ_GH.getConfig().login,
+          user: VIQ_GH.getConfig().author,
           color: settings.color,
           videoId: vid,
           videoTitle: vid === videoId ? document.title.replace(' - YouTube','').trim() : '',
@@ -1361,15 +1361,16 @@
     const box = document.getElementById('viq-gh-section'); if (!box || !window.VIQ_GH) return;
     const c = VIQ_GH.getConfig();
     const nameInp = document.getElementById('viq-username');
-    if (nameInp) {   // while connected, your GitHub login is your name (keeps each person's file separate)
+    if (nameInp) {   // your name is your file in the shared repo — change it only while disconnected
       nameInp.disabled = VIQ_GH.isConfigured();
-      nameInp.title = nameInp.disabled ? 'Using your GitHub login while GitHub sync is on' : '';
+      nameInp.title = nameInp.disabled ? 'Disconnect GitHub sync to change your name' : '';
     }
     if (VIQ_GH.isConfigured()) {
       box.innerHTML =
         '<div class="viq-gh-title">🐙 GitHub sync</div>' +
-        '<div class="viq-gh-status ok">Connected as <b>@' + escH(c.login) + '</b> → ' + escH(c.repo) +
+        '<div class="viq-gh-status ok">Saving as <b>' + escH(c.author) + '</b> → ' + escH(c.repo) +
           (c.branch ? ' (' + escH(c.branch) + ')' : '') + '</div>' +
+        '<div class="viq-gh-status">Shared repo · token of @' + escH(c.login) + '</div>' +
         '<div class="viq-gh-btns">' +
           '<button class="viq-recolor-btn" id="viq-gh-sync">⟳ Sync now</button>' +
           '<button class="viq-recolor-btn" id="viq-gh-off">Disconnect</button>' +
@@ -1385,7 +1386,8 @@
       return;
     }
     box.innerHTML =
-      '<div class="viq-gh-title">🐙 GitHub sync <span class="viq-gh-sub">— share danmu with a friend</span></div>' +
+      '<div class="viq-gh-title">🐙 GitHub sync <span class="viq-gh-sub">— one shared repo for everyone</span></div>' +
+      '<div class="viq-gh-status">Everyone enters the same repo and token. Your name above names your file, so use a different name from your friend.</div>' +
       '<input id="viq-gh-repo"   class="viq-input" placeholder="owner/repo  (e.g. sssamui/danmu-data)" value="' + escH(c.repo) + '"/>' +
       '<input id="viq-gh-branch" class="viq-input" placeholder="branch (blank = default)" value="' + escH(c.branch) + '"/>' +
       '<input id="viq-gh-token"  class="viq-input" type="password" placeholder="GitHub token" autocomplete="off"/>' +
@@ -1399,13 +1401,14 @@
     const msg = g('viq-gh-msg');
     msg.className = 'viq-gh-status'; msg.textContent = 'Connecting…';
     try {
-      const login = await VIQ_GH.connect({ repo: g('viq-gh-repo').value, branch: g('viq-gh-branch').value, token: g('viq-gh-token').value });
-      // Your GitHub login becomes your danmu name; re-label notes you wrote under the old name
+      const name = (g('viq-username')?.value || settings.username).trim();
+      const login = await VIQ_GH.connect({ repo: g('viq-gh-repo').value, branch: g('viq-gh-branch').value,
+                                          token: g('viq-gh-token').value, author: name });
+      // The typed name is your file in the shared repo; re-label notes you wrote under the old name
       const old = settings.username;
       if (old !== login) {
         for (const v in localNotes) localNotes[v].forEach(n => { if (n.user === old) n.user = login; });
         settings.username = login;
-        const ni = g('viq-username'); if (ni) ni.value = login;
       }
       save();
       ghOwnMerged = new Set(); ghShas = {};
