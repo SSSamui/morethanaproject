@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 360px;
+    background: #161a24;
+    color: #e8eaf0;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: #1e2436;
+    padding: 12px 16px;
+    border-bottom: 1px solid #2a3048;
+    display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .logo { font-weight: 700; font-size: 15px; }
+  .logo span { color: #4f9eff; }
+  .badge {
+    margin-left: auto; font-size: 11px; padding: 3px 8px; border-radius: 4px;
+    background: rgba(79,158,255,.15); color: #4f9eff;
+  }
+  .badge.active { background: rgba(52,211,153,.15); color: #34d399; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; border-bottom: 1px solid #2a3048;
+    background: #1e2436;
+  }
+  .tab {
+    flex: 1; padding: 10px 8px; text-align: center;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    color: #8892aa; border-bottom: 2px solid transparent;
+    transition: all .15s;
+  }
+  .tab.active { color: #4f9eff; border-bottom-color: #4f9eff; background: rgba(79,158,255,.04); }
+
+  /* ── PANELS ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── STATS ROW ── */
+  .stat-row { display: flex; border-bottom: 1px solid #2a3048; }
+  .stat {
+    flex: 1; padding: 14px 10px; text-align: center;
+    border-right: 1px solid #2a3048;
+  }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-weight: 700; font-size: 26px; color: #4f9eff; line-height: 1; }
+  .stat-lbl { font-size: 11px; color: #8892aa; margin-top: 4px; }
+
+  /* ── HISTORY LIST ── */
+  #historyList { max-height: 460px; overflow-y: auto; }
+  #historyList::-webkit-scrollbar { width: 4px; }
+  #historyList::-webkit-scrollbar-thumb { background: #2a3048; border-radius: 2px; }
+
+  .empty-state {
+    padding: 36px 20px; text-align: center; color: #8892aa;
+    font-size: 13px; line-height: 1.8;
+  }
+  .empty-state .big { font-size: 36px; margin-bottom: 12px; }
+
+  /* ── VIDEO CARD ── */
+  .video-card { border-bottom: 1px solid #2a3048; }
+
+  .video-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; cursor: pointer;
+    transition: background .15s; user-select: none;
+  }
+  .video-header:hover { background: rgba(79,158,255,.05); }
+
+  .video-thumb {
+    width: 54px; height: 36px; border-radius: 4px;
+    background: #0d0f14; border: 1px solid #2a3048;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0; overflow: hidden;
+  }
+  .video-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 3px; }
+
+  .video-info { flex: 1; min-width: 0; }
+  .video-title {
+    font-size: 13px; font-weight: 600; color: #e8eaf0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+  .video-meta { font-size: 11px; color: #8892aa; margin-top: 3px; }
+
+  .video-chevron {
+    color: #8892aa; font-size: 11px; flex-shrink: 0;
+    transition: transform .2s;
+  }
+  .video-card.open .video-chevron { transform: rotate(180deg); }
+
+  .export-video-btn {
+    background: none; border: 1px solid #2a3048; color: #8892aa;
+    width: 26px; height: 26px; border-radius: 5px; cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all .15s;
+  }
+  .export-video-btn:hover { background: #2a3048; color: #4f9eff; border-color: #4f9eff; }
+
+  /* ── NOTES LIST ── */
+  .notes-list { display: none; }
+  .video-card.open .notes-list { display: block; }
+
+  .note-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 14px 8px 22px;
+    border-top: 1px solid #1e2436; border-left: 3px solid transparent;
+    cursor: pointer; transition: background .15s;
+  }
+  .note-item:hover { background: rgba(79,158,255,.08); }
+
+  .note-summary-tag {
+    background: rgba(251,191,36,.15); color: #fbbf24;
+    font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    font-weight: 600; flex-shrink: 0; align-self: center;
+  }
+
+  .note-time {
+    font-size: 11px; font-weight: 700; color: #4f9eff;
+    font-family: 'Courier New', monospace;
+    background: rgba(79,158,255,.1); border-radius: 3px;
+    padding: 2px 6px; white-space: nowrap; flex-shrink: 0; margin-top: 1px;
+  }
+  .note-user {
+    font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+  .note-text { font-size: 12px; color: #c8ccd8; line-height: 1.5; flex: 1; }
+
+  /* ── TOOLS ── */
+  .tools-section { padding: 14px 16px; border-bottom: 1px solid #2a3048; }
+  .tools-title {
+    font-size: 11px; color: #8892aa; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px;
+  }
+  .btn {
+    width: 100%; padding: 10px; border-radius: 8px; border: none;
+    cursor: pointer; font-family: 'Segoe UI', sans-serif;
+    font-size: 13px; font-weight: 600; transition: background .15s; margin-bottom: 6px;
+  }
+  .btn:last-of-type { margin-bottom: 0; }
+  .btn-primary { background: #4f9eff; color: #fff; }
+  .btn-primary:hover { background: #3a8bf0; }
+  .btn-outline { background: #1e2436; color: #8892aa; border: 1px solid #2a3048; }
+  .btn-outline:hover { background: #2a3048; color: #e8eaf0; }
+  .btn-danger { background: rgba(248,113,113,.12); color: #f87171; border: 1px solid rgba(248,113,113,.25); }
+  .btn-danger:hover { background: rgba(248,113,113,.2); }
+
+  textarea {
+    width: 100%; background: #0d0f14; border: 1px solid #2a3048;
+    border-radius: 6px; color: #e8eaf0; padding: 8px; font-size: 11px;
+    resize: none; outline: none; height: 80px; margin: 8px 0;
+    font-family: 'Courier New', monospace;
+  }
+  textarea:focus { border-color: #4f9eff; }
+  #status { font-size: 12px; color: #34d399; text-align: center; min-height: 18px; margin-top: 4px; }
+
+  .tip {
+    background: rgba(79,158,255,.08); border: 1px solid rgba(79,158,255,.2);
+    border-radius: 6px; padding: 10px 12px; font-size: 12px; color: #8892aa;
+    line-height: 1.5; margin-top: 8px;
+  }
+  .tip strong { color: #4f9eff; }
+
+  .how-to { font-size: 12px; color: #8892aa; line-height: 1.8; padding: 14px 16px; }
+  .how-to li { margin-left: 16px; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span>📝</span>
+  <span class="logo">Video<span>IQ</span></span>
+  <span class="badge" id="ytBadge">—</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="history">📋 My Notes</div>
+  <div class="tab" data-tab="tools">🔧 Tools</div>
+  <div class="tab" data-tab="help">❓ Help</div>
+</div>
+
+<!-- HISTORY TAB -->
+<div class="panel active" id="panel-history">
+  <div class="stat-row">
+    <div class="stat">
+      <div class="stat-num" id="totalNotes">0</div>
+      <div class="stat-lbl">Total Notes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="totalVideos">0</div>
+      <div class="stat-lbl">Videos</div>
+    </div>
+  </div>
+  <div id="historyList">
+    <div class="empty-state">
+      <div class="big">📭</div>
+      No notes yet.<br>Open a YouTube video and start writing!
+    </div>
+  </div>
+</div>
+
+<!-- TOOLS TAB -->
+<div class="panel" id="panel-tools">
+  <div class="tools-section">
+    <div class="tools-title">Backup &amp; Share</div>
+    <button class="btn btn-primary" id="exportBtn">⬇ Export All Notes (JSON)</button>
+    <button class="btn btn-outline" id="importBtn">⬆ Import Notes from File</button>
+    <input type="file" id="fileInput" accept=".json" style="display:none" />
+    <div id="status"></div>
+    <div class="tip"><strong>Share with your teacher:</strong> Export → send the JSON file. They import it to see your notes alongside theirs.</div>
+  </div>
+  <div class="tools-section" style="border:none">
+    <div class="tools-title">Danger Zone</div>
+    <button class="btn btn-danger" id="clearBtn">🗑 Clear all my notes</button>
+  </div>
+</div>
+
+<!-- HELP TAB -->
+<div class="panel" id="panel-help">
+  <ul class="how-to">
+    <li>Open any YouTube video</li>
+    <li>Type in the <strong>VideoIQ panel</strong> on the right</li>
+    <li>Press <strong>Enter</strong> or click Send — note is saved at current time</li>
+    <li>Click any note in the list → video jumps to that moment</li>
+    <li>⚙ in the panel to set your name, color &amp; who to follow</li>
+    <li>Set a <strong>followed username</strong> to compare notes with your teacher</li>
+  </ul>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

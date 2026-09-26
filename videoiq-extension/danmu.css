@@ -1,0 +1,504 @@
+/* ── VideoIQ Danmu Styles v5 ──────────────────────────────────────────────── */
+
+/* FLOATING DANMU ON VIDEO */
+#viq-danmu-overlay {
+  position: absolute; inset: 0;
+  pointer-events: none; overflow: hidden; z-index: 2147483640;
+}
+.viq-float {
+  position: absolute; right: -100%; white-space: nowrap;
+  font-size: 18px; font-weight: 600; font-family: 'Segoe UI', sans-serif;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
+  padding: 3px 10px; border-radius: 4px; background: rgba(0,0,0,0.35);
+  animation: viq-slide 7s linear forwards; pointer-events: none;
+}
+@keyframes viq-slide {
+  0%   { right: -50%; opacity: 0; }
+  5%   { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { right: 105%; opacity: 0; }
+}
+
+/* TOGGLE BUTTON — bottom right floating */
+#viq-toggle-btn {
+  position: fixed; bottom: 24px; right: 24px; z-index: 2147483645;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #1e2436; border: 2px solid #4f9eff; color: #fff;
+  font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(79,158,255,0.35); transition: transform .2s, background .15s;
+}
+#viq-toggle-btn:hover { transform: scale(1.12); background: #2a3048; }
+
+/* ── FLOATING DRAGGABLE PANEL ─────────────────────────────────────────────── */
+#viq-side-panel {
+  position: fixed;
+  z-index: 2147483644;
+  width: 340px;
+  background: #161a24;
+  border: 1px solid #3a4560;
+  border-radius: 12px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(79,158,255,0.1);
+  max-height: 90vh;
+  /* no top/right here — set dynamically in JS */
+}
+
+/* HEADER / DRAG HANDLE */
+.viq-panel-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: #1e2436;
+  border-bottom: 1px solid #2a3048;
+  cursor: grab; user-select: none; flex-shrink: 0;
+}
+.viq-panel-header:active { cursor: grabbing; }
+
+.viq-drag-icon { color: #4a5580; font-size: 16px; flex-shrink: 0; }
+.viq-logo { font-weight: 700; font-size: 13px; color: #e8eaf0; flex: 1; }
+.viq-shorts-badge {
+  background: rgba(248,113,113,.2); color: #f87171;
+  font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; margin-left: 4px;
+}
+
+.viq-header-actions { display: flex; gap: 5px; }
+.viq-header-actions.hidden { display: none; }
+.viq-icon-btn {
+  background: none; border: 1px solid #2a3048; color: #8892aa;
+  width: 26px; height: 26px; border-radius: 5px; cursor: pointer;
+  font-size: 13px; display: flex; align-items: center; justify-content: center;
+  transition: all .15s; flex-shrink: 0;
+}
+.viq-icon-btn:hover { background: #2a3048; color: #e8eaf0; border-color: #4f9eff; }
+
+/* PANEL BODY — scrollable area */
+#viq-panel-body { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
+#viq-panel-body.hidden { display: none; }
+
+/* SETTINGS */
+.viq-settings {
+  padding: 12px 14px; background: #0d0f14;
+  border-bottom: 1px solid #2a3048;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.viq-settings.hidden { display: none; }
+.viq-setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; font-size: 12px; color: #8892aa;
+}
+.viq-setting-row label { cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.viq-input {
+  flex: 1; background: #1e2436; border: 1px solid #2a3048; border-radius: 6px;
+  padding: 5px 9px; color: #e8eaf0; font-size: 13px; outline: none;
+  font-family: 'Segoe UI', sans-serif; transition: border-color .15s;
+}
+.viq-input:focus { border-color: #4f9eff; }
+.viq-btn-save {
+  align-self: flex-end; background: #4f9eff; border: none; color: #fff;
+  padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: 'Segoe UI', sans-serif; transition: background .15s;
+}
+.viq-btn-save:hover { background: #3a8bf0; }
+
+/* FILTER BAR */
+.viq-filter-bar { display: flex; gap: 5px; padding: 8px 12px; border-bottom: 1px solid #2a3048; flex-shrink: 0; }
+.viq-filter {
+  padding: 4px 10px; border-radius: 12px; border: 1px solid #2a3048;
+  background: transparent; color: #8892aa; font-size: 11px; font-weight: 500;
+  cursor: pointer; font-family: 'Segoe UI', sans-serif; transition: all .15s;
+}
+.viq-filter:hover  { border-color: #4f9eff; color: #e8eaf0; }
+.viq-filter.active { background: rgba(79,158,255,.12); border-color: #4f9eff; color: #4f9eff; }
+
+/* NOTE LIST */
+.viq-list { flex: 1; overflow-y: auto; padding: 4px 0; min-height: 60px; max-height: 280px; }
+.viq-list::-webkit-scrollbar { width: 3px; }
+.viq-list::-webkit-scrollbar-thumb { background: #2a3048; border-radius: 2px; }
+
+.viq-empty { text-align: center; color: #8892aa; font-size: 12px; padding: 20px 12px; line-height: 1.6; }
+
+.viq-list-item {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 6px; padding: 6px 10px 6px 12px;
+  border-left: 3px solid transparent; font-size: 12px;
+  transition: background .1s; cursor: default;
+}
+.viq-list-item:hover { background: rgba(255,255,255,0.03); }
+/* border colors */
+.viq-list-item.own      { border-left-color: #4f9eff; }
+.viq-list-item.followed { border-left-color: #a78bfa; }
+.viq-list-item.other    { border-left-color: #2dd4bf; }
+.viq-list-item.summary-note { border-left-color: #fbbf24; background: rgba(251,191,36,0.03); }
+.viq-list-item.active-now { background: rgba(251,191,36,0.08) !important; border-left-color: #fbbf24 !important; }
+.viq-list-item.editing { background: rgba(79,158,255,0.06) !important; border-left-color: #4f9eff !important; }
+
+.viq-item-main { display: flex; align-items: flex-start; gap: 5px; flex: 1; flex-wrap: wrap; min-width: 0; }
+
+.viq-item-time {
+  color: #4f9eff; font-size: 10px; font-weight: 700;
+  font-family: 'Courier New', monospace; white-space: nowrap;
+  cursor: pointer; padding: 1px 4px; border-radius: 3px;
+  transition: background .12s; flex-shrink: 0; margin-top: 1px;
+}
+.viq-item-time:hover { background: rgba(79,158,255,0.18); }
+
+.viq-item-user { font-weight: 700; font-size: 11px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+
+.viq-summary-tag {
+  background: rgba(251,191,36,.15); color: #fbbf24;
+  font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 600; flex-shrink: 0;
+}
+
+.viq-item-text { color: #c8ccd8; line-height: 1.4; word-break: break-word; flex: 1; }
+.viq-item-text.editable { cursor: text; border-bottom: 1px dashed rgba(79,158,255,0.25); }
+.viq-item-text.editable:hover { color: #e8eaf0; border-bottom-color: #4f9eff; }
+
+.viq-item-actions { flex-shrink: 0; display: flex; align-items: center; }
+.viq-del {
+  background: none; border: none; color: #f87171; cursor: pointer;
+  font-size: 11px; opacity: 0; padding: 2px 3px; transition: opacity .15s;
+}
+.viq-list-item:hover .viq-del { opacity: 0.55; }
+.viq-del:hover { opacity: 1 !important; }
+
+/* ADD SECTION */
+.viq-add-section {
+  padding: 9px 12px 11px; border-top: 2px solid #4f9eff;
+  background: #191e2e; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+}
+.viq-add-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.viq-add-label { font-size: 10px; font-weight: 700; color: #4f9eff; text-transform: uppercase; letter-spacing: .06em; }
+.viq-add-controls { display: flex; gap: 5px; }
+
+.viq-pause-btn, .viq-summary-btn {
+  padding: 3px 8px; border-radius: 5px; border: 1px solid #2a3048;
+  background: #1e2436; color: #8892aa; cursor: pointer;
+  font-size: 10px; font-weight: 600; font-family: 'Segoe UI', sans-serif;
+  transition: all .15s; white-space: nowrap;
+}
+.viq-pause-btn:hover   { border-color: #f87171; color: #f87171; }
+.viq-pause-btn.paused  { border-color: #34d399; color: #34d399; background: rgba(52,211,153,.07); }
+.viq-summary-btn:hover { border-color: #fbbf24; color: #fbbf24; }
+
+.viq-add-row { display: flex; gap: 7px; align-items: flex-end; }
+
+.viq-main-input {
+  font-size: 13px !important; padding: 8px 10px !important;
+  border-color: rgba(79,158,255,0.4) !important;
+  background: #0d0f14 !important;
+  resize: none; line-height: 1.4; border-radius: 7px !important;
+  min-height: 36px; max-height: 120px; overflow-y: auto;
+}
+.viq-main-input:focus { border-color: #4f9eff !important; }
+
+.viq-btn-col { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.viq-add-btn {
+  padding: 0 12px; height: 36px; border-radius: 7px; border: none;
+  background: #4f9eff; color: #fff; font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: 'Segoe UI', sans-serif;
+  transition: background .15s; white-space: nowrap;
+}
+.viq-add-btn:hover { background: #3a8bf0; }
+
+.viq-cancel-btn {
+  padding: 0 8px; height: 26px; border-radius: 5px;
+  border: 1px solid #2a3048; background: transparent;
+  color: #8892aa; font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: 'Segoe UI', sans-serif; transition: all .15s;
+}
+.viq-cancel-btn:hover { border-color: #f87171; color: #f87171; }
+.viq-cancel-btn.hidden { display: none; }
+
+.viq-add-hint { font-size: 10px; color: #8892aa; min-height: 13px; }
+
+/* ── MINI BAR (minimized header) ────────────────────────────────────────────── */
+.viq-mini-bar {
+  display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0;
+}
+.viq-mini-bar.hidden { display: none; }
+
+.viq-mini-input {
+  flex: 1; min-width: 0;
+  background: rgba(13,15,20,0.9);
+  border: 1px solid rgba(79,158,255,0.4);
+  border-radius: 5px; color: #e8eaf0;
+  font-size: 12px; font-family: 'Segoe UI', sans-serif;
+  padding: 4px 8px; outline: none;
+  transition: border-color .15s;
+}
+.viq-mini-input:focus { border-color: #4f9eff; }
+
+.viq-mini-btn {
+  background: #1e2436; border: 1px solid #2a3048;
+  color: #8892aa; border-radius: 5px; cursor: pointer;
+  font-size: 13px; padding: 3px 6px; line-height: 1;
+  transition: all .15s; flex-shrink: 0;
+}
+.viq-mini-btn:hover { background: #2a3048; color: #e8eaf0; }
+.viq-mini-btn.active { border-color: #34d399; color: #34d399; background: rgba(52,211,153,.08); }
+.viq-mini-send { background: #4f9eff !important; color: #fff !important; border-color: #4f9eff !important; font-weight: 700; }
+.viq-mini-send:hover { background: #3a8bf0 !important; }
+
+/* hide logo text when mini bar is visible */
+#viq-side-panel .viq-logo { transition: opacity .15s; flex-shrink: 0; }
+#viq-side-panel .viq-logo.viq-logo-hidden { display: none; }
+
+/* ── IMPORT OFFSET DIALOG ─────────────────────────────────────────────────── */
+.viq-offset-dialog {
+  background: #0d0f14; border-bottom: 1px solid #2a3048;
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.viq-offset-dialog.hidden { display: none; }
+
+.viq-offset-title { font-weight: 700; font-size: 13px; color: #e8eaf0; }
+.viq-offset-desc  { font-size: 11px; color: #8892aa; line-height: 1.5; }
+.viq-offset-desc em { color: #fbbf24; font-style: normal; }
+
+.viq-offset-rows  { display: flex; flex-direction: column; gap: 12px; max-height: 220px; overflow-y: auto; }
+
+.viq-offset-row { background: #161a24; border: 1px solid #2a3048; border-radius: 8px; padding: 10px; }
+.viq-offset-who { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.viq-offset-user   { font-weight: 700; font-size: 13px; color: #e8eaf0; }
+.viq-offset-counts { font-size: 11px; color: #8892aa; }
+
+.viq-offset-fields { display: flex; gap: 8px; flex-wrap: wrap; }
+.viq-offset-field {
+  display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 70px;
+  font-size: 10px; color: #8892aa;
+}
+.viq-offset-input {
+  background: #1e2436; border: 1px solid #2a3048; border-radius: 5px;
+  color: #e8eaf0; font-size: 13px; font-weight: 700;
+  padding: 4px 6px; outline: none; text-align: center; width: 100%;
+  transition: border-color .15s;
+}
+.viq-offset-input:focus { border-color: #4f9eff; }
+
+.viq-offset-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+.viq-offset-badge {
+  font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 700;
+  background: rgba(251,191,36,.12); color: #fbbf24; flex-shrink: 0;
+}
+
+/* ── COMPARE VIEW ─────────────────────────────────────────────────────────── */
+.viq-compare-header {
+  display: flex; gap: 0; padding: 6px 10px 4px;
+  border-bottom: 1px solid #2a3048; flex-shrink: 0;
+  position: sticky; top: 0; background: #161a24; z-index: 1;
+}
+.viq-compare-hcol { flex: 1; font-size: 11px; font-weight: 700; text-align: center; }
+
+.viq-compare-cluster { border-bottom: 1px solid #1e2436; padding: 6px 8px; }
+.viq-compare-ts {
+  font-size: 10px; font-weight: 700; color: #fbbf24;
+  font-family: 'Courier New', monospace; margin-bottom: 4px;
+  cursor: pointer;
+}
+.viq-compare-ts:hover { text-decoration: underline; }
+.viq-compare-cols { display: flex; gap: 0; }
+.viq-compare-col  { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.viq-compare-mine     { padding-right: 5px; }
+.viq-compare-followed { padding-left: 5px; }
+.viq-compare-divider  { width: 1px; background: #2a3048; flex-shrink: 0; }
+
+.viq-compare-note {
+  padding: 4px 6px; border-radius: 5px; font-size: 11px;
+  border-left: 2px solid transparent; cursor: default;
+}
+.viq-compare-note.own      { background: rgba(79,158,255,0.06); border-left-color: #4f9eff; }
+.viq-compare-note.followed { background: rgba(167,139,250,0.06); border-left-color: #a78bfa; }
+.viq-compare-note:hover    { filter: brightness(1.2); }
+.viq-compare-user { font-weight: 700; font-size: 10px; display: block; margin-bottom: 1px; }
+.viq-compare-text { color: #c8ccd8; line-height: 1.4; word-break: break-word; display: block; }
+.viq-compare-text.editable { cursor: text; border-bottom: 1px dashed rgba(79,158,255,0.25); }
+.viq-compare-text.editable:hover { color: #e8eaf0; border-bottom-color: #4f9eff; }
+.viq-compare-empty { color: #3a4560; font-size: 11px; font-style: italic; padding: 2px 0; }
+
+/* file author badge in offset dialog */
+.viq-offset-file-author {
+  background: rgba(79,158,255,.15);
+  color: #4f9eff;
+  font-size: 9px; padding: 1px 6px; border-radius: 3px;
+  font-weight: 700; flex-shrink: 0;
+}
+
+/* author color picker in import dialog */
+.viq-author-color-pick {
+  width: 24px; height: 24px;
+  border: none; border-radius: 4px; cursor: pointer;
+  padding: 0; background: none; flex-shrink: 0;
+}
+
+/* recolor button in settings */
+.viq-recolor-btn {
+  background: #1e2436; border: 1px solid #2a3048;
+  color: #8892aa; border-radius: 5px; cursor: pointer;
+  font-size: 11px; font-weight: 600; padding: 3px 9px;
+  font-family: 'Segoe UI', sans-serif; transition: all .15s;
+  white-space: nowrap;
+}
+.viq-recolor-btn:hover { border-color: #a78bfa; color: #a78bfa; }
+
+/* dynamic author color rows inside settings */
+.viq-author-colors { display: flex; flex-direction: column; gap: 8px; }
+.viq-author-colors-title {
+  font-size: 10px; font-weight: 700; color: #4f9eff;
+  text-transform: uppercase; letter-spacing: .06em; margin-top: 2px;
+}
+
+/* ── AUTH PANEL ──────────────────────────────────────────────────────────────── */
+.viq-auth-panel {
+  background: #0d0f14; border-bottom: 1px solid #2a3048;
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.viq-auth-panel.hidden { display: none; }
+
+.viq-auth-tabs { display: flex; gap: 0; border-bottom: 1px solid #2a3048; margin-bottom: 10px; }
+.viq-auth-tab {
+  flex: 1; padding: 7px; background: none; border: none;
+  color: #8892aa; font-size: 12px; font-weight: 600;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  font-family: 'Segoe UI', sans-serif; transition: all .15s;
+}
+.viq-auth-tab.active { color: #4f9eff; border-bottom-color: #4f9eff; }
+
+.viq-auth-form { display: flex; flex-direction: column; gap: 7px; }
+.viq-auth-form .viq-input { font-size: 13px; }
+
+.viq-auth-msg { font-size: 11px; min-height: 14px; }
+.viq-color-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #8892aa; }
+
+.viq-auth-user { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #e8eaf0; }
+.viq-auth-link { background: none; border: none; color: #8892aa; cursor: pointer; font-size: 11px; font-family: 'Segoe UI', sans-serif; }
+.viq-auth-link:hover { color: #f87171; }
+
+/* clickable logo */
+.viq-logo { cursor: pointer; }
+.viq-logo:hover { opacity: .8; }
+
+/* ── USER SELECTOR ───────────────────────────────────────────────────────────── */
+.viq-user-selector {
+  padding: 8px 12px; border-bottom: 1px solid #2a3048;
+  background: #0d0f14;
+}
+.viq-user-selector.hidden { display: none; }
+.viq-us-title { font-size: 10px; color: #8892aa; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.viq-us-btns  { display: flex; flex-wrap: wrap; gap: 5px; }
+.viq-us-btn {
+  padding: 3px 10px; border-radius: 12px; border: 1px solid #2a3048;
+  background: transparent; color: #8892aa; font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: 'Segoe UI', sans-serif; transition: all .15s;
+}
+.viq-us-btn:hover { background: rgba(255,255,255,.05); }
+.viq-us-btn.active { background: rgba(79,158,255,.12); }
+.viq-us-all { color: #e8eaf0 !important; border-color: #4a5580 !important; }
+.viq-us-all.active { background: rgba(79,158,255,.15); border-color: #4f9eff !important; }
+
+/* ── VISIBILITY TOGGLE & BADGES ──────────────────────────────────────────────── */
+.viq-add-bottom { display: flex; align-items: center; justify-content: space-between; }
+.viq-visibility-toggle {
+  display: flex; align-items: center; gap: 5px; cursor: pointer;
+  font-size: 11px; color: #8892aa;
+}
+.viq-visibility-toggle input { cursor: pointer; }
+
+.viq-private-badge {
+  font-size: 10px; padding: 1px 4px; border-radius: 3px;
+  background: rgba(251,191,36,.12); color: #fbbf24; flex-shrink: 0;
+}
+.viq-cloud-badge {
+  font-size: 10px; color: #4f9eff; opacity: .5; flex-shrink: 0;
+}
+
+/* ── PUBLISH DIALOG ──────────────────────────────────────────────────────────── */
+.viq-publish-dialog {
+  background: #0d0f14; border-bottom: 1px solid #2a3048;
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.viq-publish-dialog.hidden { display: none; }
+.viq-pd-title { font-weight: 700; font-size: 13px; color: #e8eaf0; }
+.viq-pd-desc  { font-size: 11px; color: #8892aa; line-height: 1.5; }
+.viq-pd-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; font-size: 12px; color: #8892aa;
+}
+.viq-pd-row .viq-input { font-size: 13px; }
+.viq-pd-preview {
+  background: #161a24; border: 1px solid #2a3048;
+  border-radius: 8px; padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 4px; max-height: 100px; overflow-y: auto;
+}
+.viq-pd-preview-title { font-size: 10px; color: #8892aa; margin-bottom: 4px; }
+.viq-pd-note { display: flex; gap: 6px; font-size: 12px; align-items: flex-start; }
+.viq-pd-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.viq-pd-msg  { font-size: 11px; min-height: 14px; text-align: center; }
+
+/* ── USER SELECTOR ROWS ──────────────────────────────────────────────────────── */
+.viq-user-selector {
+  padding: 8px 12px; border-bottom: 1px solid #2a3048; background: #0d0f14;
+}
+.viq-user-selector.hidden { display: none; }
+.viq-us-title { font-size: 10px; color: #8892aa; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+
+.viq-us-row {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 6px 0; border-bottom: 1px solid #1e2436;
+}
+.viq-us-row:last-child { border-bottom: none; }
+
+.viq-us-toggle { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.viq-us-toggle input { cursor: pointer; }
+.viq-us-name  { font-weight: 700; font-size: 12px; }
+.viq-us-count { font-size: 10px; color: #8892aa; margin-left: auto; }
+
+.viq-us-offset { display: flex; align-items: center; gap: 8px; padding-left: 20px; }
+.viq-us-offset-lbl { font-size: 10px; color: #8892aa; white-space: nowrap; }
+.viq-us-offset-lbl b { color: #fbbf24; }
+
+.viq-us-slider {
+  flex: 1; -webkit-appearance: none; height: 3px;
+  background: linear-gradient(to right, #4f9eff 0%, #4f9eff 50%, #2a3048 50%, #2a3048 100%);
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+.viq-us-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 13px; height: 13px;
+  border-radius: 50%; background: #4f9eff; cursor: pointer;
+  border: 2px solid #161a24;
+}
+.viq-cloud-badge { font-size: 10px; color: #4f9eff; opacity: .5; flex-shrink: 0; }
+
+/* notes that exist in sidebar but are NOT shown on video */
+.viq-list-item.note-dimmed { opacity: 0.45; }
+.viq-list-item.note-dimmed:hover { opacity: 0.75; }
+
+.viq-hidden-badge {
+  font-size: 10px; opacity: 0.5; flex-shrink: 0;
+  cursor: help;
+}
+
+/* ── CLOUD STATUS BAR ────────────────────────────────────────────────────────── */
+.viq-cloud-bar {
+  padding: 7px 12px; font-size: 11px; line-height: 1.5;
+  border-bottom: 1px solid #2a3048; transition: all .3s;
+}
+.viq-cloud-bar.hidden        { display: none; }
+.viq-cloud-loading  { background: rgba(79,158,255,.06);  color: #8892aa; }
+.viq-cloud-loaded   { background: rgba(52,211,153,.07);  color: #34d399; }
+.viq-cloud-empty    { background: rgba(251,191,36,.06);  color: #d4a80f; }
+.viq-cloud-error    { background: rgba(248,113,113,.07); color: #f87171; }
+
+/* ── POST PUBLICLY PILL BUTTON ───────────────────────────────────────────────── */
+.viq-publish-pill {
+  padding: 4px 10px; border-radius: 12px;
+  background: rgba(79,158,255,.15); border: 1px solid rgba(79,158,255,.4);
+  color: #4f9eff; font-size: 11px; font-weight: 700;
+  cursor: pointer; font-family: 'Segoe UI', sans-serif;
+  white-space: nowrap; transition: all .15s; flex-shrink: 0;
+}
+.viq-publish-pill:hover { background: rgba(79,158,255,.28); border-color: #4f9eff; }
+
+/* ── OFFSET HINT TEXT ────────────────────────────────────────────────────────── */
+.viq-us-offset-hint { color: #4f9eff; font-style: italic; margin-left: 3px; }

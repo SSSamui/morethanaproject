@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "VideoIQ Danmu",
+  "version": "3.0.0",
+  "description": "Personal danmu on YouTube. Work locally, post publicly — no account needed.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://*.supabase.co/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/watch*",
+        "https://www.youtube.com/shorts/*"
+      ],
+      "js": ["config.js", "cloud.js", "content.js"],
+      "css": ["danmu.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": { "48": "icons/icon48.png" }
+  },
+  "icons": { "48": "icons/icon48.png" }
+}
