@@ -197,6 +197,13 @@ function escHtml(s) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// Local sync bookkeeping must not travel inside exported / imported files
+function stripSync(n) {
+  const o = {};
+  for (const k in n) if (!['_synced','_syncedAt','_dirty','_rev'].includes(k)) o[k] = n[k];
+  return o;
+}
+
 // ── EXPORT ───────────────────────────────────────────────────────────────────
 document.getElementById('exportBtn').onclick = () => {
   chrome.storage.local.get([STORAGE_KEY, 'videoiq_settings'], (res) => {
@@ -205,7 +212,7 @@ document.getElementById('exportBtn').onclick = () => {
     // Only export notes written by the current user
     const mine = {};
     for (const vid in data) {
-      const myNotes = data[vid].filter(n => n.user === name);
+      const myNotes = data[vid].filter(n => n.user === name).map(stripSync);
       if (myNotes.length) mine[vid] = myNotes;
     }
     const payload = { _meta: { author: name, exportedAt: new Date().toISOString() }, ...mine };
@@ -235,10 +242,11 @@ document.getElementById('fileInput').onchange = (e) => {
         const existing = res[STORAGE_KEY] || {};
         let added = 0;
         for (const vid in incoming) {
+          if (vid === '_meta' || !Array.isArray(incoming[vid])) continue;
           if (!existing[vid]) existing[vid] = [];
           const ids = new Set(existing[vid].map(d => d.id));
           for (const entry of incoming[vid]) {
-            if (!ids.has(entry.id)) { existing[vid].push(entry); added++; }
+            if (!ids.has(entry.id)) { existing[vid].push(stripSync(entry)); added++; }
           }
         }
         chrome.storage.local.set({ [STORAGE_KEY]: existing }, () => {

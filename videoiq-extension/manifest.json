@@ -1,16 +1,15 @@
 {
   "manifest_version": 3,
   "name": "VideoIQ Danmu",
-  "version": "3.3.0",
-  "description": "Personal danmu on YouTube. Work locally, sync with friends through GitHub.",
+  "version": "4.0.0",
+  "description": "Danmu on YouTube with styles and emoji. Sign in to save everything online and see everyone's danmu.",
   "permissions": [
     "storage",
     "tabs"
   ],
   "host_permissions": [
     "https://www.youtube.com/*",
-    "https://*.supabase.co/*",
-    "https://api.github.com/*"
+    "https://*.supabase.co/*"
   ],
   "content_scripts": [
     {
@@ -21,7 +20,6 @@
       "js": [
         "config.js",
         "cloud.js",
-        "github.js",
         "content.js"
       ],
       "css": [

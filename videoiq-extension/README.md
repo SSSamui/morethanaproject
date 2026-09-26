@@ -62,39 +62,28 @@ Under the note box in the panel there is a style bar:
 
 ---
 
-## GitHub Sync (everyone's danmu in one shared repo)
+## Accounts & Online Saving (everyone's danmu in one place)
 
-All danmu are saved in **one repo** owned by one person. Inside it, **each person has their own file**, named after the name they chose, so nobody overwrites anyone else:
+All danmu from all users are saved in **one online database** (Supabase).
+The extension owner sets it up once (see **SETUP.md**). Everyone else just installs the extension and signs in.
 
-```
-danmu/<youtubeVideoId>/<name>.json     e.g. danmu/dQw4w9WgXcQ/Lin.json
-                                              danmu/dQw4w9WgXcQ/Friend.json
-```
+### For users
+1. Click **👤 Sign in** in the panel header.
+2. First time: **Create account** → display name (unique; everyone sees it), email, password.
+   Depending on the setup, you may need to click the confirmation link in your email first, then **Sign in**.
+3. That's it. Every danmu you add, edit or delete is saved online automatically ("☁ Saved online").
+   Notes you wrote before signing in are uploaded too.
 
-Only the repo owner needs a GitHub account. Friends don't need GitHub at all.
-
-### One-time setup (repo owner)
-1. On github.com: **+** → **New repository** → name it e.g. `danmu-data` (private is fine) → tick *Add a README* → Create.
-2. Make **one token for that repo only**: your picture → **Settings** → **Developer settings** → **Personal access tokens** →
-   **Fine-grained tokens** → **Generate new token**
-   - Repository access: **Only select repositories** → `danmu-data`
-   - Permissions → Repository permissions → **Contents: Read and write**
-   - Generate, then copy the token (starts with `github_pat_`)
-3. Send your friend the repo name (`yourGitHubName/danmu-data`) and the token privately.
-   The token can only touch that one repo.
-
-### Each person
-1. In the extension panel click **⚙**, type **your own name** in *Your name* (it must be different from your friend's).
-2. Under **🐙 GitHub sync** enter the same `owner/danmu-data` and the same token → **Connect**.
-   You'll see "Saving as <your name>". To change your name later, Disconnect first.
-
-### Using it
-- Every note you add, edit or delete is saved to **your** file in the shared repo about 2 seconds later ("🐙 Saved to GitHub").
-- The other person's danmu (marked 🐙) load when you open a video and refresh **every 15 seconds** while the tab is visible. They float on the video at their timestamps, with their chosen style.
-- **↩ Reply** on someone's note jumps to that moment and starts a `@theirname ` danmu. Notes that @mention you are highlighted in gold.
-- The 👥 selector lets you hide a person's danmu on the video or shift their timing. That only affects your screen.
-- **⟳ Sync now** in ⚙ forces a save and reload. Opening the same video on a new computer restores your own notes from GitHub.
-- The token is stored only in this browser (`chrome.storage.local`), separately from settings, and is never included in exports.
+### What you get
+- **Everyone's danmu** on the video you're watching (☁ in the list), refreshed every 10 seconds.
+  They float at their timestamps in each author's style.
+- **Your danmu are protected:** only you can edit or delete them (enforced by the database).
+- **Any computer:** sign in and your danmu come back. Edits and deletes sync across devices.
+- **↩ Reply** on someone's danmu jumps there and starts `@theirname `. Danmu that @mention you are highlighted in gold.
+- Change your **name or color** in ⚙ → Save. Everyone sees the new name on all your danmu.
+- The 👥 selector hides a person's danmu on the video or shifts their timing (only on your screen).
+- You can watch everyone's danmu without signing in. Signing in is needed to save your own online.
+- Offline or signed out? Notes stay in your browser and upload when you're back and signed in.
 
 ---
 
@@ -114,7 +103,7 @@ Notes are merged non-destructively — you keep yours, you add theirs.
 
 ## Privacy
 
-All notes are stored **locally in your browser** (`chrome.storage.local`). Nothing leaves your browser unless you turn on **GitHub sync** (your notes go to the repo you chose) or **Post publicly**, or export a JSON file yourself.
+All notes are stored **locally in your browser** (`chrome.storage.local`). Nothing leaves your browser until you **sign in**: then your danmu (and your display name/color) are saved to the online database, where anyone using the extension can read them. Your email is only used for your account. Passwords are handled by Supabase and never stored by the extension.
 
 ---
 
@@ -124,7 +113,9 @@ All notes are stored **locally in your browser** (`chrome.storage.local`). Nothi
 videoiq-extension/
 ├── manifest.json    — Extension config
 ├── content.js       — Main logic injected into YouTube
-├── github.js        — GitHub sync (one file per person per video)
+├── cloud.js         — Accounts + online database (Supabase)
+├── config.js        — Your Supabase project URL + public key
+├── SETUP.md         — One-time database setup for the owner
 ├── danmu.css        — Styles for overlay and panel
 ├── popup.html       — Extension popup UI
 ├── popup.js         — Popup logic (stats, export, import)

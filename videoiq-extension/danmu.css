@@ -568,18 +568,32 @@
 }
 .viq-emoji:hover { background: #2a3048; }
 
-/* ── GITHUB SYNC ──────────────────────────────────────────────────────────── */
-.viq-gh-section {
+/* ── ACCOUNT ─────────────────────────────────────────────────────────────── */
+.viq-account-section {
   display: flex; flex-direction: column; gap: 6px;
-  padding-top: 8px; border-top: 1px solid #2a3048;
+  padding-bottom: 9px; border-bottom: 1px solid #2a3048;
 }
-.viq-gh-section:empty { display: none; }
-.viq-gh-title { font-size: 11px; font-weight: 700; color: #e8eaf0; }
-.viq-gh-sub   { font-weight: 400; color: #8892aa; }
-.viq-gh-btns  { display: flex; gap: 6px; justify-content: flex-end; }
-.viq-gh-status     { font-size: 11px; color: #8892aa; min-height: 13px; word-break: break-word; }
-.viq-gh-status.ok  { color: #34d399; }
-.viq-gh-status.err { color: #f87171; }
+.viq-account-section:empty { display: none; }
+.viq-account-section .viq-input.hidden { display: none; }
+.viq-acc-title { font-size: 11px; font-weight: 700; color: #e8eaf0; }
+.viq-acc-sub   { font-weight: 400; color: #8892aa; }
+.viq-acc-tabs  { display: flex; gap: 4px; }
+.viq-acc-tab {
+  flex: 1; background: #1e2436; border: 1px solid #2a3048; color: #8892aa;
+  border-radius: 5px; padding: 4px 0; font-size: 11px; font-weight: 600; cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+}
+.viq-acc-tab.active { border-color: #4f9eff; color: #e8eaf0; background: rgba(79,158,255,.12); }
+.viq-acc-btns  { display: flex; gap: 6px; justify-content: flex-end; }
+.viq-acc-go    { height: 28px; }
+.viq-acc-go:disabled { opacity: .6; cursor: wait; }
+.viq-acc-msg     { font-size: 11px; color: #8892aa; min-height: 13px; word-break: break-word; line-height: 1.4; }
+.viq-acc-msg.ok  { color: #34d399; }
+.viq-acc-msg.err { color: #f87171; }
+.viq-acc-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: #34d399; margin-right: 5px; vertical-align: middle;
+}
 
 /* reply button + notes that @mention you */
 .viq-reply {
