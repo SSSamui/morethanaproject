@@ -662,3 +662,4 @@
   border-top: 1px solid #2a3048; color: #8892aa; font-size: 11px; cursor: pointer;
 }
 #viq-st-anon.anon { color: #fbbf24; border-color: #fbbf24; }
+.viq-style-bar.editing { outline: 1px dashed #fbbf24; outline-offset: 3px; border-radius: 6px; }
