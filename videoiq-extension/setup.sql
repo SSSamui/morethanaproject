@@ -1,21 +1,5 @@
-# VideoIQ — Online Setup (one database for everyone)
+-- VideoIQ database setup — paste this WHOLE file into Supabase → SQL Editor → Run
 
-Everyone's danmu are saved in **one Supabase database**. People create an
-account (email + password) inside the extension. Only the extension's owner
-does the steps below, **once**. Users just install the extension and sign in.
-
-## 1. Create a free Supabase project
-1. Go to https://supabase.com → **Start your project** → sign in (GitHub or email).
-2. **New project** → give it a name (e.g. `videoiq`), set a database password
-   (save it somewhere; the extension doesn't need it), pick a region near your users → **Create**.
-3. Wait about 1 minute until the project is ready.
-
-## 2. Create the tables (copy, paste, Run)
-Left sidebar → **SQL Editor** → **New query** → open **`setup.sql`** (in this folder), copy **all of it**, paste → **Run**.
-It should say *Success. No rows returned*. (The same SQL is shown below for reference.
-If you copy from here, don't include the ```` ```sql ```` / ```` ``` ```` lines.)
-
-```sql
 -- ── Accounts: one profile per user (display name is unique, case-insensitive)
 create table public.profiles (
   id           uuid primary key references auth.users (id) on delete cascade,
@@ -85,34 +69,3 @@ begin new.updated_at = now(); return new; end $$;
 
 create trigger danmu_touch before update on public.danmu
   for each row execute function public.touch_updated_at();
-```
-
-## 3. Email confirmation (choose one)
-**Authentication** → **Sign In / Providers** → **Email**:
-- **Confirm email ON** (default, recommended for public use): new users get a
-  confirmation email and must click it before signing in. The free plan's
-  built-in mailer only sends a few emails per hour. For real traffic, set up your own
-  SMTP under **Authentication → Emails → SMTP Settings**.
-- **Confirm email OFF**: people are signed in right after creating an account.
-  Easiest for testing and small groups.
-
-## 4. Put your project keys into the extension
-**Project Settings** → **API Keys** (or **Data API**):
-- **Project URL**, e.g. `https://abcdefghijkl.supabase.co`
-- **Publishable key** (`sb_publishable_…`) or the legacy **anon public** key (`eyJ…`)
-
-Open `config.js` and replace the placeholders:
-```js
-const VIQ_CONFIG = {
-  supabaseUrl:  'https://abcdefghijkl.supabase.co',
-  supabaseKey:  'sb_publishable_xxxxxxxx'
-};
-```
-These two values are **meant to be public**. The security rules above decide what
-anyone can do. **Never** put the `service_role` / secret key in the extension.
-
-Reload the extension at `chrome://extensions`. The panel header now shows **👤 Sign in**.
-
-## Where to see the data
-Supabase → **Table Editor** → `danmu` (all danmu from everyone) and `profiles`
-(all users). **Authentication → Users** lists the accounts.
