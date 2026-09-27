@@ -206,33 +206,116 @@ window.VIQ_CLOUD = (() => {
 
   // ── danmu ──────────────────────────────────────────────────────────────────
   // All danmu on a video, everyone's, with the author's current name + color
+  // ── Privacy view ───────────────────────────────────────────────────────────
+  // With privacy.sql applied, danmu are read through `danmu_public`, which leaves out
+  // the author of hidden-name danmu for everyone except the writer and the one person
+  // they chose. Without it (older database) we fall back to the table.
+  let hasView = null;                      // null = not checked yet
+  const nameCache = new Map();             // user id → display name (for "only visible to …")
+
+  function isMissingView(e) {
+    return e.status === 404 || e.code === 'PGRST205' || e.code === '42P01' || /danmu_public|schema cache/i.test(e.message);
+  }
+
+  // Same shape for both paths:
+  // {user_id, client_id, time_sec, text, style, is_summary, updated_at, video_id, video_title,
+  //  profiles:{display_name,color}|null, name_hidden, name_revealed, name_to:[{id,name}]}
+  function normalize(r) {
+    if ('name_hidden' in r) {              // from the view
+      return Object.assign(r, {
+        profiles: r.user_id ? { display_name: r.display_name, color: r.color } : null,
+        name_hidden: !!r.name_hidden, name_revealed: !!r.name_revealed,
+        name_to: (r.name_visible_to || []).map(id => ({ id, name: nameCache.get(id) || '' }))
+      });
+    }
+    const me = session && session.user.id;  // older database: can only hide on screen
+    return Object.assign(r, {
+      name_hidden: !!(r.style && r.style.anon) && r.user_id !== me, name_revealed: false, name_to: []
+    });
+  }
+
+  async function fillNames(rows) {
+    const ids = [...new Set(rows.flatMap(r => r.name_visible_to || []))].filter(id => !nameCache.has(id));
+    if (ids.length) {
+      try {
+        const ps = await call('/rest/v1/profiles?select=id,display_name&id=in.(' + ids.join(',') + ')');
+        (ps || []).forEach(p => nameCache.set(p.id, p.display_name));
+      } catch { /* names are cosmetic */ }
+    }
+  }
+
+  async function readDanmu(viewQuery, tableQuery) {
+    if (hasView !== false) {
+      try {
+        const rows = (await call('/rest/v1/danmu_public?' + viewQuery)) || [];
+        hasView = true;
+        await fillNames(rows);
+        return rows.map(normalize);
+      } catch (e) {
+        if (!isMissingView(e)) throw e;
+        hasView = false;
+      }
+    }
+    return ((await call('/rest/v1/danmu?' + tableQuery)) || []).map(normalize);
+  }
+
+  const VIEW_COLS = 'user_id,client_id,video_id,video_title,time_sec,text,style,is_summary,updated_at,' +
+                    'display_name,color,name_hidden,name_revealed,name_visible_to';
+  const TABLE_COLS = 'user_id,client_id,video_id,video_title,time_sec,text,style,is_summary,updated_at,profiles(display_name,color)';
+
+  // All danmu on a video, everyone's
   function getVideo(videoId) {
-    return call('/rest/v1/danmu?video_id=eq.' + encodeURIComponent(videoId) +
-      '&select=user_id,client_id,time_sec,text,style,is_summary,updated_at,profiles(display_name,color)' +
-      '&order=time_sec.asc&limit=10000');
+    const q = 'video_id=eq.' + encodeURIComponent(videoId) + '&order=time_sec.asc&limit=10000';
+    return readDanmu('select=' + VIEW_COLS + '&' + q, 'select=' + TABLE_COLS + '&' + q);
   }
 
   // Most recent danmu from everyone, across all videos (for the "New danmu" feed)
   function getRecent(limit) {
-    return call('/rest/v1/danmu?select=video_id,video_title,text,style,updated_at,user_id,profiles(display_name,color)' +
-      '&order=updated_at.desc&limit=' + (limit || 300));
+    const q = 'order=updated_at.desc&limit=' + (limit || 300);
+    return readDanmu('select=' + VIEW_COLS + '&' + q, 'select=' + TABLE_COLS + '&' + q);
   }
 
-  // Create or update our own danmu (idempotent on user_id + client_id)
-  function upsert(videoId, videoTitle, notes) {
-    if (!notes.length) return Promise.resolve();
+  // Is "show my name to one person only" available? (privacy.sql applied)
+  async function privacyReady() {
+    if (hasView === null) {
+      try { await call('/rest/v1/danmu_public?select=client_id&limit=1'); hasView = true; }
+      catch (e) { if (isMissingView(e)) hasView = false; else throw e; }
+    }
+    return hasView;
+  }
+
+  // Find someone by their display name → {id, name}
+  async function findUser(name) {
+    name = String(name || '').trim();
+    if (!name) throw new Error('Type the person\'s display name');
+    const esc = name.replace(/([%_\\*])/g, '\\$1');
+    const rows = await call('/rest/v1/profiles?select=id,display_name&display_name=ilike.' + encodeURIComponent(esc));
+    const u = (rows || [])[0];
+    if (!u) throw new Error('No one is called "' + name + '"');
+    if (session && u.id === session.user.id) throw new Error('That\'s you. Pick someone else');
+    nameCache.set(u.id, u.display_name);
+    return { id: u.id, name: u.display_name };
+  }
+
+  // Create or update our own danmu (idempotent on user_id + client_id).
+  // n.nameTo = {id,name} → with a hidden name, only that person may see who wrote it.
+  async function upsert(videoId, videoTitle, notes) {
+    if (!notes.length) return;
+    const withTargets = await privacyReady().catch(() => false);
+    const anyTarget = notes.some(n => n.nameTo && n.style && n.style.anon);
+    if (anyTarget && !withTargets) throw new Error('"Only one person" needs the database update (privacy.sql). Ask the owner to run it');
     return call('/rest/v1/danmu?on_conflict=user_id,client_id', {
       method: 'POST', auth: true, prefer: 'resolution=merge-duplicates,return=minimal',
-      body: notes.map(n => ({
+      body: notes.map(n => Object.assign({
         user_id: session.user.id,
         client_id: n.id,
         video_id: videoId,
         video_title: (videoTitle || '').slice(0, 300) || null,
         time_sec: Math.max(0, Math.floor(n.time || 0)),
         text: String(n.text).slice(0, 500),
-        style: n.style || null,
+        style: n.style ? Object.assign({}, n.style, { nameTo: undefined }) : null,
         is_summary: !!n.isSummary
-      }))
+      }, withTargets ? { name_visible_to: n.nameTo && n.style && n.style.anon ? [n.nameTo.id] : null } : {}))
     });
   }
 
@@ -245,5 +328,5 @@ window.VIQ_CLOUD = (() => {
 
   return { isConfigured, init, isSignedIn, getUser, onChange,
            signUp, signIn, signOut, updateProfile, verifyEmailCode, resendCode,
-           getVideo, getRecent, upsert, remove };
+           getVideo, getRecent, upsert, remove, findUser, privacyReady };
 })();

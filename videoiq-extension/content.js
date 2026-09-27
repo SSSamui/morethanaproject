@@ -48,9 +48,16 @@
     ['👍','like'],['👎','dislike'],['👏','applause'],['🙏','thanks'],['❤️','heart'],['💔','heartbroken'],
     ['🔥','fire'],['💯','perfect'],['🎉','celebrate'],['✨','sparkle'],['❓','question'],['❗','important']
   ];
-  // anon: the WRITER hides their name on this danmu for everyone
-  const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false };
+  // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
+  const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null };
   const ANON_NAME = '🙈 Anonymous', ANON_COLOR = '#9ca3af';
+  // A note's saved style never carries nameTo (that lives in note.nameTo / the database column)
+  function styleOnly(st) { const o = Object.assign({}, st); delete o.nameTo; return o; }
+  // Compare styles regardless of key order (the database may reorder keys)
+  function sameStyle(a, b) {
+    const norm = s => JSON.stringify(Object.keys(s || {}).sort().reduce((o, k) => (s[k] === undefined ? o : (o[k] = s[k], o)), {}));
+    return norm(a) === norm(b);
+  }
 
   // Current style for new danmu (color falls back to the user's color)
   // While editing a danmu, the style bar edits THAT danmu's style (editStyle); otherwise
@@ -220,17 +227,18 @@
       const mine = [], byUser = new Map();
       rows.forEach(r => {
         if (me ? r.user_id === me.id : localOwn.has(Number(r.client_id))) { mine.push(r); return; }
-        const anon = !!(r.style && r.style.anon);
-        const key  = anon ? 'anon' : r.user_id;
+        const anon = !!r.name_hidden, revealed = !!r.name_revealed;   // decided by the database per viewer
+        const key  = anon ? 'anon' : r.user_id + (revealed ? ':only-you' : '');
         let a = byUser.get(key);
         if (!a) {
           const prev = remoteList.find(x => x.id === 'sb_' + key);
-          a = { id: 'sb_' + key, author_name: anon ? ANON_NAME : (r.profiles?.display_name || 'Unknown'),
+          a = { id: 'sb_' + key, author_name: anon ? ANON_NAME : (r.profiles?.display_name || 'Unknown') + (revealed ? ' 🔒' : ''),
                 color: prev?._recolored ? prev.color : (anon ? ANON_COLOR : (r.profiles?.color || '#a78bfa')),
                 _recolored: prev?._recolored || undefined, notes: [], _source: 'sb', _anon: anon || undefined };
           byUser.set(key, a);
         }
-        a.notes.push({ id: r.client_id, time: r.time_sec, text: r.text, style: r.style, isSummary: r.is_summary });
+        a.notes.push({ id: r.client_id, time: r.time_sec, text: r.text, style: r.style, isSummary: r.is_summary,
+                       revealed: revealed || undefined });
       });
       const next = [...byUser.values()];
       let changed = JSON.stringify(next) !== JSON.stringify(remoteList);
@@ -267,10 +275,14 @@
         needPush = true;                                   // new or edited here → upload
       } else if (!r) {
         if ((n._syncedAt || 0) < started) { list.splice(i, 1); changed = true; }   // deleted on another device
-      } else if (r.text !== n.text || r.time_sec !== n.time ||
-                 JSON.stringify(r.style || null) !== JSON.stringify(n.style || null)) {
-        n.text = r.text; n.time = r.time_sec; n.ts = fmtTime(r.time_sec); n.style = r.style;   // edited elsewhere
-        changed = true;
+      } else {
+        const rTo = (r.name_to || [])[0] || null;
+        if (r.text !== n.text || r.time_sec !== n.time || !sameStyle(r.style, n.style) ||
+            (rTo && rTo.id) !== (n.nameTo && n.nameTo.id)) {
+          n.text = r.text; n.time = r.time_sec; n.ts = fmtTime(r.time_sec); n.style = r.style;   // edited elsewhere
+          n.nameTo = rTo;
+          changed = true;
+        }
       }
     }
     const have = new Set(list.filter(n => n.user === me).map(n => Number(n.id)));
@@ -279,7 +291,7 @@
       const id = Number(r.client_id);
       if (have.has(id) || gone.has(id)) return;
       list.push({ id, user: me, color: settings.color, text: r.text, time: r.time_sec, ts: fmtTime(r.time_sec),
-                  isSummary: !!r.is_summary, style: r.style || null, videoId: vid,
+                  isSummary: !!r.is_summary, style: r.style || null, videoId: vid, nameTo: (r.name_to || [])[0] || null,
                   _synced: true, _syncedAt: Date.now() });                             // written on another device
       changed = true;
     });
@@ -421,8 +433,9 @@
       if (!/^[\w-]{6,20}$/.test(r.video_id || '')) return;
       let v = map.get(r.video_id);
       const at = Date.parse(r.updated_at) || 0;
-      const anon = !!(r.style && r.style.anon);
-      const who = anon ? { name: ANON_NAME, color: ANON_COLOR } : { name: r.profiles?.display_name || 'Someone', color: r.profiles?.color || '#a78bfa' };
+      const anon = !!r.name_hidden;
+      const who = anon ? { name: ANON_NAME, color: ANON_COLOR }
+                       : { name: (r.profiles?.display_name || 'Someone') + (r.name_revealed ? ' 🔒' : ''), color: r.profiles?.color || '#a78bfa' };
       if (!v) {
         v = { id: r.video_id, title: '', count: 0, people: new Map(), lastAt: at, latest: { who, text: r.text },
               lastOther: 0 };
@@ -644,6 +657,7 @@
           ts:        fmtTime(adjustedTime),
           isSummary: n.isSummary || false,
           style:     n.style || null,
+          revealed:  n.revealed || undefined,
           _cloud:    true,
           _source:   post._source || 'cloud',
           _postId:   post.id,
@@ -915,7 +929,11 @@
           <select id="viq-st-dur" class="viq-st-select ${fixed ? '' : 'hidden'}" title="How long it stays on screen">
             ${DURATIONS.map(d => '<option value="' + d + '"' + (d === Number(st.duration) ? ' selected' : '') + '>' + d + 's</option>').join('')}
           </select>
-          <button id="viq-st-anon" class="viq-st-preview${st.anon ? ' anon' : ''}" title="Show my name on my danmu for everyone">${st.anon ? '🙈 Name hidden' : '👤 Name on'}</button>
+          <select id="viq-st-namevis" class="viq-st-select" title="Who can see your name on this danmu">
+            <option value="all">👤 Name: everyone</option>
+            <option value="none">🙈 Name: nobody</option>
+            <option value="one">🔒 Name: only one person…</option>
+          </select>
           <button id="viq-st-preview" class="viq-st-preview" title="Preview on video">▶ Preview</button>
         </div>
         <div class="viq-st-sample" id="viq-st-sample">Aa 弹幕 😊</div>
@@ -932,7 +950,8 @@
         color:    g('viq-st-color').value,
         mode,
         duration: parseInt(g('viq-st-dur').value, 10) || DEFAULT_STYLE.duration,
-        anon:     !!curStyle().anon
+        anon:     !!curStyle().anon,
+        nameTo:   curStyle().nameTo || null
       };
       g('viq-st-dur').classList.toggle('hidden', mode !== 'top' && mode !== 'bottom');
       if (editStyle) editStyle = next;               // saved with the danmu you're editing
@@ -941,13 +960,28 @@
     };
     ['viq-st-font','viq-st-size','viq-st-mode','viq-st-dur'].forEach(id => g(id).onchange = onChange);
     g('viq-st-color').oninput = onChange;
-    g('viq-st-anon').onclick = () => {
-      const anon = !curStyle().anon;
-      if (editStyle) editStyle = Object.assign({}, editStyle, { anon });
-      else { settings.danmuStyle = Object.assign({}, curStyle(), { anon }); save(); }
+    // Who can see my name: everyone / nobody / only one person
+    g('viq-st-namevis').onchange = async () => {
+      const v = g('viq-st-namevis').value;
+      let patch;
+      if (v === 'all') patch = { anon: false, nameTo: null };
+      else if (v === 'none') patch = { anon: true, nameTo: null };
+      else {
+        try {
+          if (!cloudOn() || !signedIn()) throw new Error('Sign in first to choose a person');
+          if (!(await VIQ_CLOUD.privacyReady())) throw new Error('This needs a database update (privacy.sql). Ask the owner to run it');
+          const who = prompt('Show your name only to… (type their display name)', curStyle().nameTo?.name || '');
+          if (who === null) { setStyleBar(); return; }
+          patch = { anon: true, nameTo: await VIQ_CLOUD.findUser(who) };
+        } catch (e) { flashHint('❌ ' + e.message); setStyleBar(); return; }
+      }
+      if (editStyle) editStyle = Object.assign({}, editStyle, patch);
+      else { settings.danmuStyle = Object.assign({}, curStyle(), patch); save(); }
       setStyleBar();
-      flashHint(editStyle ? (anon ? '🙈 This danmu won\'t show your name (Save to apply)' : '👤 This danmu will show your name (Save to apply)')
-                          : (anon ? '🙈 Your next danmu won\'t show your name to others' : '👤 Your next danmu will show your name'));
+      const later = editStyle ? ' (Save to apply)' : '';
+      flashHint(!patch.anon ? '👤 Everyone will see your name' + later
+              : patch.nameTo ? '🔒 Only ' + patch.nameTo.name + ' will see your name' + later
+              : '🙈 Nobody will see your name' + later);
     };
     g('viq-st-preview').onclick = () =>
       launchFloat({ user: settings.username, color: settings.color, text: 'Preview 预览 😊', style: curStyle() });
@@ -961,8 +995,10 @@
     g('viq-st-font').value = st.font; g('viq-st-size').value = st.size; g('viq-st-color').value = st.color;
     g('viq-st-mode').value = st.mode; g('viq-st-dur').value = String(st.duration);
     g('viq-st-dur').classList.toggle('hidden', st.mode !== 'top' && st.mode !== 'bottom');
-    g('viq-st-anon').textContent = st.anon ? '🙈 Name hidden' : '👤 Name on';
-    g('viq-st-anon').classList.toggle('anon', !!st.anon);
+    const nv = g('viq-st-namevis');
+    nv.value = !st.anon ? 'all' : st.nameTo ? 'one' : 'none';
+    nv.options[2].textContent = st.anon && st.nameTo ? '🔒 Name: only ' + st.nameTo.name : '🔒 Name: only one person…';
+    nv.classList.toggle('anon', !!st.anon);
     document.getElementById('viq-style-bar')?.classList.toggle('editing', !!editStyle);
     updateStyleSample();
   }
@@ -1292,7 +1328,8 @@
       id: Date.now(), user: settings.username, color: settings.color,
       text, time: Math.floor(time), ts: fmtTime(time),
       isSummary: isSummary||false, videoId,
-      style: curStyle()
+      style: styleOnly(curStyle()),
+      nameTo: curStyle().anon ? curStyle().nameTo || null : null
     };
     if (!localNotes[videoId]) localNotes[videoId] = [];
     localNotes[videoId].push(note);
@@ -1308,7 +1345,8 @@
     const note = (localNotes[videoId]||[]).find(n => n.id === id); if (!note) return;
     if (note.user !== settings.username) return;
     editingId = id; summaryMode = false;
-    editStyle = Object.assign({}, DEFAULT_STYLE, { color: note.color || settings.color }, note.style || {});
+    editStyle = Object.assign({}, DEFAULT_STYLE, { color: note.color || settings.color }, note.style || {},
+                              { nameTo: note.nameTo || null });
     setStyleBar();                                  // show this danmu's current style
     const inp  = document.getElementById('viq-quick-input');
     const btn  = document.getElementById('viq-quick-add');
@@ -1328,7 +1366,7 @@
   function commitEdit(text) {
     const note = (localNotes[videoId]||[]).find(n => n.id === editingId); if (!note) return;
     note.text = text;
-    if (editStyle) note.style = Object.assign({}, curStyle());
+    if (editStyle) { const st = curStyle(); note.style = styleOnly(st); note.nameTo = st.anon ? st.nameTo || null : null; }
     rebuildActive(); markChanged(note);
     if (settings.showOnVideo && !note.isSummary) launchFloat(note);   // show how it looks now
   }
@@ -1510,7 +1548,8 @@
     const el = document.createElement('div');
     el.className   = 'viq-float viq-float-' + mode;
     // no name if the viewer turned names off (⚙) or the writer hid theirs on this danmu
-    const hideName = (opts && opts.noName) || settings.showNames === false || !!st.anon;
+    // revealed = the writer hid their name from everyone except ME (the database decided)
+    const hideName = (opts && opts.noName) || settings.showNames === false || (!!st.anon && !entry.revealed);
     el.textContent = (hideName ? '' : '[' + (entry.user||entry.username) + '] ') + entry.text;
     el.style.color      = st.color || entry.color;
     el.style.fontFamily = font.css + ',' + EMOJI_FALLBACK;
@@ -1611,7 +1650,10 @@
         '<div class="viq-item-main">' +
           '<span class="viq-item-time" data-time="'+d.time+'">'+(isSummary?'📋':d.ts)+'</span>' +
           '<span class="viq-item-user" style="color:'+escH(d.color)+'">'+escH(user)+'</span>' +
-          (isOwn && d.style && d.style.anon ? '<span class="viq-hidden-badge" title="Your name is hidden on this danmu">🙈</span>' : '') +
+          (isOwn && d.style && d.style.anon
+            ? (d.nameTo ? '<span class="viq-hidden-badge" title="Only '+escH(d.nameTo.name||'one person')+' can see your name on this danmu">🔒 '+escH(d.nameTo.name||'')+'</span>'
+                        : '<span class="viq-hidden-badge" title="Your name is hidden on this danmu">🙈</span>') : '') +
+          (d.revealed ? '<span class="viq-hidden-badge" title="Only you can see who wrote this">only you</span>' : '') +
           (isSummary?'<span class="viq-summary-tag">Summary</span>':'') +
           offBadge+cloudBadge+eyeBadge+
           '<span class="viq-item-text '+(isOwn?'editable':'')+'" data-id="'+d.id+'">'+escH(d.text)+'</span>' +

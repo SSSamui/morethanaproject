@@ -32,7 +32,7 @@ Under the note box in the panel there is a style bar:
 | Position | ⬅ Scroll right → left · ➡ Scroll left → right · ⬆ Stay on top · ⬇ Stay on bottom |
 | Duration | For top/bottom danmu: how many seconds it stays (2–15s) |
 | 😊 | Emotion emoji picker — inserts at the cursor (also in the minimized bar) |
-| 👤 Name on / 🙈 Name hidden | Whether **your** name shows on your danmu for everyone (others see "🙈 Anonymous") |
+| Name: 👤 everyone / 🙈 nobody / 🔒 only one person | Who can see **your** name on your danmu. Others see "🙈 Anonymous"; the chosen person sees your name with 🔒 (needs `privacy.sql`, see SETUP.md) |
 
 - **▶ Preview** shows a sample danmu on the video with the current style.
 - **Show names on danmu** (⚙) is a viewer choice: turn it off to see only danmu text on your screen.
