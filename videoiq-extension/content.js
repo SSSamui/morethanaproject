@@ -8,7 +8,7 @@
 
   let settings = {
     username: 'Me', color: '#4f9eff',
-    showOwn: true, showOnVideo: true,
+    showOwn: true, showOnVideo: true, showNames: true,
     panelX: null, panelY: null, minimized: false,
     defaultPublic: true,
     // Danmu style — remembered until the user changes it again
@@ -843,6 +843,9 @@
           <div class="viq-setting-row">
             <label><input type="checkbox" id="viq-toggle-video" ${settings.showOnVideo?'checked':''}/> Float danmu on video</label>
           </div>
+          <div class="viq-setting-row">
+            <label><input type="checkbox" id="viq-toggle-names" ${settings.showNames!==false?'checked':''}/> Show names on danmu</label>
+          </div>
           <div id="viq-author-colors" class="viq-author-colors"></div>
           <button class="viq-btn-save" id="viq-save-settings">Save</button>
         </div>
@@ -1466,7 +1469,8 @@
 
     const el = document.createElement('div');
     el.className   = 'viq-float viq-float-' + mode;
-    el.textContent = (opts && opts.noName ? '' : '[' + (entry.user||entry.username) + '] ') + entry.text;
+    const hideName = (opts && opts.noName) || settings.showNames === false;   // viewer's choice in ⚙
+    el.textContent = (hideName ? '' : '[' + (entry.user||entry.username) + '] ') + entry.text;
     el.style.color      = st.color || entry.color;
     el.style.fontFamily = font.css + ',' + EMOJI_FALLBACK;
     el.style.fontSize   = px + 'px';
@@ -1657,6 +1661,7 @@
     settings.color       = newColor;
     settings.showOwn     = document.getElementById('viq-toggle-own').checked;
     settings.showOnVideo = document.getElementById('viq-toggle-video').checked;
+    settings.showNames   = document.getElementById('viq-toggle-names').checked;
     save(); rebuildActive(); updateStyleSample();
     const stc = document.getElementById('viq-st-color'); if (stc) stc.value = curStyle().color;
     document.getElementById('viq-settings-panel').classList.add('hidden');
