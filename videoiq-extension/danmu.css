@@ -661,3 +661,4 @@
   display: flex; align-items: center; gap: 6px; padding: 7px 12px;
   border-top: 1px solid #2a3048; color: #8892aa; font-size: 11px; cursor: pointer;
 }
+#viq-st-anon.anon { color: #fbbf24; border-color: #fbbf24; }

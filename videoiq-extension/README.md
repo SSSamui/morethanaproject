@@ -32,8 +32,11 @@ Under the note box in the panel there is a style bar:
 | Position | ⬅ Scroll right → left · ➡ Scroll left → right · ⬆ Stay on top · ⬇ Stay on bottom |
 | Duration | For top/bottom danmu: how many seconds it stays (2–15s) |
 | 😊 | Emotion emoji picker — inserts at the cursor (also in the minimized bar) |
+| 👤 Name on / 🙈 Name hidden | Whether **your** name shows on your danmu for everyone (others see "🙈 Anonymous") |
 
 - **▶ Preview** shows a sample danmu on the video with the current style.
+- **Show names on danmu** (⚙) is a viewer choice: turn it off to see only danmu text on your screen.
+  On the website it's the 🏷️ button on the video.
 - Your style is **saved automatically** and used for every new danmu until you change it again (it survives page reloads and new videos).
 - Each note remembers the style it was written with; public posts carry their style too.
 
