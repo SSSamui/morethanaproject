@@ -128,6 +128,18 @@ anyone can do. **Never** put the `service_role` / secret key in the extension.
 
 Reload the extension at `chrome://extensions`. The panel header now shows **👤 Sign in**.
 
+## Update: private names (run once)
+Needed for **"🔒 Name: only one person"**. It also makes **"🙈 Name: nobody"** truly private:
+after this, the database itself hides who wrote a hidden-name danmu, from everyone except
+the writer and the chosen person.
+
+Supabase → **SQL Editor** → **New query** → open **`privacy.sql`** (in this folder), copy **all of it**,
+paste → **Run**. It should say *Success. No rows returned*. It's safe to run again.
+(New installs: `setup.sql` already includes it.)
+
+Until it's run, everything else keeps working; only "only one person" is unavailable,
+and hidden names are hidden on screen only.
+
 ## Where to see the data
 Supabase → **Table Editor** → `danmu` (all danmu from everyone) and `profiles`
 (all users). **Authentication → Users** lists the accounts.

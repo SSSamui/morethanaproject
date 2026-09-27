@@ -30,11 +30,24 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '6';
-  // anon: the WRITER hides their name on this danmu for everyone
-  const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false };
+  const APP_VERSION = '7';
+  // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
+  const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null };
   const ANON = { name: '🙈 Anonymous', color: '#9ca3af' };
-  const isAnon = r => !!(r.style && r.style.anon);
+  const isMine = r => { const u = me(); return !!(u && r.user_id === u.id); };
+  // How a danmu's author appears to ME: {name, color, hidden, revealed, note}
+  function author(r) {
+    const base = { name: r.profiles?.display_name || 'Someone', color: r.profiles?.color || '#a78bfa' };
+    if (isMine(r)) {
+      const anon = !!(r.style && r.style.anon), to = (r.name_to || [])[0];
+      return Object.assign(base, { mineAnon: anon,
+        note: anon ? (to ? '🔒 ' + (to.name || '1 person') : '🙈') : '',
+        tip: anon ? (to ? 'Only ' + (to.name || 'one person') + ' can see your name on this danmu' : 'Your name is hidden on this danmu') : '' });
+    }
+    if (r.name_hidden) return { name: ANON.name, color: ANON.color, hidden: true };
+    if (r.name_revealed) return Object.assign(base, { revealed: true, note: '🔒', tip: 'Only you can see who wrote this' });
+    return base;
+  }
   const STYLE_KEY = 'viq_web_style', SEEN_KEY = 'viq_web_feed_seen', DANMU_ON_KEY = 'viq_web_danmu_on', NAMES_KEY = 'viq_web_show_names';
   const POLL_MS = 10000, SCROLL_MS = 7000;
 
@@ -177,12 +190,12 @@
       recent.forEach(r => {
         if (!/^[\w-]{11}$/.test(r.video_id || '')) return;
         const at = Date.parse(r.updated_at) || 0;
-        const who = isAnon(r) ? ANON : { name: r.profiles?.display_name || 'Someone', color: r.profiles?.color || '#a78bfa' };
+        const a = author(r), who = { name: a.name + (a.revealed ? ' 🔒' : ''), color: a.color };
         let v = map.get(r.video_id);
         if (!v) { v = { id: r.video_id, title: '', count: 0, people: new Map(), lastAt: at, latest: { who, text: r.text }, lastOther: 0 }; map.set(r.video_id, v); }
         if (!v.title && r.video_title) v.title = cleanTitle(r.video_title);
         v.count++;
-        const pk = isAnon(r) ? 'anon' : r.user_id;
+        const pk = a.hidden ? 'anon' : r.user_id;
         if (!v.people.has(pk)) v.people.set(pk, who);
         if (!(u && r.user_id === u.id)) v.lastOther = Math.max(v.lastOther, at);
       });
@@ -323,13 +336,14 @@
     const px = Math.round(((SIZES.find(z => z.id === st.size) || SIZES[1]).px) * scale);
     const mode = MODES.some(m => m.id === st.mode) ? st.mode : 'rtl';
     const dur = clamp(Number(st.duration) || 5, 1, 60) * 1000;
-    const name = r.profiles?.display_name || 'Someone';
+    const a = author(r);
     const u = me();
 
     const el = document.createElement('div');
     el.className = 'dm ' + mode + (u && r.user_id === u.id ? ' mine' : '');
-    // name shows only if the viewer wants names AND the writer didn't hide theirs
-    el.textContent = (showNames && !st.anon ? '[' + name + '] ' : '') + r.text;
+    // name shows if the viewer wants names AND the writer didn't hide it from this viewer
+    const showName = showNames && !a.hidden && !a.mineAnon;
+    el.textContent = (showName ? '[' + a.name + (a.revealed ? ' 🔒' : '') + '] ' : '') + r.text;
     el.style.color = st.color || r.profiles?.color || '#ffffff';
     el.style.fontFamily = font.css + ',' + EMOJI_FALLBACK;
     el.style.fontSize = px + 'px';
@@ -407,7 +421,7 @@
     fillSelect($('st-dur'), DURATIONS, s.duration, d => d + 's');
     $('st-color').value = s.color;
     updateStyleUI();
-    updateAnonBtn();
+    updateNameVis();
   }
   function updateStyleUI() {
     const s = curStyle();
@@ -419,24 +433,40 @@
   }
   ['st-font', 'st-size', 'st-mode', 'st-dur', 'st-color'].forEach(id => $(id).addEventListener(id === 'st-color' ? 'input' : 'change', () => {
     const next = { font: $('st-font').value, size: $('st-size').value, color: $('st-color').value,
-                   mode: $('st-mode').value, duration: +$('st-dur').value || 5, anon: !!baseStyle().anon };
+                   mode: $('st-mode').value, duration: +$('st-dur').value || 5,
+                   anon: !!baseStyle().anon, nameTo: baseStyle().nameTo || null };
     if (editing) editStyle = next;               // saved with the danmu when you tap Save
     else { style = next; lsSet(STYLE_KEY, style); }
     updateStyleUI();
   }));
   $('style-btn').onclick = () => $('style-bar').classList.toggle('hidden');
-  $('st-anon').onclick = () => {
-    const anon = !baseStyle().anon;
-    if (editing) { editStyle = Object.assign({}, editStyle, { anon }); updateAnonBtn();
-      toast(anon ? '🙈 This danmu won\'t show your name (tap Save)' : '👤 This danmu will show your name (tap Save)'); return; }
-    style = Object.assign({}, style, { anon });
-    lsSet(STYLE_KEY, style); updateAnonBtn();
-    toast(anon ? '🙈 Your next danmu won\'t show your name' : '👤 Your next danmu will show your name');
+  // Who can see my name: everyone / nobody / only one person
+  $('st-namevis').onchange = async () => {
+    const v = $('st-namevis').value;
+    let patch;
+    if (v === 'all') patch = { anon: false, nameTo: null };
+    else if (v === 'none') patch = { anon: true, nameTo: null };
+    else {
+      try {
+        if (!(await C.privacyReady())) throw new Error('This needs a database update (privacy.sql). Ask the owner to run it');
+        const who = prompt('Show your name only to… (type their display name)', baseStyle().nameTo?.name || '');
+        if (who === null) { updateNameVis(); return; }
+        patch = { anon: true, nameTo: await C.findUser(who) };
+      } catch (e) { toast('❌ ' + e.message, 4000); updateNameVis(); return; }
+    }
+    const later = editing ? ' (tap Save)' : '';
+    if (editing) editStyle = Object.assign({}, editStyle, patch);
+    else { style = Object.assign({}, style, patch); lsSet(STYLE_KEY, style); }
+    updateNameVis();
+    toast(!patch.anon ? '👤 Everyone will see your name' + later
+        : patch.nameTo ? '🔒 Only ' + patch.nameTo.name + ' will see your name' + later
+        : '🙈 Nobody will see your name' + later);
   };
-  function updateAnonBtn() {
-    const a = !!baseStyle().anon, b = $('st-anon');
-    b.textContent = a ? '🙈 Name hidden' : '👤 Name on';
-    b.classList.toggle('anon', a);
+  function updateNameVis() {
+    const s = baseStyle(), sel = $('st-namevis');
+    sel.value = !s.anon ? 'all' : s.nameTo ? 'one' : 'none';
+    sel.options[2].textContent = s.anon && s.nameTo ? '🔒 Name: only ' + s.nameTo.name : '🔒 Name: only one person…';
+    sel.classList.toggle('private', !!s.anon);
   }
   $('app-ver').textContent = APP_VERSION;
 
@@ -478,13 +508,15 @@
       user_id: u.id, client_id: Date.now(), time_sec: Math.floor(nowSec()), text, style: curStyle(), is_summary: false,
       profiles: { display_name: u.name, color: u.color }
     };
+    const nameTo = row.style.anon ? row.style.nameTo : null;
+    row.name_to = nameTo ? [nameTo] : [];
     pending.set(row.client_id, row);
     rows.push(row); rows.sort((a, b) => a.time_sec - b.time_sec);
     inp.value = ''; $('emoji-grid').classList.add('hidden');
     if (danmuOn) launch(row, true);
     renderList();
     try {
-      await C.upsert(videoId, $('video-title').textContent, [{ id: row.client_id, time: row.time_sec, text, style: row.style, isSummary: false }]);
+      await C.upsert(videoId, $('video-title').textContent, [{ id: row.client_id, time: row.time_sec, text, style: row.style, isSummary: false, nameTo }]);
       pending.delete(row.client_id);
       toast('☁ Saved');
     } catch (e) {
@@ -497,7 +529,8 @@
 
   function startEdit(r) {
     editing = r;
-    editStyle = Object.assign({}, DEFAULT_STYLE, { color: r.profiles?.color || null }, r.style || {});
+    editStyle = Object.assign({}, DEFAULT_STYLE, { color: r.profiles?.color || null }, r.style || {},
+                              { nameTo: (r.name_to || [])[0] || null });
     buildStyleBar();                               // show this danmu's current style
     $('style-bar').classList.remove('hidden');
     $('danmu-input').value = r.text; $('danmu-input').focus();
@@ -514,15 +547,15 @@
     if ($('danmu-input')) $('danmu-input').value = '';
   }
   async function saveEdit(text) {
-    const r = editing, old = { text: r.text, style: r.style };
-    const newStyle = curStyle();
-    r.text = text; r.style = newStyle;
+    const r = editing, old = { text: r.text, style: r.style, name_to: r.name_to };
+    const newStyle = curStyle(), nameTo = newStyle.anon ? newStyle.nameTo : null;
+    r.text = text; r.style = newStyle; r.name_to = nameTo ? [nameTo] : [];
     cancelEdit(); renderList();
     if (danmuOn) launch(r, true);                  // show how it looks now
     try {
-      await C.upsert(videoId, $('video-title').textContent, [{ id: r.client_id, time: r.time_sec, text, style: newStyle, isSummary: r.is_summary }]);
+      await C.upsert(videoId, $('video-title').textContent, [{ id: r.client_id, time: r.time_sec, text, style: newStyle, isSummary: r.is_summary, nameTo }]);
       toast('☁ Updated');
-    } catch (e) { r.text = old.text; r.style = old.style; renderList(); toast('❌ Not saved: ' + e.message, 4000); }
+    } catch (e) { r.text = old.text; r.style = old.style; r.name_to = old.name_to; renderList(); toast('❌ Not saved: ' + e.message, 4000); }
   }
   async function del(r) {
     if (!confirm('Delete this danmu?\n\n' + r.text)) return;
@@ -559,16 +592,15 @@
     const mention = u ? new RegExp('@' + escRe(u.name) + '(?![\\w])', 'i') : null;
     list.innerHTML = items.map((r, i) => {
       const mine = u && r.user_id === u.id;
-      const anon = isAnon(r);
-      const name = anon && !mine ? ANON.name : (r.profiles?.display_name || 'Someone') + (anon ? ' 🙈' : '');
-      const nameColor = anon && !mine ? ANON.color : (r.profiles?.color || '#a78bfa');
+      const a = author(r);
       const cls = 'row' + (mention && !mine && mention.test(r.text) ? ' mention' : '');
       return '<div class="' + cls + '" data-i="' + i + '" data-t="' + r.time_sec + '">' +
         '<span class="t">' + fmt(r.time_sec) + '</span>' +
-        '<span class="body"><span class="who" style="color:' + esc(nameColor) + '"' + (anon && mine ? ' title="Your name is hidden on this danmu"' : '') + '>' + esc(name) + '</span>' + esc(r.text) + '</span>' +
+        '<span class="body"><span class="who" style="color:' + esc(a.color) + '"' + (a.tip ? ' title="' + esc(a.tip) + '"' : '') + '>' + esc(a.name) +
+          (a.note ? '<span class="lock">' + esc(a.note) + '</span>' : '') + '</span>' + esc(r.text) + '</span>' +
         '<span class="acts">' + (mine
           ? '<button data-a="edit" title="Edit">✎</button><button data-a="del" title="Delete">✕</button>'
-          : anon ? '' : '<button data-a="reply" title="Reply">↩</button>') + '</span></div>';
+          : a.hidden ? '' : '<button data-a="reply" title="Reply">↩</button>') + '</span></div>';
     }).join('');
     list.querySelectorAll('.row').forEach(el => {
       const r = items[+el.dataset.i];
@@ -652,6 +684,8 @@
 
   C.onChange(u => {
     updatePill(); updateComposer(); renderList(); buildStyleBar();
+    // who may see which names depends on who you are → reload with the new account
+    if (videoId && !$('watch').classList.contains('hidden')) loadDanmu(false); else if (!$('home').classList.contains('hidden')) loadFeed();
     if (u) { closeSheet(); toast('👋 Signed in as ' + u.name); }
   });
 

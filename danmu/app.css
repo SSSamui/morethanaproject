@@ -116,7 +116,8 @@ body.fs .fs-compose:focus-within, body.fs .fs-compose:hover { opacity: 1; }
 .style-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
 .style-bar select { padding: 7px 8px; font-size: 14px; }
 .style-bar input[type=color] { width: 40px; height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; }
-#st-anon.anon { color: var(--gold); border-color: var(--gold); }
+#st-namevis.private { color: var(--gold); border-color: var(--gold); }
+.who .lock { font-size: 12px; margin-left: 3px; }
 .ver { font-size: 12px; opacity: .7; }
 .st-sample { padding: 3px 10px; background: #000; border-radius: 6px; font-weight: 700; white-space: nowrap; max-width: 100%; overflow: hidden; }
 .signin-note { margin-top: 8px; }

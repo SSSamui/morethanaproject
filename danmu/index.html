@@ -10,7 +10,7 @@
   <title>VideoIQ Danmu</title>
   <link rel="icon" href="../videoiq-extension/icons/icon48.png">
   <link rel="apple-touch-icon" href="../videoiq-extension/icons/icon48.png">
-  <link rel="stylesheet" href="app.css?v=6">
+  <link rel="stylesheet" href="app.css?v=7">
 </head>
 <body>
   <header class="top">
@@ -85,7 +85,11 @@
         <input  id="st-color" type="color" title="Color">
         <select id="st-mode" title="Position"></select>
         <select id="st-dur" title="Seconds on screen"></select>
-        <button type="button" class="ghost small" id="st-anon" title="Show my name on my danmu for everyone">👤 Name on</button>
+        <select id="st-namevis" title="Who can see your name on this danmu">
+          <option value="all">👤 Name: everyone</option>
+          <option value="none">🙈 Name: nobody</option>
+          <option value="one">🔒 Name: only one person…</option>
+        </select>
         <span class="st-sample" id="st-sample">Aa 弹幕 😊</span>
       </div>
       <div class="signin-note hidden" id="signin-note">
@@ -116,8 +120,8 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script src="../videoiq-extension/config.js?v=6"></script>
-  <script src="../videoiq-extension/cloud.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="../videoiq-extension/config.js?v=7"></script>
+  <script src="../videoiq-extension/cloud.js?v=7"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

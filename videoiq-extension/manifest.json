@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "VideoIQ Danmu",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "Danmu on YouTube with styles and emoji. Sign in to save everything online and see everyone's danmu.",
   "permissions": [
     "storage",
