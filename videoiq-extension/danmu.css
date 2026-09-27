@@ -602,3 +602,62 @@
 }
 .viq-reply:hover { opacity: 1; color: #4f9eff; }
 .viq-list-item.mentions-me { background: rgba(251,191,36,.08); box-shadow: inset 3px 0 0 #fbbf24; }
+
+/* ── NEW DANMU FEED ───────────────────────────────────────────────────────── */
+#viq-feed-btn {
+  position: fixed; bottom: 80px; right: 24px; z-index: 2147483645;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #1e2436; border: 2px solid #f97316; color: #fff;
+  font-size: 20px; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+#viq-feed-btn:hover { background: #2a3048; }
+.viq-feed-badge {
+  position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px;
+  padding: 0 4px; border-radius: 9px; background: #ef4444; color: #fff;
+  font: 700 11px/18px 'Segoe UI', sans-serif; text-align: center;
+}
+.viq-feed-badge.hidden { display: none; }
+
+#viq-feed {
+  position: fixed; top: 64px; right: 16px; z-index: 2147483646;
+  width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 170px);
+  display: none; flex-direction: column;
+  background: #161a24; border: 1px solid #3a4560; border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.55); font-family: 'Segoe UI', sans-serif; overflow: hidden;
+}
+#viq-feed.open { display: flex; }
+.viq-feed-head {
+  display: flex; align-items: center; gap: 6px; padding: 10px 12px;
+  background: #1e2436; border-bottom: 1px solid #2a3048;
+}
+.viq-feed-title { flex: 1; color: #e8eaf0; font-size: 14px; font-weight: 700; }
+.viq-feed-list  { overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.viq-feed-empty { color: #8892aa; font-size: 12px; padding: 18px 10px; text-align: center; }
+.viq-feed-item {
+  display: flex; gap: 10px; padding: 6px; border-radius: 8px;
+  text-decoration: none; color: inherit; transition: background .15s;
+}
+.viq-feed-item:hover   { background: #232a3d; }
+.viq-feed-item.current { box-shadow: inset 3px 0 0 #4f9eff; }
+.viq-feed-thumb {
+  position: relative; flex-shrink: 0; width: 120px; height: 68px;
+  border-radius: 6px; overflow: hidden; background: #0d0f14;
+}
+.viq-feed-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.viq-feed-new {
+  position: absolute; top: 4px; left: 4px; padding: 1px 5px; border-radius: 4px;
+  background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .04em;
+}
+.viq-feed-info { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.viq-feed-vtitle {
+  color: #e8eaf0; font-size: 12.5px; font-weight: 600; line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.viq-feed-meta, .viq-feed-last {
+  color: #8892aa; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.viq-feed-last { color: #b8c0d4; }
+.viq-feed-foot {
+  display: flex; align-items: center; gap: 6px; padding: 7px 12px;
+  border-top: 1px solid #2a3048; color: #8892aa; font-size: 11px; cursor: pointer;
+}

@@ -37,6 +37,15 @@ Under the note box in the panel there is a style bar:
 - Your style is **saved automatically** and used for every new danmu until you change it again (it survives page reloads and new videos).
 - Each note remembers the style it was written with; public posts carry their style too.
 
+### 🔥 New danmu feed
+When you open YouTube (home, search, any page that isn't a video), a **🔥 New danmu** list opens with the
+videos that most recently got danmu from anyone: thumbnail, title, how many danmu, who wrote them,
+the newest one and how long ago. **NEW** marks videos with activity from others since you last looked.
+Click a video to open it.
+- The **🔥** button (bottom right) opens and closes the list on any page. Its red number counts NEW videos.
+- Untick **Show when I open YouTube** to stop it opening automatically.
+- It works signed in or out, and refreshes every minute.
+
 ### Viewing & Comparing
 - The side panel lists all notes sorted by timestamp
 - **Click any note** → video jumps to that moment

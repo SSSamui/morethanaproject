@@ -102,7 +102,7 @@
         if (user) adoptAccount(user);
         VIQ_CLOUD.onChange(onAccountChange);
       }
-      waitForVideo();
+      startRouting();
     });
   }
 
@@ -132,14 +132,17 @@
   }
 
   // ── WAIT FOR VIDEO ───────────────────────────────────────────────────────────
+  let waiting = false;
   function waitForVideo() {
+    if (waiting) return;
+    waiting = true;
     let n = 0;
     const t = setInterval(() => {
       n++;
       videoEl = document.querySelector('video');
       const id = getVideoId();
       if (videoEl && id) {
-        clearInterval(t);
+        clearInterval(t); waiting = false;
         videoId = id;
         rebuildActive();
         if (!sidePanel) buildUI();
@@ -148,8 +151,43 @@
         loadRemote();
         startPolling();
       }
-      if (n > 50) clearInterval(t);
+      if (n > 50) { clearInterval(t); waiting = false; }
     }, 600);
+  }
+
+  // ── ROUTING ──────────────────────────────────────────────────────────────────
+  // YouTube is a single-page app: the script loads once on any youtube.com page,
+  // then pages change without reloading. Video pages get the danmu panel;
+  // every other page (home, search, channels…) gets the "New danmu" feed.
+  let lastRoute = null, panelHiddenByUser = false, feedShownThisLoad = false;
+
+  function startRouting() {
+    buildFeedButton();
+    onRoute();
+    document.addEventListener('yt-navigate-finish', onRoute);
+    setInterval(() => { if (location.href !== lastRoute) onRoute(); }, 1000);
+    setInterval(() => { if (document.visibilityState === 'visible') refreshFeed(true); }, FEED_POLL_MS);
+  }
+
+  function onRoute() {
+    lastRoute = location.href;
+    const onVideo = !!getVideoId();
+    if (onVideo) {
+      if (!sidePanel) waitForVideo();
+      setWatchUIVisible(true);
+    } else {
+      setWatchUIVisible(false);
+      // Opening YouTube → show the newest danmu'd videos once per page load
+      if (!feedShownThisLoad && settings.feedAutoOpen !== false && cloudOn()) { feedShownThisLoad = true; openFeed(); }
+    }
+    refreshFeed(true);
+  }
+
+  function setWatchUIVisible(on) {
+    const tb = document.getElementById('viq-toggle-btn');
+    if (tb) tb.style.display = on ? '' : 'none';
+    if (sidePanel) sidePanel.style.display = on && !panelHiddenByUser ? 'flex' : 'none';
+    if (danmuContainer) danmuContainer.style.display = on ? '' : 'none';
   }
 
   function setCloudBar(state, html) {
@@ -277,7 +315,7 @@
         const todo = (localNotes[vid] || []).filter(n => n.user === me && (n._dirty || !n._synced));
         if (!todo.length) continue;
         const revs = todo.map(n => n._rev || 0), stamp = Date.now();
-        await VIQ_CLOUD.upsert(vid, vid === videoId ? document.title.replace(' - YouTube','').trim() : '', todo);
+        await VIQ_CLOUD.upsert(vid, vid === videoId ? pageTitle() : '', todo);
         todo.forEach((n, i) => {
           n._synced = true; n._syncedAt = stamp;
           if ((n._rev || 0) === revs[i]) n._dirty = false;   // edited again during upload → stays dirty
@@ -303,6 +341,136 @@
     }
     chrome.storage.local.set({ [DEL_KEY]: pendingDeletes });
   }
+
+  // ── NEW DANMU FEED ───────────────────────────────────────────────────────────
+  // Videos that recently got danmu from anyone, newest first. "NEW" = activity by
+  // someone else since you last opened the feed.
+  const FEED_SEEN_KEY = 'videoiq_feed_seen';
+  const FEED_POLL_MS  = 60000;
+  let feedVideos = [], feedSeen = 0, feedLoading = false, feedError = '';
+
+  function buildFeedButton() {
+    if (!cloudOn() || document.getElementById('viq-feed-btn')) return;
+    chrome.storage.local.get([FEED_SEEN_KEY], r => { feedSeen = r[FEED_SEEN_KEY] || 0; updateFeedBadge(); });
+    const btn = document.createElement('button');
+    btn.id = 'viq-feed-btn'; btn.title = 'New danmu on YouTube';
+    btn.innerHTML = '🔥<span class="viq-feed-badge hidden" id="viq-feed-badge"></span>';
+    btn.onclick = () => document.getElementById('viq-feed')?.classList.contains('open') ? closeFeed() : openFeed();
+    document.body.appendChild(btn);
+
+    const feed = document.createElement('div');
+    feed.id = 'viq-feed';
+    feed.innerHTML = `
+      <div class="viq-feed-head">
+        <span class="viq-feed-title">🔥 New danmu</span>
+        <button class="viq-icon-btn" id="viq-feed-refresh" title="Refresh">⟳</button>
+        <button class="viq-icon-btn" id="viq-feed-close" title="Close">✕</button>
+      </div>
+      <div class="viq-feed-list" id="viq-feed-list"></div>
+      <label class="viq-feed-foot"><input type="checkbox" id="viq-feed-auto" ${settings.feedAutoOpen !== false ? 'checked' : ''}/> Show when I open YouTube</label>`;
+    document.body.appendChild(feed);
+    document.getElementById('viq-feed-close').onclick = closeFeed;
+    document.getElementById('viq-feed-refresh').onclick = () => refreshFeed(false);
+    document.getElementById('viq-feed-auto').onchange = e => { settings.feedAutoOpen = e.target.checked; save(); };
+  }
+
+  function openFeed() {
+    const feed = document.getElementById('viq-feed'); if (!feed) return;
+    feed.classList.add('open');
+    renderFeed();
+    refreshFeed(false).then(markFeedSeen);
+  }
+  function closeFeed() {
+    document.getElementById('viq-feed')?.classList.remove('open');
+    markFeedSeen();
+  }
+  function markFeedSeen() {
+    // remember what you've seen; badges in the open list stay until it's reopened
+    const newest = feedVideos.reduce((m, v) => Math.max(m, v.lastAt), 0);
+    if (newest > feedSeen) { feedSeen = newest; chrome.storage.local.set({ [FEED_SEEN_KEY]: feedSeen }); }
+    updateFeedBadge();
+  }
+
+  async function refreshFeed(silent) {
+    if (!cloudOn() || feedLoading) return;
+    const open = document.getElementById('viq-feed')?.classList.contains('open');
+    if (silent && !open && feedVideos.length && Date.now() - (refreshFeed.at || 0) < FEED_POLL_MS - 1000) return;
+    feedLoading = true; refreshFeed.at = Date.now();
+    if (!silent && open) renderFeed(true);
+    try {
+      feedVideos = groupFeed((await VIQ_CLOUD.getRecent(400)) || []);
+      feedError = '';
+    } catch (e) { feedError = e.message; }
+    feedLoading = false;
+    if (document.getElementById('viq-feed')?.classList.contains('open')) renderFeed();
+    updateFeedBadge();
+  }
+
+  function groupFeed(rows) {
+    const me = VIQ_CLOUD.getUser();
+    const map = new Map();
+    rows.forEach(r => {
+      if (!/^[\w-]{6,20}$/.test(r.video_id || '')) return;
+      let v = map.get(r.video_id);
+      const at = Date.parse(r.updated_at) || 0;
+      const who = { name: r.profiles?.display_name || 'Someone', color: r.profiles?.color || '#a78bfa' };
+      if (!v) {
+        v = { id: r.video_id, title: '', count: 0, people: new Map(), lastAt: at, latest: { who, text: r.text },
+              lastOther: 0 };
+        map.set(r.video_id, v);
+      }
+      if (!v.title && r.video_title) v.title = cleanTitle(r.video_title);
+      v.count++;
+      if (!v.people.has(r.user_id)) v.people.set(r.user_id, who);
+      if (!(me && r.user_id === me.id)) v.lastOther = Math.max(v.lastOther, at);
+    });
+    return [...map.values()].slice(0, 30);
+  }
+
+  function isNewVideo(v) { return v.lastOther > feedSeen; }
+
+  function updateFeedBadge() {
+    const b = document.getElementById('viq-feed-badge'); if (!b) return;
+    const n = feedVideos.filter(isNewVideo).length;
+    b.textContent = n > 9 ? '9+' : String(n);
+    b.classList.toggle('hidden', !n);
+  }
+
+  function renderFeed(loading) {
+    const list = document.getElementById('viq-feed-list'); if (!list) return;
+    if (loading && !feedVideos.length) { list.innerHTML = '<div class="viq-feed-empty">Loading…</div>'; return; }
+    if (feedError && !feedVideos.length) { list.innerHTML = '<div class="viq-feed-empty">⚠ ' + escH(feedError) + '</div>'; return; }
+    if (!feedVideos.length) { list.innerHTML = '<div class="viq-feed-empty">No danmu yet. Open a video and write the first one!</div>'; return; }
+    list.innerHTML = feedVideos.map(v => {
+      const people = [...v.people.values()];
+      const names  = people.slice(0, 3).map(p => '<span style="color:' + escH(p.color) + '">' + escH(p.name) + '</span>').join(', ') +
+                     (people.length > 3 ? ' +' + (people.length - 3) : '');
+      return (
+        '<a class="viq-feed-item' + (v.id === videoId && getVideoId() ? ' current' : '') + '" href="/watch?v=' + v.id + '" data-id="' + v.id + '">' +
+          '<span class="viq-feed-thumb"><img src="https://i.ytimg.com/vi/' + v.id + '/mqdefault.jpg" alt="" loading="lazy"/>' +
+            (isNewVideo(v) ? '<span class="viq-feed-new">NEW</span>' : '') + '</span>' +
+          '<span class="viq-feed-info">' +
+            '<span class="viq-feed-vtitle">' + escH(v.title || 'YouTube video') + '</span>' +
+            '<span class="viq-feed-meta">💬 ' + v.count + ' · ' + names + ' · ' + timeAgo(v.lastAt) + '</span>' +
+            '<span class="viq-feed-last"><b style="color:' + escH(v.latest.who.color) + '">' + escH(v.latest.who.name) + ':</b> ' + escH(v.latest.text) + '</span>' +
+          '</span>' +
+        '</a>'
+      );
+    }).join('');
+  }
+
+  function timeAgo(ms) {
+    const s = Math.max(0, (Date.now() - ms) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + 'm ago';
+    if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+    if (s < 86400 * 30) return Math.floor(s / 86400) + 'd ago';
+    return new Date(ms).toLocaleDateString();
+  }
+
+  // "(3) Some title - YouTube" → "Some title"
+  function cleanTitle(t) { return String(t || '').replace(/ - YouTube$/, '').replace(/^\(\d+\)\s*/, '').trim(); }
+  function pageTitle()   { return cleanTitle(document.title); }
 
   // ── ACCOUNT ──────────────────────────────────────────────────────────────────
   // Signed-in account = your danmu name + color. Notes written under the old name
@@ -978,6 +1146,7 @@
     btn.onclick = () => {
       const v = sidePanel.style.display !== 'none';
       sidePanel.style.display = v ? 'none' : 'flex';
+      panelHiddenByUser = v;
       btn.textContent = v ? '📝' : '✕';
     };
     document.body.appendChild(btn);
@@ -1055,7 +1224,7 @@
     if (!localNotes[videoId]) localNotes[videoId] = [];
     localNotes[videoId].push(note);
     save();
-    saveVideoTitle(document.title.replace(' - YouTube','').trim());
+    saveVideoTitle(pageTitle());
     rebuildActive();
     if (settings.showOnVideo && !isSummary) launchFloat(note);
     refreshSideList();
@@ -1302,7 +1471,7 @@
   }
 
   function checkTime(t) {
-    if (!settings.showOnVideo) return;
+    if (!settings.showOnVideo || !getVideoId()) return;   // e.g. hover previews on the home page
     activeDanmu.filter(d => {
       if (d.time!==t || d.isSummary||d.is_summary) return false;
       const user = d.user||d.username;

@@ -203,6 +203,12 @@ window.VIQ_CLOUD = (() => {
       '&order=time_sec.asc&limit=10000');
   }
 
+  // Most recent danmu from everyone, across all videos (for the "New danmu" feed)
+  function getRecent(limit) {
+    return call('/rest/v1/danmu?select=video_id,video_title,text,updated_at,user_id,profiles(display_name,color)' +
+      '&order=updated_at.desc&limit=' + (limit || 300));
+  }
+
   // Create or update our own danmu (idempotent on user_id + client_id)
   function upsert(videoId, videoTitle, notes) {
     if (!notes.length) return Promise.resolve();
@@ -230,5 +236,5 @@ window.VIQ_CLOUD = (() => {
 
   return { isConfigured, init, isSignedIn, getUser, onChange,
            signUp, signIn, signOut, updateProfile, verifyEmailCode, resendCode,
-           getVideo, upsert, remove };
+           getVideo, getRecent, upsert, remove };
 })();
