@@ -53,8 +53,11 @@
   const ANON_NAME = '🙈 Anonymous', ANON_COLOR = '#9ca3af';
 
   // Current style for new danmu (color falls back to the user's color)
+  // While editing a danmu, the style bar edits THAT danmu's style (editStyle); otherwise
+  // it's your default for new danmu (settings.danmuStyle)
+  let editStyle = null;
   function curStyle() {
-    const st = Object.assign({}, DEFAULT_STYLE, settings.danmuStyle || {});
+    const st = Object.assign({}, DEFAULT_STYLE, editStyle || settings.danmuStyle || {});
     if (!st.color) st.color = settings.color;
     return st;
   }
@@ -678,6 +681,7 @@
         remoteList = []; visibleUsers = null; userOffsets = {};
         activeDanmu = [];
         editingId = null; pausedForNote = false; summaryMode = false;
+        if (editStyle) { editStyle = null; setStyleBar(); }
         const onReady = () => {
           rebuildActive(); clearDanmuOverlay();
           refreshSideList(); buildUserSelector();
@@ -922,30 +926,44 @@
     const g = id => document.getElementById(id);
     const onChange = () => {
       const mode = g('viq-st-mode').value;
-      settings.danmuStyle = {
+      const next = {
         font:     g('viq-st-font').value,
         size:     g('viq-st-size').value,
         color:    g('viq-st-color').value,
         mode,
         duration: parseInt(g('viq-st-dur').value, 10) || DEFAULT_STYLE.duration,
-        anon:     !!(settings.danmuStyle && settings.danmuStyle.anon)
+        anon:     !!curStyle().anon
       };
       g('viq-st-dur').classList.toggle('hidden', mode !== 'top' && mode !== 'bottom');
-      save();   // persisted — stays until the next change
+      if (editStyle) editStyle = next;               // saved with the danmu you're editing
+      else { settings.danmuStyle = next; save(); }   // default — stays until the next change
       updateStyleSample();
     };
     ['viq-st-font','viq-st-size','viq-st-mode','viq-st-dur'].forEach(id => g(id).onchange = onChange);
     g('viq-st-color').oninput = onChange;
     g('viq-st-anon').onclick = () => {
-      const anon = !(settings.danmuStyle && settings.danmuStyle.anon);
-      settings.danmuStyle = Object.assign({}, curStyle(), { anon });
-      save();
-      g('viq-st-anon').textContent = anon ? '🙈 Name hidden' : '👤 Name on';
-      g('viq-st-anon').classList.toggle('anon', anon);
-      flashHint(anon ? '🙈 Your next danmu won\'t show your name to others' : '👤 Your next danmu will show your name');
+      const anon = !curStyle().anon;
+      if (editStyle) editStyle = Object.assign({}, editStyle, { anon });
+      else { settings.danmuStyle = Object.assign({}, curStyle(), { anon }); save(); }
+      setStyleBar();
+      flashHint(editStyle ? (anon ? '🙈 This danmu won\'t show your name (Save to apply)' : '👤 This danmu will show your name (Save to apply)')
+                          : (anon ? '🙈 Your next danmu won\'t show your name to others' : '👤 Your next danmu will show your name'));
     };
     g('viq-st-preview').onclick = () =>
       launchFloat({ user: settings.username, color: settings.color, text: 'Preview 预览 😊', style: curStyle() });
+    updateStyleSample();
+  }
+
+  // Put curStyle() into the style bar controls (default style, or the danmu being edited)
+  function setStyleBar() {
+    const g = id => document.getElementById(id), st = curStyle();
+    if (!g('viq-st-font')) return;
+    g('viq-st-font').value = st.font; g('viq-st-size').value = st.size; g('viq-st-color').value = st.color;
+    g('viq-st-mode').value = st.mode; g('viq-st-dur').value = String(st.duration);
+    g('viq-st-dur').classList.toggle('hidden', st.mode !== 'top' && st.mode !== 'bottom');
+    g('viq-st-anon').textContent = st.anon ? '🙈 Name hidden' : '👤 Name on';
+    g('viq-st-anon').classList.toggle('anon', !!st.anon);
+    document.getElementById('viq-style-bar')?.classList.toggle('editing', !!editStyle);
     updateStyleSample();
   }
 
@@ -1290,6 +1308,8 @@
     const note = (localNotes[videoId]||[]).find(n => n.id === id); if (!note) return;
     if (note.user !== settings.username) return;
     editingId = id; summaryMode = false;
+    editStyle = Object.assign({}, DEFAULT_STYLE, { color: note.color || settings.color }, note.style || {});
+    setStyleBar();                                  // show this danmu's current style
     const inp  = document.getElementById('viq-quick-input');
     const btn  = document.getElementById('viq-quick-add');
     const cBtn = document.getElementById('viq-cancel-edit');
@@ -1299,7 +1319,7 @@
     if (btn)  btn.textContent = 'Save';
     if (cBtn) cBtn.classList.remove('hidden');
     if (lbl)  lbl.textContent  = '✏️ Editing note';
-    if (hint) hint.textContent = 'Editing @ ' + note.ts + ' — Enter to save, Esc to cancel';
+    if (hint) hint.textContent = 'Editing @ ' + note.ts + ': change text and/or style, Enter to save, Esc to cancel';
     if (settings.minimized) setMinimized(false);
     inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
     refreshSideList();
@@ -1307,11 +1327,15 @@
 
   function commitEdit(text) {
     const note = (localNotes[videoId]||[]).find(n => n.id === editingId); if (!note) return;
-    note.text = text; rebuildActive(); markChanged(note);
+    note.text = text;
+    if (editStyle) note.style = Object.assign({}, curStyle());
+    rebuildActive(); markChanged(note);
+    if (settings.showOnVideo && !note.isSummary) launchFloat(note);   // show how it looks now
   }
 
   function cancelEdit() {
     editingId = null; summaryMode = false;
+    if (editStyle) { editStyle = null; setStyleBar(); }   // back to your default style
     const el = id => document.getElementById(id);
     if (el('viq-quick-input')) { el('viq-quick-input').value = ''; el('viq-quick-input').placeholder = 'Type here… Enter to send, Shift+Enter for new line'; }
     if (el('viq-quick-add'))   el('viq-quick-add').textContent = 'Send';

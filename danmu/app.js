@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '5';
+  const APP_VERSION = '6';
   // anon: the WRITER hides their name on this danmu for everyone
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false };
   const ANON = { name: '🙈 Anonymous', color: '#9ca3af' };
@@ -284,7 +284,7 @@
   function tick() {
     if (!playerReady) return;
     const t = Math.floor(nowSec());
-    $('time-hint').textContent = editing ? '✏️ Editing your danmu at ' + fmt(editing.time_sec) : '⏱ Will be added at ' + fmt(t);
+    $('time-hint').textContent = editing ? '✏️ Editing your danmu at ' + fmt(editing.time_sec) + ': change text and/or 🎨 style' : '⏱ Will be added at ' + fmt(t);
     if (t === lastSec) return;
     const jumped = lastSec >= 0 && Math.abs(t - lastSec) > 2;
     lastSec = t;
@@ -391,7 +391,11 @@
 
   // ── Style (remembered on this device) ──────────────────────────────────────
   let style = Object.assign({}, DEFAULT_STYLE, lsGet(STYLE_KEY, {}));
-  const curStyle = () => Object.assign({}, style, { color: style.color || me()?.color || '#4f9eff' });
+  // While editing a danmu, the style bar shows and changes THAT danmu's style (editStyle);
+  // otherwise it's your default for new danmu (style, remembered on this device).
+  let editStyle = null;
+  const baseStyle = () => editing && editStyle ? editStyle : style;
+  const curStyle = () => { const b = baseStyle(); return Object.assign({}, b, { color: b.color || me()?.color || '#4f9eff' }); };
   function fillSelect(sel, list, cur, label) {
     sel.innerHTML = list.map(o => '<option value="' + esc(o.id ?? o) + '"' + (String(o.id ?? o) === String(cur) ? ' selected' : '') + '>' + esc(label(o)) + '</option>').join('');
   }
@@ -414,19 +418,23 @@
     smp.style.fontSize = Math.min((SIZES.find(z => z.id === s.size) || SIZES[1]).px, 24) + 'px';
   }
   ['st-font', 'st-size', 'st-mode', 'st-dur', 'st-color'].forEach(id => $(id).addEventListener(id === 'st-color' ? 'input' : 'change', () => {
-    style = { font: $('st-font').value, size: $('st-size').value, color: $('st-color').value,
-              mode: $('st-mode').value, duration: +$('st-dur').value || 5, anon: !!style.anon };
-    lsSet(STYLE_KEY, style);
+    const next = { font: $('st-font').value, size: $('st-size').value, color: $('st-color').value,
+                   mode: $('st-mode').value, duration: +$('st-dur').value || 5, anon: !!baseStyle().anon };
+    if (editing) editStyle = next;               // saved with the danmu when you tap Save
+    else { style = next; lsSet(STYLE_KEY, style); }
     updateStyleUI();
   }));
   $('style-btn').onclick = () => $('style-bar').classList.toggle('hidden');
   $('st-anon').onclick = () => {
-    style = Object.assign({}, style, { anon: !style.anon });
+    const anon = !baseStyle().anon;
+    if (editing) { editStyle = Object.assign({}, editStyle, { anon }); updateAnonBtn();
+      toast(anon ? '🙈 This danmu won\'t show your name (tap Save)' : '👤 This danmu will show your name (tap Save)'); return; }
+    style = Object.assign({}, style, { anon });
     lsSet(STYLE_KEY, style); updateAnonBtn();
-    toast(style.anon ? '🙈 Your next danmu won\'t show your name' : '👤 Your next danmu will show your name');
+    toast(anon ? '🙈 Your next danmu won\'t show your name' : '👤 Your next danmu will show your name');
   };
   function updateAnonBtn() {
-    const a = !!style.anon, b = $('st-anon');
+    const a = !!baseStyle().anon, b = $('st-anon');
     b.textContent = a ? '🙈 Name hidden' : '👤 Name on';
     b.classList.toggle('anon', a);
   }
@@ -489,24 +497,32 @@
 
   function startEdit(r) {
     editing = r;
+    editStyle = Object.assign({}, DEFAULT_STYLE, { color: r.profiles?.color || null }, r.style || {});
+    buildStyleBar();                               // show this danmu's current style
+    $('style-bar').classList.remove('hidden');
     $('danmu-input').value = r.text; $('danmu-input').focus();
     $('send-btn').textContent = 'Save'; $('cancel-edit').hidden = false;
     $('compose').classList.add('editing');
     $('compose').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   function cancelEdit() {
-    editing = null;
+    const wasEditing = !!editing;
+    editing = null; editStyle = null;
+    if (wasEditing) buildStyleBar();               // back to your default style
     $('send-btn').textContent = 'Send'; $('cancel-edit').hidden = true;
     $('compose').classList.remove('editing');
     if ($('danmu-input')) $('danmu-input').value = '';
   }
   async function saveEdit(text) {
-    const r = editing, old = r.text;
-    r.text = text; cancelEdit(); renderList();
+    const r = editing, old = { text: r.text, style: r.style };
+    const newStyle = curStyle();
+    r.text = text; r.style = newStyle;
+    cancelEdit(); renderList();
+    if (danmuOn) launch(r, true);                  // show how it looks now
     try {
-      await C.upsert(videoId, $('video-title').textContent, [{ id: r.client_id, time: r.time_sec, text, style: r.style, isSummary: r.is_summary }]);
+      await C.upsert(videoId, $('video-title').textContent, [{ id: r.client_id, time: r.time_sec, text, style: newStyle, isSummary: r.is_summary }]);
       toast('☁ Updated');
-    } catch (e) { r.text = old; renderList(); toast('❌ Not saved: ' + e.message, 4000); }
+    } catch (e) { r.text = old.text; r.style = old.style; renderList(); toast('❌ Not saved: ' + e.message, 4000); }
   }
   async function del(r) {
     if (!confirm('Delete this danmu?\n\n' + r.text)) return;
