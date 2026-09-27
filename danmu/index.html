@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0f14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VideoIQ">
+  <title>VideoIQ Danmu</title>
+  <link rel="icon" href="../videoiq-extension/icons/icon48.png">
+  <link rel="apple-touch-icon" href="../videoiq-extension/icons/icon48.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="./" id="home-link">📝 VideoIQ <span>Danmu</span></a>
+    <button class="pill" id="account-pill">👤 Sign in</button>
+  </header>
+
+  <!-- HOME: paste a link + newest danmu'd videos -->
+  <main id="home" class="view">
+    <form class="open-box" id="open-form">
+      <input id="link-input" type="url" inputmode="url" autocomplete="off"
+             placeholder="Paste a YouTube link…" aria-label="YouTube link">
+      <button type="button" class="ghost" id="paste-btn" title="Paste from clipboard">📋</button>
+      <button type="submit" class="primary">Open</button>
+    </form>
+    <div class="msg" id="open-msg"></div>
+
+    <details class="help">
+      <summary>📱 Open videos straight from the YouTube app</summary>
+      <ol>
+        <li>Open the <b>Shortcuts</b> app → <b>+</b> (new shortcut).</li>
+        <li>Tap the <b>ⓘ</b> (or shortcut name) → turn on <b>Show in Share Sheet</b>, set it to receive <b>URLs</b> and <b>Text</b>.</li>
+        <li>Add the action <b>URL</b> and type: <code id="shortcut-url"></code> then insert <b>Shortcut Input</b> right after <code>=</code>.</li>
+        <li>Add the action <b>Open URLs</b>. Name the shortcut <b>VideoIQ</b>.</li>
+        <li>In the YouTube app: <b>Share</b> → <b>More</b> → <b>VideoIQ</b>. The video opens here with danmu.</li>
+      </ol>
+      <p>Tip: in Safari tap <b>Share → Add to Home Screen</b> to use this page like an app.</p>
+    </details>
+
+    <section class="feed">
+      <div class="feed-head"><h2>🔥 New danmu</h2><button class="ghost small" id="feed-refresh">⟳</button></div>
+      <div id="feed-list" class="feed-list"><div class="empty">Loading…</div></div>
+    </section>
+  </main>
+
+  <!-- WATCH: player + danmu -->
+  <main id="watch" class="view hidden">
+    <div class="stage" id="stage">
+      <div id="yt-player"></div>
+      <div id="overlay" class="overlay"></div>
+      <div class="stage-btns">
+        <button id="danmu-toggle" title="Danmu on/off">弹</button>
+        <button id="fs-btn" title="Full screen">⛶</button>
+      </div>
+      <div class="fs-compose" id="fs-compose">
+        <input id="fs-input" maxlength="500" placeholder="Danmu…" enterkeyhint="send">
+        <button id="fs-send">➤</button>
+      </div>
+    </div>
+    <div class="stage-msg hidden" id="stage-msg"></div>
+
+    <div class="video-title" id="video-title"></div>
+
+    <section class="compose" id="compose">
+      <div class="compose-row">
+        <input id="danmu-input" maxlength="500" enterkeyhint="send" autocomplete="off"
+               placeholder="Write a danmu at this moment…" aria-label="Danmu text">
+        <button class="ghost" id="emoji-btn" title="Emotion emoji">😊</button>
+        <button class="primary" id="send-btn">Send</button>
+      </div>
+      <div class="emoji-grid hidden" id="emoji-grid"></div>
+      <div class="compose-sub">
+        <span id="time-hint">⏱ 0:00</span>
+        <button class="linklike" id="cancel-edit" hidden>Cancel edit</button>
+        <button class="linklike" id="style-btn">🎨 Style</button>
+      </div>
+      <div class="style-bar hidden" id="style-bar">
+        <select id="st-font" title="Font"></select>
+        <select id="st-size" title="Size"></select>
+        <input  id="st-color" type="color" title="Color">
+        <select id="st-mode" title="Position"></select>
+        <select id="st-dur" title="Seconds on screen"></select>
+        <span class="st-sample" id="st-sample">Aa 弹幕 😊</span>
+      </div>
+      <div class="signin-note hidden" id="signin-note">
+        <button class="primary" id="signin-to-write">👤 Sign in to write danmu</button>
+      </div>
+    </section>
+
+    <section class="list-sec">
+      <div class="list-head">
+        <h2 id="list-title">Danmu</h2>
+        <div class="filters">
+          <button class="chip active" data-f="all">All</button>
+          <button class="chip" data-f="mine">Mine</button>
+          <button class="chip" data-f="others">Others</button>
+        </div>
+      </div>
+      <div id="danmu-list" class="danmu-list"></div>
+    </section>
+  </main>
+
+  <!-- ACCOUNT SHEET -->
+  <div class="sheet-bg hidden" id="sheet-bg">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <div class="sheet-head"><h2 id="sheet-title">👤 Account</h2><button class="ghost small" id="sheet-close">✕</button></div>
+      <div id="sheet-body"></div>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="../videoiq-extension/config.js"></script>
+  <script src="../videoiq-extension/cloud.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
