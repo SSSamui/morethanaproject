@@ -18,7 +18,7 @@
   // ── DANMU STYLE OPTIONS ──────────────────────────────────────────────────────
   const EMOJI_FALLBACK = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
   const FONTS = [
-    { id: 'default', label: 'Default',   css: "'Segoe UI',system-ui" },
+    { id: 'default', label: 'Default',   css: "-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui" },
     { id: 'arial',   label: 'Arial',     css: 'Arial,Helvetica' },
     { id: 'serif',   label: 'Serif',     css: 'Georgia,"Times New Roman",serif' },
     { id: 'mono',    label: 'Mono',      css: '"Courier New",Consolas,monospace' },
@@ -581,7 +581,7 @@
       catch (e) { msg.className = 'viq-acc-msg err'; msg.textContent = '❌ ' + e.message; }
     };
     ['viq-acc-name','viq-acc-email','viq-acc-pass','viq-acc-code'].forEach(id =>
-      g(id).onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') g('viq-acc-go').click(); });
+      g(id).onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter' && !composing(e)) g('viq-acc-go').click(); });
     g('viq-acc-go').onclick = async () => {
       const msg = g('viq-acc-msg'), btn = g('viq-acc-go');
       const email = g('viq-acc-email').value.trim(), password = g('viq-acc-pass').value;
@@ -987,7 +987,7 @@
 
     // mini bar
     document.getElementById('viq-mini-send').onclick    = miniSend;
-    document.getElementById('viq-mini-input').onkeydown = e => { if (e.key==='Enter') miniSend(); };
+    document.getElementById('viq-mini-input').onkeydown = e => { if (e.key==='Enter' && !composing(e)) miniSend(); };
     document.getElementById('viq-mini-pause').onclick   = togglePause;
     document.getElementById('viq-mini-summary').onclick = openSummary;
 
@@ -1002,7 +1002,7 @@
     // note input
     const inp = document.getElementById('viq-quick-input');
     inp.onkeydown = e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); quickAdd(); }
+      if (e.key === 'Enter' && !e.shiftKey && !composing(e)) { e.preventDefault(); quickAdd(); }
       if (e.key === 'Escape') cancelEdit();
     };
     document.getElementById('viq-quick-add').onclick   = quickAdd;
@@ -1680,8 +1680,13 @@
     for (const k in n) if (!['_synced','_syncedAt','_dirty','_rev'].includes(k)) o[k] = n[k];
     return o;
   }
+  // True while an input method (Chinese/Japanese/Korean…) is still composing: the Enter
+  // that picks the characters must not send the danmu (macOS sends it as a real keydown)
+  function composing(e) { return e.isComposing || e.keyCode === 229; }
   function escRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
   function clamp(v,lo,hi) { return Math.max(lo,Math.min(v,hi)); }
 
+  console.info('[VideoIQ] Danmu v' + chrome.runtime.getManifest().version + ' loaded on ' + location.pathname +
+               (cloudOn() ? ' (online saving on)' : ' (online saving not configured)'));
   boot();
 })();

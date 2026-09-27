@@ -7,7 +7,7 @@
 }
 .viq-float {
   position: absolute; right: -100%; white-space: nowrap;
-  font-size: 18px; font-weight: 600; font-family: 'Segoe UI', sans-serif;
+  font-size: 18px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9);
   padding: 3px 10px; border-radius: 4px; background: rgba(0,0,0,0.35);
   animation: viq-slide 7s linear forwards; pointer-events: none;
@@ -40,7 +40,7 @@
   border-radius: 12px;
   display: flex; flex-direction: column;
   overflow: hidden;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(79,158,255,0.1);
   max-height: 90vh;
   /* no top/right here — set dynamically in JS */
@@ -92,13 +92,13 @@
 .viq-input {
   flex: 1; background: #1e2436; border: 1px solid #2a3048; border-radius: 6px;
   padding: 5px 9px; color: #e8eaf0; font-size: 13px; outline: none;
-  font-family: 'Segoe UI', sans-serif; transition: border-color .15s;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; transition: border-color .15s;
 }
 .viq-input:focus { border-color: #4f9eff; }
 .viq-btn-save {
   align-self: flex-end; background: #4f9eff; border: none; color: #fff;
   padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
-  cursor: pointer; font-family: 'Segoe UI', sans-serif; transition: background .15s;
+  cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; transition: background .15s;
 }
 .viq-btn-save:hover { background: #3a8bf0; }
 
@@ -107,7 +107,7 @@
 .viq-filter {
   padding: 4px 10px; border-radius: 12px; border: 1px solid #2a3048;
   background: transparent; color: #8892aa; font-size: 11px; font-weight: 500;
-  cursor: pointer; font-family: 'Segoe UI', sans-serif; transition: all .15s;
+  cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; transition: all .15s;
 }
 .viq-filter:hover  { border-color: #4f9eff; color: #e8eaf0; }
 .viq-filter.active { background: rgba(79,158,255,.12); border-color: #4f9eff; color: #4f9eff; }
@@ -175,7 +175,7 @@
 .viq-pause-btn, .viq-summary-btn {
   padding: 3px 8px; border-radius: 5px; border: 1px solid #2a3048;
   background: #1e2436; color: #8892aa; cursor: pointer;
-  font-size: 10px; font-weight: 600; font-family: 'Segoe UI', sans-serif;
+  font-size: 10px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   transition: all .15s; white-space: nowrap;
 }
 .viq-pause-btn:hover   { border-color: #f87171; color: #f87171; }
@@ -197,7 +197,7 @@
 .viq-add-btn {
   padding: 0 12px; height: 36px; border-radius: 7px; border: none;
   background: #4f9eff; color: #fff; font-size: 12px; font-weight: 700;
-  cursor: pointer; font-family: 'Segoe UI', sans-serif;
+  cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   transition: background .15s; white-space: nowrap;
 }
 .viq-add-btn:hover { background: #3a8bf0; }
@@ -206,7 +206,7 @@
   padding: 0 8px; height: 26px; border-radius: 5px;
   border: 1px solid #2a3048; background: transparent;
   color: #8892aa; font-size: 11px; font-weight: 600;
-  cursor: pointer; font-family: 'Segoe UI', sans-serif; transition: all .15s;
+  cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; transition: all .15s;
 }
 .viq-cancel-btn:hover { border-color: #f87171; color: #f87171; }
 .viq-cancel-btn.hidden { display: none; }
@@ -224,7 +224,7 @@
   background: rgba(13,15,20,0.9);
   border: 1px solid rgba(79,158,255,0.4);
   border-radius: 5px; color: #e8eaf0;
-  font-size: 12px; font-family: 'Segoe UI', sans-serif;
+  font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   padding: 4px 8px; outline: none;
   transition: border-color .15s;
 }
@@ -337,7 +337,7 @@
   background: #1e2436; border: 1px solid #2a3048;
   color: #8892aa; border-radius: 5px; cursor: pointer;
   font-size: 11px; font-weight: 600; padding: 3px 9px;
-  font-family: 'Segoe UI', sans-serif; transition: all .15s;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; transition: all .15s;
   white-space: nowrap;
 }
 .viq-recolor-btn:hover { border-color: #a78bfa; color: #a78bfa; }
@@ -361,7 +361,7 @@
   flex: 1; padding: 7px; background: none; border: none;
   color: #8892aa; font-size: 12px; font-weight: 600;
   cursor: pointer; border-bottom: 2px solid transparent;
-  font-family: 'Segoe UI', sans-serif; transition: all .15s;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; transition: all .15s;
 }
 .viq-auth-tab.active { color: #4f9eff; border-bottom-color: #4f9eff; }
 
@@ -372,7 +372,7 @@
 .viq-color-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #8892aa; }
 
 .viq-auth-user { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #e8eaf0; }
-.viq-auth-link { background: none; border: none; color: #8892aa; cursor: pointer; font-size: 11px; font-family: 'Segoe UI', sans-serif; }
+.viq-auth-link { background: none; border: none; color: #8892aa; cursor: pointer; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
 .viq-auth-link:hover { color: #f87171; }
 
 /* clickable logo */
@@ -390,7 +390,7 @@
 .viq-us-btn {
   padding: 3px 10px; border-radius: 12px; border: 1px solid #2a3048;
   background: transparent; color: #8892aa; font-size: 11px; font-weight: 600;
-  cursor: pointer; font-family: 'Segoe UI', sans-serif; transition: all .15s;
+  cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; transition: all .15s;
 }
 .viq-us-btn:hover { background: rgba(255,255,255,.05); }
 .viq-us-btn.active { background: rgba(79,158,255,.12); }
@@ -495,7 +495,7 @@
   padding: 4px 10px; border-radius: 12px;
   background: rgba(79,158,255,.15); border: 1px solid rgba(79,158,255,.4);
   color: #4f9eff; font-size: 11px; font-weight: 700;
-  cursor: pointer; font-family: 'Segoe UI', sans-serif;
+  cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   white-space: nowrap; transition: all .15s; flex-shrink: 0;
 }
 .viq-publish-pill:hover { background: rgba(79,158,255,.28); border-color: #4f9eff; }
@@ -532,7 +532,7 @@
 .viq-st-select {
   flex: 1; min-width: 0; background: #0d0f14; color: #e8eaf0;
   border: 1px solid #2a3048; border-radius: 5px; padding: 3px 4px;
-  font-size: 11px; font-family: 'Segoe UI', sans-serif; outline: none; cursor: pointer;
+  font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; outline: none; cursor: pointer;
 }
 .viq-st-select:focus { border-color: #4f9eff; }
 .viq-st-select.hidden { display: none; }
@@ -544,7 +544,7 @@
 .viq-st-emoji, .viq-st-preview {
   background: #1e2436; border: 1px solid #2a3048; border-radius: 5px;
   color: #8892aa; cursor: pointer; flex-shrink: 0; transition: all .15s;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 .viq-st-emoji   { font-size: 14px; padding: 1px 6px; line-height: 20px; }
 .viq-st-preview { font-size: 10px; font-weight: 600; padding: 4px 8px; white-space: nowrap; }
@@ -581,7 +581,7 @@
 .viq-acc-tab {
   flex: 1; background: #1e2436; border: 1px solid #2a3048; color: #8892aa;
   border-radius: 5px; padding: 4px 0; font-size: 11px; font-weight: 600; cursor: pointer;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 .viq-acc-tab.active { border-color: #4f9eff; color: #e8eaf0; background: rgba(79,158,255,.12); }
 .viq-acc-btns  { display: flex; gap: 6px; justify-content: flex-end; }
@@ -614,7 +614,7 @@
 .viq-feed-badge {
   position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px;
   padding: 0 4px; border-radius: 9px; background: #ef4444; color: #fff;
-  font: 700 11px/18px 'Segoe UI', sans-serif; text-align: center;
+  font: 700 11px/18px -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; text-align: center;
 }
 .viq-feed-badge.hidden { display: none; }
 
@@ -623,7 +623,7 @@
   width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 170px);
   display: none; flex-direction: column;
   background: #161a24; border: 1px solid #3a4560; border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.55); font-family: 'Segoe UI', sans-serif; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.55); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; overflow: hidden;
 }
 #viq-feed.open { display: flex; }
 .viq-feed-head {
