@@ -376,40 +376,69 @@
       <input id="viq-acc-name"  class="viq-input hidden" placeholder="Display name (everyone sees this)" maxlength="30" value="${escH(defName)}"/>
       <input id="viq-acc-email" class="viq-input" type="email" placeholder="Email" autocomplete="email"/>
       <input id="viq-acc-pass"  class="viq-input" type="password" placeholder="Password" autocomplete="current-password"/>
-      <div class="viq-acc-btns"><button class="viq-add-btn viq-acc-go" id="viq-acc-go">Sign in</button></div>
+      <input id="viq-acc-code"  class="viq-input hidden" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code from the email" maxlength="12"/>
+      <div class="viq-acc-btns">
+        <button class="viq-recolor-btn hidden" id="viq-acc-resend">Send a new code</button>
+        <button class="viq-add-btn viq-acc-go" id="viq-acc-go">Sign in</button>
+      </div>
       <div class="viq-acc-msg" id="viq-acc-msg"></div>`;
     let mode = 'in';
     const g = id => document.getElementById(id);
+    // Account created but not confirmed yet → ask for the code from the email
+    const showCodeStep = (email, note) => {
+      mode = 'code';
+      g('viq-acc-email').value = email;
+      ['viq-acc-name','viq-acc-pass'].forEach(id => g(id).classList.add('hidden'));
+      ['viq-acc-code','viq-acc-resend'].forEach(id => g(id).classList.remove('hidden'));
+      g('viq-acc-go').textContent = 'Confirm';
+      g('viq-acc-msg').className = 'viq-acc-msg ok';
+      g('viq-acc-msg').textContent = note;
+      g('viq-acc-code').focus();
+    };
     box.querySelectorAll('.viq-acc-tab').forEach(t => t.onclick = () => {
       mode = t.dataset.mode;
       box.querySelectorAll('.viq-acc-tab').forEach(x => x.classList.toggle('active', x === t));
+      ['viq-acc-code','viq-acc-resend'].forEach(id => g(id).classList.add('hidden'));
+      g('viq-acc-pass').classList.remove('hidden');
       g('viq-acc-name').classList.toggle('hidden', mode !== 'up');
       g('viq-acc-pass').placeholder = mode === 'up' ? 'Password (at least 6 characters)' : 'Password';
       g('viq-acc-pass').autocomplete = mode === 'up' ? 'new-password' : 'current-password';
       g('viq-acc-go').textContent = mode === 'up' ? 'Create account' : 'Sign in';
       g('viq-acc-msg').textContent = ''; g('viq-acc-msg').className = 'viq-acc-msg';
     });
-    ['viq-acc-name','viq-acc-email','viq-acc-pass'].forEach(id =>
+    g('viq-acc-resend').onclick = async () => {
+      const msg = g('viq-acc-msg');
+      try { await VIQ_CLOUD.resendCode(g('viq-acc-email').value); msg.className = 'viq-acc-msg ok'; msg.textContent = '✓ New code sent — check your email (also spam).'; }
+      catch (e) { msg.className = 'viq-acc-msg err'; msg.textContent = '❌ ' + e.message; }
+    };
+    ['viq-acc-name','viq-acc-email','viq-acc-pass','viq-acc-code'].forEach(id =>
       g(id).onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') g('viq-acc-go').click(); });
     g('viq-acc-go').onclick = async () => {
       const msg = g('viq-acc-msg'), btn = g('viq-acc-go');
       const email = g('viq-acc-email').value.trim(), password = g('viq-acc-pass').value;
       msg.className = 'viq-acc-msg';
+      if (mode === 'code') {
+        btn.disabled = true; msg.textContent = 'Confirming…';
+        try { await VIQ_CLOUD.verifyEmailCode({ email, code: g('viq-acc-code').value }); }
+        catch (e) { msg.className = 'viq-acc-msg err'; msg.textContent = '❌ ' + e.message; }
+        btn.disabled = false;
+        return;
+      }
       if (!email || !password) { msg.className = 'viq-acc-msg err'; msg.textContent = 'Enter your email and password'; return; }
       btn.disabled = true; msg.textContent = mode === 'up' ? 'Creating account…' : 'Signing in…';
       try {
         if (mode === 'up') {
           const r = await VIQ_CLOUD.signUp({ email, password, name: g('viq-acc-name').value, color: settings.color });
-          if (!r.signedIn) {
-            box.querySelector('.viq-acc-tab[data-mode="in"]').click();
-            g('viq-acc-email').value = email;
-            g('viq-acc-msg').className = 'viq-acc-msg ok';
-            g('viq-acc-msg').textContent = '✓ Account created! Confirm the link in your email, then sign in here.';
-          }
+          if (!r.signedIn) showCodeStep(email, '✓ Account created! We emailed you a code — enter it here (check spam too).');
         } else {
           await VIQ_CLOUD.signIn({ email, password });
         }
       } catch (e) {
+        if (/confirm your email/i.test(e.message)) {
+          btn.disabled = false;
+          showCodeStep(email, 'Your email isn\'t confirmed yet. Enter the code from the email, or press "Send a new code".');
+          return;
+        }
         msg.className = 'viq-acc-msg err'; msg.textContent = '❌ ' + e.message;
       }
       btn.disabled = false;

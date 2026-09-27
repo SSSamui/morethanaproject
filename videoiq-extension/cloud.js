@@ -62,7 +62,9 @@ window.VIQ_CLOUD = (() => {
     if (/Invalid login credentials/i.test(m)) return 'Wrong email or password';
     if (/Email not confirmed/i.test(m)) return 'Please confirm your email first (check your inbox), then sign in';
     if (/User already registered/i.test(m)) return 'An account with this email already exists — sign in instead';
-    if (/Password should be/i.test(m)) return m;
+    if (/Token has expired or is invalid|otp_expired|invalid.*otp/i.test(m)) return 'That code is wrong or has expired — check the newest email, or press "Send a new code"';
+    if (/rate limit/i.test(m)) return 'Too many emails were sent recently — please wait a few minutes and try again';
+    if (/For security purposes, you can only request this after/i.test(m)) return 'Please wait a minute before asking for another code';
     return m;
   }
 
@@ -150,6 +152,28 @@ window.VIQ_CLOUD = (() => {
     return getUser();
   }
 
+  // Confirm a new account with the 6-digit code from the confirmation email
+  async function verifyEmailCode({ email, code }) {
+    const token = String(code).replace(/\s/g, '');
+    if (!/^\d{6,10}$/.test(token)) throw new Error('Enter the code from the email (only digits)');
+    let data;
+    try {
+      data = await call('/auth/v1/verify', { method: 'POST', anon: true, body: { type: 'email', email: email.trim(), token } });
+    } catch (e) {
+      // older projects only accept the "signup" type for sign-up confirmations
+      data = await call('/auth/v1/verify', { method: 'POST', anon: true, body: { type: 'signup', email: email.trim(), token } });
+    }
+    if (!data || !data.access_token) throw new Error('Confirmation did not return a session — try signing in');
+    setSession(data);
+    await loadProfile();
+    emit();
+    return getUser();
+  }
+
+  function resendCode(email) {
+    return call('/auth/v1/resend', { method: 'POST', anon: true, body: { type: 'signup', email: email.trim() } });
+  }
+
   async function signOut() {
     try { if (session) await call('/auth/v1/logout', { method: 'POST', auth: true }); } catch { /* token may already be gone */ }
     session = null; profile = null; persist(); emit();
@@ -205,6 +229,6 @@ window.VIQ_CLOUD = (() => {
   }
 
   return { isConfigured, init, isSignedIn, getUser, onChange,
-           signUp, signIn, signOut, updateProfile,
+           signUp, signIn, signOut, updateProfile, verifyEmailCode, resendCode,
            getVideo, upsert, remove };
 })();

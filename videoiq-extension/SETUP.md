@@ -87,14 +87,29 @@ create trigger danmu_touch before update on public.danmu
   for each row execute function public.touch_updated_at();
 ```
 
-## 3. Email confirmation (choose one)
-**Authentication** → **Sign In / Providers** → **Email**:
-- **Confirm email ON** (default, recommended for public use): new users get a
-  confirmation email and must click it before signing in. The free plan's
-  built-in mailer only sends a few emails per hour. For real traffic, set up your own
-  SMTP under **Authentication → Emails → SMTP Settings**.
-- **Confirm email OFF**: people are signed in right after creating an account.
-  Easiest for testing and small groups.
+## 3. Email confirmation: use a 6-digit code (not a link)
+The extension confirms new accounts with a **code** typed into the panel. Links
+don't work well here: they redirect to a web page the extension doesn't have
+(`localhost:3000`), and email scanners can "use up" the one-time link.
+
+1. **Authentication** → **Emails** → **Templates** → **Confirm signup**. Replace the message body with:
+   ```html
+   <h2>Your VideoIQ code</h2>
+   <p>Enter this code in the VideoIQ panel to confirm your account:</p>
+   <p style="font-size:28px;font-weight:bold;letter-spacing:4px">{{ .Token }}</p>
+   ```
+   → **Save**. (`{{ .Token }}` is replaced by the code.)
+2. **Authentication** → **URL Configuration** → **Site URL**: change `http://localhost:3000`
+   to e.g. `https://www.youtube.com`, so any old link lands on a real page.
+3. (Optional) **Authentication** → **Sign In / Providers** → **Email** → turn **Confirm email** OFF
+   if you don't want confirmation at all (people are signed in right after creating an account).
+
+The free built-in mailer sends only a few emails per hour. With many users, add your
+own email service under **Authentication → Emails → SMTP Settings**.
+
+**Stuck user?** Someone who signed up but can't confirm can simply **Sign in**; the panel
+asks for the code and offers **Send a new code**. Or confirm them yourself in SQL Editor:
+`update auth.users set email_confirmed_at = now() where email = 'their@email.com';`
 
 ## 4. Put your project keys into the extension
 **Project Settings** → **API Keys** (or **Data API**):

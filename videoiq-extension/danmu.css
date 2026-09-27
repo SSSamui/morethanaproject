@@ -574,7 +574,7 @@
   padding-bottom: 9px; border-bottom: 1px solid #2a3048;
 }
 .viq-account-section:empty { display: none; }
-.viq-account-section .viq-input.hidden { display: none; }
+.viq-account-section .hidden { display: none !important; }
 .viq-acc-title { font-size: 11px; font-weight: 700; color: #e8eaf0; }
 .viq-acc-sub   { font-weight: 400; color: #8892aa; }
 .viq-acc-tabs  { display: flex; gap: 4px; }
