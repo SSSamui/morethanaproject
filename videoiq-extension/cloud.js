@@ -27,7 +27,16 @@ window.VIQ_CLOUD = (() => {
   const onChange   = fn => listeners.add(fn);
   const emit       = () => listeners.forEach(fn => { try { fn(getUser()); } catch (e) { console.warn(e); } });
 
-  function persist() { chrome.storage.local.set({ [AUTH_KEY]: session }); }
+  // Session storage: chrome.storage inside the extension, localStorage on the web page
+  const hasChrome = typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local;
+  const store = hasChrome ? {
+    get: k => new Promise(r => chrome.storage.local.get([k], x => r(x[k] || null))),
+    set: (k, v) => chrome.storage.local.set({ [k]: v })
+  } : {
+    get: async k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } }
+  };
+  function persist() { store.set(AUTH_KEY, session); }
 
   // ── low-level fetch ────────────────────────────────────────────────────────
   async function call(path, { method = 'GET', body, auth = false, prefer, anon = false } = {}) {
@@ -106,7 +115,7 @@ window.VIQ_CLOUD = (() => {
   // Restore a saved session (called once at startup)
   async function init() {
     if (!isConfigured()) return null;
-    const saved = await new Promise(r => chrome.storage.local.get([AUTH_KEY], x => r(x[AUTH_KEY] || null)));
+    const saved = await store.get(AUTH_KEY);
     if (!saved) return null;
     session = saved;
     try { await ensureFresh(); if (session) await loadProfile(); }
