@@ -214,7 +214,7 @@ window.VIQ_CLOUD = (() => {
 
   // Most recent danmu from everyone, across all videos (for the "New danmu" feed)
   function getRecent(limit) {
-    return call('/rest/v1/danmu?select=video_id,video_title,text,updated_at,user_id,profiles(display_name,color)' +
+    return call('/rest/v1/danmu?select=video_id,video_title,text,style,updated_at,user_id,profiles(display_name,color)' +
       '&order=updated_at.desc&limit=' + (limit || 300));
   }
 

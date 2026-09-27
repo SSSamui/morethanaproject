@@ -10,7 +10,7 @@
   <title>VideoIQ Danmu</title>
   <link rel="icon" href="../videoiq-extension/icons/icon48.png">
   <link rel="apple-touch-icon" href="../videoiq-extension/icons/icon48.png">
-  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="app.css?v=5">
 </head>
 <body>
   <header class="top">
@@ -38,6 +38,7 @@
         <li>In the YouTube app: <b>Share</b> → <b>More</b> → <b>VideoIQ</b>. The video opens here with danmu.</li>
       </ol>
       <p>Tip: in Safari tap <b>Share → Add to Home Screen</b> to use this page like an app.</p>
+      <p class="ver">Version <span id="app-ver"></span></p>
     </details>
 
     <section class="feed">
@@ -52,7 +53,7 @@
       <div id="yt-player"></div>
       <div id="overlay" class="overlay"></div>
       <div class="stage-btns">
-        <button id="names-toggle" title="Show names on danmu">👤</button>
+        <button id="names-toggle" title="Show names on danmu">🏷️</button>
         <button id="danmu-toggle" title="Danmu on/off">弹</button>
         <button id="fs-btn" title="Full screen">⛶</button>
       </div>
@@ -84,6 +85,7 @@
         <input  id="st-color" type="color" title="Color">
         <select id="st-mode" title="Position"></select>
         <select id="st-dur" title="Seconds on screen"></select>
+        <button type="button" class="ghost small" id="st-anon" title="Show my name on my danmu for everyone">👤 Name on</button>
         <span class="st-sample" id="st-sample">Aa 弹幕 😊</span>
       </div>
       <div class="signin-note hidden" id="signin-note">
@@ -114,8 +116,8 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script src="../videoiq-extension/config.js"></script>
-  <script src="../videoiq-extension/cloud.js"></script>
-  <script src="app.js"></script>
+  <script src="../videoiq-extension/config.js?v=5"></script>
+  <script src="../videoiq-extension/cloud.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
