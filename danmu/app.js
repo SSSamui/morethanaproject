@@ -31,7 +31,7 @@
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5 };
-  const STYLE_KEY = 'viq_web_style', SEEN_KEY = 'viq_web_feed_seen', DANMU_ON_KEY = 'viq_web_danmu_on';
+  const STYLE_KEY = 'viq_web_style', SEEN_KEY = 'viq_web_feed_seen', DANMU_ON_KEY = 'viq_web_danmu_on', NAMES_KEY = 'viq_web_show_names';
   const POLL_MS = 10000, SCROLL_MS = 7000;
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -44,6 +44,7 @@
   const live = new Set();        // on-screen danmu animations (paused with the video)
   const lanes = { top: [], bottom: [] };
   let danmuOn = lsGet(DANMU_ON_KEY, true);
+  let showNames = lsGet(NAMES_KEY, true);   // "[Lin] text" vs just "text" (viewer's choice)
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function lsGet(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } }
@@ -322,7 +323,7 @@
 
     const el = document.createElement('div');
     el.className = 'dm ' + mode + (u && r.user_id === u.id ? ' mine' : '');
-    el.textContent = '[' + name + '] ' + r.text;
+    el.textContent = (showNames ? '[' + name + '] ' : '') + r.text;
     el.style.color = st.color || r.profiles?.color || '#ffffff';
     el.style.fontFamily = font.css + ',' + EMOJI_FALLBACK;
     el.style.fontSize = px + 'px';
@@ -357,6 +358,13 @@
   };
   $('overlay').classList.toggle('off', !danmuOn);
   $('danmu-toggle').classList.toggle('off', !danmuOn);
+
+  $('names-toggle').onclick = () => {
+    showNames = !showNames; lsSet(NAMES_KEY, showNames);
+    $('names-toggle').classList.toggle('off', !showNames);
+    toast(showNames ? 'Names shown on danmu' : 'Names hidden: only the danmu text shows');
+  };
+  $('names-toggle').classList.toggle('off', !showNames);
 
   // Our own full screen: on iPhone the player's native full screen would hide the danmu
   $('fs-btn').onclick = () => document.body.classList.contains('fs') ? exitFs() : enterFs();
