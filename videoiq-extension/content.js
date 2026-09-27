@@ -139,7 +139,7 @@
     let n = 0;
     const t = setInterval(() => {
       n++;
-      videoEl = document.querySelector('video');
+      videoEl = findActiveVideo();
       const id = getVideoId();
       if (videoEl && id) {
         clearInterval(t); waiting = false;
@@ -230,6 +230,7 @@
       remoteList = next;
       if (me) changed = reconcileOwn(vid, mine, started) || changed;
       if (changed) { rebuildActive(); refreshSideList(); buildUserSelector(); }
+      if (!silent && changed) lastTime = -1;   // just loaded → show danmu for the current second too
 
       if (!silent) {
         const n = remoteList.reduce((t, p) => t + p.notes.length, 0);
@@ -667,7 +668,7 @@
         const newId = getVideoId();
         if (!newId || newId === videoId) return;
         videoId = newId;
-        videoEl = document.querySelector('video');
+        videoEl = findActiveVideo();
         remoteList = []; visibleUsers = null; userOffsets = {};
         activeDanmu = [];
         editingId = null; pausedForNote = false; summaryMode = false;
@@ -680,7 +681,7 @@
         if (videoEl) onReady();
         else {
           const w = setInterval(() => {
-            videoEl = document.querySelector('video');
+            videoEl = findActiveVideo();
             if (videoEl) { clearInterval(w); onReady(); }
           }, 400);
         }
@@ -718,13 +719,48 @@
 
   function buildDanmuOverlay() {
     if (document.getElementById('viq-danmu-overlay')) return;
-    const playerEl = document.querySelector('#movie_player') ||
-                     document.querySelector('.html5-video-player') ||
-                     videoEl?.closest('ytd-shorts') ||
-                     videoEl?.parentElement;
     danmuContainer = document.createElement('div');
     danmuContainer.id = 'viq-danmu-overlay';
-    (playerEl || document.body).appendChild(danmuContainer);
+    (playerHost(videoEl) || document.body).appendChild(danmuContainer);
+  }
+
+  // ── WHICH VIDEO IS "THE" VIDEO? ──────────────────────────────────────────────
+  // A YouTube page can hold several <video>s: the normal player (hidden while you
+  // are on Shorts), hover previews, and one per short. Use the biggest one that is
+  // actually on screen, preferring one that is playing.
+  function findActiveVideo() {
+    let best = null, bestScore = 0;
+    document.querySelectorAll('video').forEach(v => {
+      const r = v.getBoundingClientRect();
+      const w = Math.min(r.right, innerWidth) - Math.max(r.left, 0);
+      const h = Math.min(r.bottom, innerHeight) - Math.max(r.top, 0);
+      if (w < 120 || h < 120) return;                       // hidden, off-screen or a tiny preview
+      const score = w * h * (v.paused ? 1 : 4);
+      if (score > bestScore) { best = v; bestScore = score; }
+    });
+    if (best) return best;
+    // nothing visible yet (still loading) → the player that belongs to this kind of page
+    return (isShorts ? document.querySelector('ytd-reel-video-renderer[is-active] video, #shorts-player video')
+                     : document.querySelector('#movie_player video')) || null;
+  }
+
+  // The element that frames the video, so the danmu layer sits exactly on top of it
+  function playerHost(v) {
+    return v ? (v.closest('.html5-video-player') || v.closest('#player-container') || v.parentElement) : null;
+  }
+
+  // Follow the on-screen video (Shorts swipes, miniplayer, theater…) and keep the
+  // danmu layer attached to its player
+  function syncActiveVideo() {
+    if (!getVideoId()) return;
+    const v = findActiveVideo();
+    if (!v) return;
+    if (v !== videoEl) { videoEl = v; lastTime = -1; }
+    const host = playerHost(v);
+    if (danmuContainer && host && danmuContainer.parentElement !== host && !document.fullscreenElement) {
+      danmuContainer.innerHTML = '';
+      host.appendChild(danmuContainer);
+    }
   }
 
   // ── PANEL ────────────────────────────────────────────────────────────────────
@@ -1453,15 +1489,23 @@
       lifeMs = 7000;
     }
     danmuContainer.appendChild(el);
+    if (mode === 'top' || mode === 'bottom') {
+      // narrow players (Shorts): shrink a fixed danmu so the whole text fits
+      const room = danmuContainer.clientWidth * 0.9;
+      if (room > 0 && el.scrollWidth > room) el.style.fontSize = Math.max(11, Math.floor(px * room / el.scrollWidth)) + 'px';
+    }
     setTimeout(() => el.remove(), lifeMs + 200);
   }
   function clearDanmuOverlay() { if (danmuContainer) danmuContainer.innerHTML = ''; }
 
   // ── TIME LOOP ─────────────────────────────────────────────────────────────────
+  let syncTimer2 = null;
   function startLoop() {
     cancelAnimationFrame(animFrame);
+    clearInterval(syncTimer2);
+    syncTimer2 = setInterval(syncActiveVideo, 500);
     (function tick() {
-      if (!videoEl||videoEl.readyState===undefined) videoEl=document.querySelector('video');
+      if (!videoEl || !videoEl.isConnected) videoEl = findActiveVideo();
       if (videoEl) {
         const t = Math.floor(videoEl.currentTime);
         if (t !== lastTime) { lastTime=t; checkTime(t); highlightList(t); }
