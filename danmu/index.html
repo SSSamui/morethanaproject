@@ -10,7 +10,7 @@
   <title>VideoIQ Danmu</title>
   <link rel="icon" href="../videoiq-extension/icons/icon48.png">
   <link rel="apple-touch-icon" href="../videoiq-extension/icons/icon48.png">
-  <link rel="stylesheet" href="app.css?v=7">
+  <link rel="stylesheet" href="app.css?v=8">
 </head>
 <body>
   <header class="top">
@@ -52,6 +52,10 @@
     <div class="stage" id="stage">
       <div id="yt-player"></div>
       <div id="overlay" class="overlay"></div>
+      <div class="stage-btns-left">
+        <button id="back-btn" title="Home">‹</button>
+        <button id="acc-mini" title="Account">👤</button>
+      </div>
       <div class="stage-btns">
         <button id="names-toggle" title="Show names on danmu">🏷️</button>
         <button id="danmu-toggle" title="Danmu on/off">弹</button>
@@ -64,6 +68,8 @@
     </div>
     <div class="stage-msg hidden" id="stage-msg"></div>
 
+    <!-- On phones this is a bar pinned to the bottom: one input line; ⌃ opens the rest -->
+    <div id="drawer" class="drawer">
     <div class="video-title" id="video-title"></div>
 
     <section class="compose" id="compose">
@@ -71,6 +77,7 @@
         <input id="danmu-input" maxlength="500" enterkeyhint="send" autocomplete="off"
                placeholder="Write a danmu at this moment…" aria-label="Danmu text">
         <button class="ghost" id="emoji-btn" title="Emotion emoji">😊</button>
+        <button class="ghost" id="more-btn" title="Style, danmu list and more">⌃</button>
         <button class="primary" id="send-btn">Send</button>
       </div>
       <div class="emoji-grid hidden" id="emoji-grid"></div>
@@ -108,6 +115,7 @@
       </div>
       <div id="danmu-list" class="danmu-list"></div>
     </section>
+    </div>
   </main>
 
   <!-- ACCOUNT SHEET -->
@@ -120,8 +128,8 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script src="../videoiq-extension/config.js?v=7"></script>
-  <script src="../videoiq-extension/cloud.js?v=7"></script>
-  <script src="app.js?v=7"></script>
+  <script src="../videoiq-extension/config.js?v=8"></script>
+  <script src="../videoiq-extension/cloud.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '7';
+  const APP_VERSION = '8';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null };
   const ANON = { name: '🙈 Anonymous', color: '#9ca3af' };
@@ -154,6 +154,7 @@
   // ── HOME ───────────────────────────────────────────────────────────────────
   function showHome() {
     stopWatch();
+    document.body.classList.remove('watching'); setDrawer(false);
     $('home').classList.remove('hidden'); $('watch').classList.add('hidden');
     document.title = 'VideoIQ Danmu';
     loadFeed();
@@ -222,6 +223,7 @@
   // ── WATCH ──────────────────────────────────────────────────────────────────
   function showWatch(p) {
     $('home').classList.add('hidden'); $('watch').classList.remove('hidden');
+    document.body.classList.add('watching');
     const changed = p.id !== videoId;
     videoId = p.id; isShort = !!p.short; startAt = p.t || 0;
     $('stage').classList.toggle('short', isShort);
@@ -332,7 +334,7 @@
     if (!W || !H) return;
     const st = Object.assign({}, DEFAULT_STYLE, r.style || {});
     const font = FONTS.find(f => f.id === st.font) || FONTS[0];
-    const scale = clamp(W / 640, 0.62, 1.25);       // phones get smaller text, big screens bigger
+    const scale = clamp(W / 640, 0.82, 1.25);       // phones slightly smaller (still readable), big screens bigger
     const px = Math.round(((SIZES.find(z => z.id === st.size) || SIZES[1]).px) * scale);
     const mode = MODES.some(m => m.id === st.mode) ? st.mode : 'rtl';
     const dur = clamp(Number(st.duration) || 5, 1, 60) * 1000;
@@ -472,7 +474,7 @@
 
   // Emoji
   $('emoji-grid').innerHTML = EMOJIS.map(e => '<button type="button">' + e + '</button>').join('');
-  $('emoji-btn').onclick = () => $('emoji-grid').classList.toggle('hidden');
+  $('emoji-btn').onclick = () => { if (!C.isSignedIn()) return openSheet(); $('emoji-grid').classList.toggle('hidden'); };
   $('emoji-grid').querySelectorAll('button').forEach(b => {
     b.onmousedown = e => e.preventDefault();
     b.onclick = () => {
@@ -487,12 +489,46 @@
   function updateComposer() {
     const signed = C.isSignedIn();
     $('signin-note').classList.toggle('hidden', signed);
-    $('danmu-input').disabled = !signed; $('send-btn').disabled = !signed; $('emoji-btn').disabled = !signed;
-    $('danmu-input').placeholder = signed ? 'Write a danmu at this moment…' : 'Sign in to write danmu';
+    // signed out: the line stays visible; tapping it (or Send / 😊) opens sign-in
+    $('danmu-input').readOnly = !signed;
+    $('danmu-input').placeholder = signed ? 'Write a danmu at this moment…' : '👤 Sign in to write danmu';
     $('fs-input').placeholder = signed ? 'Danmu…' : 'Sign in to write';
     $('fs-input').disabled = !signed;
   }
   $('signin-to-write').onclick = () => openSheet();
+  $('danmu-input').addEventListener('click', () => { if (!C.isSignedIn()) openSheet(); });
+
+  // ── Phone layout: video fills the screen, one input line pinned to the bottom ──
+  const compactMQ = matchMedia('(max-width: 820px), (pointer: coarse)');
+  function applyCompact() { document.body.classList.toggle('compact', compactMQ.matches); measureBar(); }
+  (compactMQ.addEventListener ? compactMQ.addEventListener('change', applyCompact) : compactMQ.addListener(applyCompact));
+  function setDrawer(open) {
+    $('drawer').classList.toggle('open', open);
+    $('more-btn').textContent = open ? '⌄' : '⌃';
+    $('more-btn').title = open ? 'Close' : 'Style, danmu list and more';
+    if (open) $('style-bar').classList.remove('hidden');
+    measureBar();
+  }
+  $('more-btn').onclick = () => setDrawer(!$('drawer').classList.contains('open'));
+  $('back-btn').onclick = () => { history.pushState(null, '', location.pathname); showHome(); };
+  $('acc-mini').onclick = () => openSheet();
+  // The video ends where the collapsed bar begins (the open panel floats over the video)
+  function measureBar() {
+    const d = $('drawer');
+    if (!document.body.classList.contains('compact') || d.classList.contains('open')) return;
+    document.documentElement.style.setProperty('--bar-h', d.offsetHeight + 'px');
+  }
+  if (window.ResizeObserver) new ResizeObserver(measureBar).observe($('drawer'));
+  // iPhone keyboard: keep the input line just above it
+  if (window.visualViewport) {
+    const kb = () => {
+      const v = window.visualViewport;
+      const gap = Math.max(0, Math.round(window.innerHeight - v.height - v.offsetTop));
+      document.documentElement.style.setProperty('--kb', gap + 'px');
+    };
+    visualViewport.addEventListener('resize', kb); visualViewport.addEventListener('scroll', kb);
+  }
+  applyCompact();
   $('send-btn').onclick = () => send($('danmu-input'));
   $('danmu-input').onkeydown = e => { if (e.key === 'Enter' && !composing(e)) { e.preventDefault(); send($('danmu-input')); } if (e.key === 'Escape') cancelEdit(); };
   $('fs-send').onclick = () => send($('fs-input'));
@@ -533,6 +569,7 @@
                               { nameTo: (r.name_to || [])[0] || null });
     buildStyleBar();                               // show this danmu's current style
     $('style-bar').classList.remove('hidden');
+    if (document.body.classList.contains('compact')) setDrawer(true);
     $('danmu-input').value = r.text; $('danmu-input').focus();
     $('send-btn').textContent = 'Save'; $('cancel-edit').hidden = false;
     $('compose').classList.add('editing');
