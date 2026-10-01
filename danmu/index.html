@@ -8,9 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="VideoIQ">
   <title>VideoIQ Danmu</title>
-  <link rel="icon" href="../videoiq-extension/icons/icon48.png">
-  <link rel="apple-touch-icon" href="../videoiq-extension/icons/icon48.png">
-  <link rel="stylesheet" href="app.css?v=8">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="app.css?v=9">
 </head>
 <body>
   <header class="top">
@@ -30,6 +31,12 @@
 
     <details class="help">
       <summary>📱 Open videos straight from the YouTube app</summary>
+      <p><b>Android (Pixel, Samsung…):</b></p>
+      <ol>
+        <li>In Chrome, tap <b>⋮</b> → <b>Install app</b> (or <b>Add to Home screen</b> → <b>Install</b>).<span id="install-wrap" hidden> Or tap: <button type="button" class="primary small" id="install-btn">Install VideoIQ</button></span></li>
+        <li>In the YouTube app: <b>Share</b> → <b>VideoIQ</b>. The video opens here with danmu.</li>
+      </ol>
+      <p><b>iPhone:</b></p>
       <ol>
         <li>Open the <b>Shortcuts</b> app → <b>+</b> (new shortcut).</li>
         <li>Tap the <b>ⓘ</b> (or shortcut name) → turn on <b>Show in Share Sheet</b>, set it to receive <b>URLs</b> and <b>Text</b>.</li>
@@ -128,8 +135,8 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script src="../videoiq-extension/config.js?v=8"></script>
-  <script src="../videoiq-extension/cloud.js?v=8"></script>
-  <script src="app.js?v=8"></script>
+  <script src="../videoiq-extension/config.js?v=9"></script>
+  <script src="../videoiq-extension/cloud.js?v=9"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>
