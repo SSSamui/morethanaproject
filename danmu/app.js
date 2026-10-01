@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '8';
+  const APP_VERSION = '9';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null };
   const ANON = { name: '🙈 Anonymous', color: '#9ca3af' };
@@ -122,19 +122,25 @@
   // ── Routing: ?v=ID (&s=1 for Shorts) ─────────────────────────────────────────
   function readUrl() {
     const q = new URLSearchParams(location.search);
-    // ?url=<shared link> (from the iPhone Shortcut). Read it raw: the shared link
-    // may itself contain ? and & that weren't encoded.
-    const i = location.search.indexOf('url=');
-    if (i >= 0) {
-      let raw = location.search.slice(i + 4);
-      try { raw = decodeURIComponent(raw); } catch { /* already plain */ }
-      const p = parseVideo(raw);
-      if (p) { history.replaceState(null, '', buildUrl(p)); return p; }
-      $('open-msg').textContent = 'That link doesn\'t look like a YouTube video.';
+    // Shared into the app: ?url=… (iPhone Shortcut) or ?title=…&text=…&url=… (Android Share
+    // menu; the YouTube app puts the link in "text" and leaves "url" empty).
+    if (q.has('url') || q.has('text') || q.has('title')) {
+      const tries = [];
+      const i = location.search.indexOf('url=');
+      if (i >= 0) {   // raw: a link pasted by the Shortcut may contain unencoded ? and &
+        let raw = location.search.slice(i + 4);
+        try { raw = decodeURIComponent(raw); } catch { /* already plain */ }
+        tries.push(raw);
+      }
+      tries.push(q.get('url'), q.get('text'), q.get('title'));
+      for (const t of tries) {
+        const p = t && parseVideo(t);
+        if (p) { history.replaceState(null, '', buildUrl(p)); return p; }
+      }
+      history.replaceState(null, '', location.pathname);
+      $('open-msg').textContent = 'That doesn\'t look like a YouTube video link.';
       return null;
     }
-    const text = q.get('text');
-    if (text) { const p = parseVideo(text); if (p) { history.replaceState(null, '', buildUrl(p)); return p; } }
     const v = q.get('v');
     return v && /^[\w-]{11}$/.test(v) ? { id: v, short: q.get('s') === '1', t: parseT(q.get('t')) } : null;
   }
@@ -725,6 +731,21 @@
     if (videoId && !$('watch').classList.contains('hidden')) loadDanmu(false); else if (!$('home').classList.contains('hidden')) loadFeed();
     if (u) { closeSheet(); toast('👋 Signed in as ' + u.name); }
   });
+
+  // ── Installable app (Android: appears in the YouTube app's Share menu) ─────
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { /* optional */ });
+  let installPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); installPrompt = e;
+    $('install-wrap').hidden = false;
+  });
+  $('install-btn').onclick = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const r = await installPrompt.userChoice.catch(() => null);
+    if (r && r.outcome === 'accepted') { $('install-wrap').hidden = true; toast('✓ Installed. Find VideoIQ in the YouTube app\'s Share menu'); }
+    installPrompt = null;
+  };
 
   // ── Start ──────────────────────────────────────────────────────────────────
   window.addEventListener('popstate', route);
