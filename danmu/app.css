@@ -201,3 +201,17 @@ body.compact .drawer.open .video-title { order: 1; margin: 10px 2px 4px; }
 body.compact .drawer.open .list-sec { order: 2; margin-top: 8px; }
 body.compact .toast { bottom: calc(var(--bar-h, 64px) + 12px + var(--kb, 0px)); }
 body.compact.fs .drawer { display: none; }
+
+/* hide a video from my 🔥 list */
+.feed-wrap { position: relative; }
+.feed-wrap .feed-item { padding-right: 40px; }
+.feed-hide {
+  position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border-radius: 8px;
+  border: 0; background: rgba(0,0,0,.35); color: var(--muted); font-size: 15px;
+}
+.feed-hide:active { color: var(--text); }
+.feed-wrap.is-hidden .feed-item { opacity: .45; }
+.hidden-note { text-align: center; font-size: 13px; color: var(--muted); padding: 10px 0 4px; }
+.hidden-note button { background: none; border: 0; color: var(--blue); font-size: 13px; padding: 0 4px; }
+/* delete all my danmu on this video */
+.chip.danger { color: var(--red); border-color: rgba(248,113,113,.45); }

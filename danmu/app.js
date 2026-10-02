@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '9';
+  const APP_VERSION = '10';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null };
   const ANON = { name: '🙈 Anonymous', color: '#9ca3af' };
@@ -187,6 +187,11 @@
 
   // Feed: videos with the most recent danmu from everyone
   let feedSeen = lsGet(SEEN_KEY, 0);
+  // Videos hidden from MY 🔥 list (this device only; nothing is deleted)
+  const HIDE_KEY = 'viq_web_hidden_videos';
+  let hiddenVids = new Set(lsGet(HIDE_KEY, []));
+  let showHidden = false;
+  const saveHidden = () => lsSet(HIDE_KEY, [...hiddenVids]);
   $('feed-refresh').onclick = () => loadFeed();
   async function loadFeed() {
     const list = $('feed-list');
@@ -206,24 +211,46 @@
         if (!v.people.has(pk)) v.people.set(pk, who);
         if (!(u && r.user_id === u.id)) v.lastOther = Math.max(v.lastOther, at);
       });
-      const vids = [...map.values()].slice(0, 30);
-      if (!vids.length) { list.innerHTML = '<div class="empty">No danmu yet. Paste a link above and write the first one!</div>'; return; }
+      const all = [...map.values()];
+      const hiddenCount = all.filter(v => hiddenVids.has(v.id)).length;
+      const vids = all.filter(v => showHidden || !hiddenVids.has(v.id)).slice(0, 30);
+      const hiddenNote = hiddenCount
+        ? '<div class="hidden-note">' + hiddenCount + ' hidden · <button type="button" id="toggle-hidden">' + (showHidden ? 'Hide them again' : 'Show') + '</button></div>' : '';
+      if (!vids.length) {
+        list.innerHTML = '<div class="empty">' + (all.length ? 'You hid all the videos.' : 'No danmu yet. Paste a link above and write the first one!') + '</div>' + hiddenNote;
+        wireHidden(); return;
+      }
       list.innerHTML = vids.map(v => {
         const people = [...v.people.values()];
         const names = people.slice(0, 3).map(p => '<span style="color:' + esc(p.color) + '">' + esc(p.name) + '</span>').join(', ') + (people.length > 3 ? ' +' + (people.length - 3) : '');
-        return '<a class="feed-item" href="?v=' + v.id + '" data-id="' + v.id + '">' +
+        const isHidden = hiddenVids.has(v.id);
+        return '<div class="feed-wrap' + (isHidden ? ' is-hidden' : '') + '"><a class="feed-item" href="?v=' + v.id + '" data-id="' + v.id + '">' +
           '<span class="thumb"><img src="https://i.ytimg.com/vi/' + v.id + '/mqdefault.jpg" alt="" loading="lazy">' +
             (v.lastOther > feedSeen ? '<span class="new">NEW</span>' : '') + '</span>' +
           '<span class="info"><span class="vtitle">' + esc(v.title || 'YouTube video') + '</span>' +
           '<span class="meta">💬 ' + v.count + ' · ' + names + ' · ' + timeAgo(v.lastAt) + '</span>' +
-          '<span class="last"><b style="color:' + esc(v.latest.who.color) + '">' + esc(v.latest.who.name) + ':</b> ' + esc(v.latest.text) + '</span></span></a>';
-      }).join('');
+          '<span class="last"><b style="color:' + esc(v.latest.who.color) + '">' + esc(v.latest.who.name) + ':</b> ' + esc(v.latest.text) + '</span></span></a>' +
+          '<button type="button" class="feed-hide" data-id="' + v.id + '" title="' + (isHidden ? 'Show in my list again' : 'Hide from my list (only on this device)') + '">' + (isHidden ? '↺' : '✕') + '</button></div>';
+      }).join('') + hiddenNote;
       list.querySelectorAll('.feed-item').forEach(a => a.onclick = e => { e.preventDefault(); go({ id: a.dataset.id, short: false, t: 0 }); });
+      list.querySelectorAll('.feed-hide').forEach(btn => btn.onclick = e => {
+        e.preventDefault(); e.stopPropagation();
+        const id = btn.dataset.id;
+        if (hiddenVids.has(id)) { hiddenVids.delete(id); toast('Shown in your list again'); }
+        else { hiddenVids.add(id); toast('Hidden from your list. Tap "Show" at the bottom to undo'); }
+        saveHidden(); loadFeed();
+      });
+      wireHidden();
       const newest = vids.reduce((m, v) => Math.max(m, v.lastAt), 0);
       if (newest > feedSeen) { feedSeen = newest; lsSet(SEEN_KEY, feedSeen); }   // badges shown now, cleared next visit
     } catch (e) {
       list.innerHTML = '<div class="empty">⚠ Could not load: ' + esc(e.message) + '</div>';
     }
+  }
+
+  function wireHidden() {
+    const t = $('toggle-hidden');
+    if (t) t.onclick = () => { showHidden = !showHidden; loadFeed(); };
   }
 
   // ── WATCH ──────────────────────────────────────────────────────────────────
@@ -626,6 +653,9 @@
     let items = rows;
     if (filter === 'mine')   items = rows.filter(r => u && r.user_id === u.id);
     if (filter === 'others') items = rows.filter(r => !(u && r.user_id === u.id));
+    const mineCount = rows.filter(r => u && r.user_id === u.id && !pending.has(r.client_id)).length;
+    $('del-mine').classList.toggle('hidden', !mineCount);
+    $('del-mine').textContent = '🗑 Delete all mine (' + mineCount + ')';
     const people = new Set(rows.map(r => r.user_id)).size;
     $('list-title').textContent = rows.length ? '💬 ' + rows.length + ' danmu · ' + people + (people === 1 ? ' person' : ' people') : 'Danmu';
     if (!items.length) {
@@ -652,6 +682,23 @@
     });
     highlightNow(lastSec);
   }
+  // Delete every danmu I wrote on this video (other people's stay)
+  $('del-mine').onclick = async () => {
+    const u = me(); if (!u) return;
+    const mine = rows.filter(r => r.user_id === u.id && !pending.has(r.client_id));
+    if (!mine.length) return;
+    if (!confirm('Delete all ' + mine.length + ' of your danmu on this video?\n\nOther people\'s danmu stay. This can\'t be undone.')) return;
+    if (editing) cancelEdit();
+    rows = rows.filter(r => !mine.includes(r)); renderList();
+    try {
+      for (let i = 0; i < mine.length; i += 100) await C.remove(mine.slice(i, i + 100).map(r => r.client_id));
+      toast('🗑 Deleted ' + mine.length + ' danmu');
+    } catch (e) {
+      rows = rows.concat(mine).sort((a, b) => a.time_sec - b.time_sec); renderList();
+      toast('❌ Not deleted: ' + e.message, 4000);
+    }
+  };
+
   function highlightNow(t) {
     document.querySelectorAll('#danmu-list .row').forEach(el => el.classList.toggle('now', Math.abs(+el.dataset.t - t) <= 1));
   }
