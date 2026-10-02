@@ -140,6 +140,12 @@ paste → **Run**. It should say *Success. No rows returned*. It's safe to run a
 Until it's run, everything else keeps working; only "only one person" is unavailable,
 and hidden names are hidden on screen only.
 
+## Update: video tags (run once)
+Needed for **🏷 video tags** (what a video is about: puppy, sports…) and the tag filter on the
+website's home page. Supabase → **SQL Editor** → **New query** → open **`tags.sql`**, copy **all of it**,
+paste → **Run**. Safe to run again. (New installs: `setup.sql` already includes it.)
+Comment tags (#emotion, #conversation…) need no database change.
+
 ## Where to see the data
 Supabase → **Table Editor** → `danmu` (all danmu from everyone) and `profiles`
 (all users). **Authentication → Users** lists the accounts.
