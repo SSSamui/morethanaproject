@@ -215,3 +215,29 @@ body.compact.fs .drawer { display: none; }
 .hidden-note button { background: none; border: 0; color: var(--blue); font-size: 13px; padding: 0 4px; }
 /* delete all my danmu on this video */
 .chip.danger { color: var(--red); border-color: rgba(248,113,113,.45); }
+
+/* ── TAGS ─────────────────────────────────────────────────────────────────── */
+.tag-row { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+.tag-row::-webkit-scrollbar { display: none; }
+.tag {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 999px;
+  padding: 4px 11px; font-size: 13px;
+}
+.tag.active { border-color: var(--blue); background: rgba(79,158,255,.16); color: #fff; }
+.tag .n { color: var(--muted); font-size: 11px; }
+.tag .x { background: none; border: 0; color: var(--muted); padding: 0 0 0 2px; font-size: 13px; }
+.tag.add { color: var(--blue); border-style: dashed; }
+.vtags { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+.vtags .note { font-size: 12px; }
+.feed-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.feed-tags span { font-size: 11px; color: #9cc3ff; background: rgba(79,158,255,.12); border-radius: 999px; padding: 1px 7px; }
+.tagchip { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 10px; padding-right: 10px; }
+.tagchip.on { color: var(--gold); border-color: var(--gold); }
+.ctag { font-size: 11px; color: var(--gold); background: rgba(251,191,36,.1); border-radius: 999px; padding: 0 6px; margin-right: 6px; white-space: nowrap; }
+#tag-view.on { color: var(--gold); width: auto; padding: 0 9px; font-size: 13px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.picker-list .tag { font-size: 15px; padding: 7px 13px; }
+.picker-new { display: flex; gap: 8px; }
+.picker-new input { flex: 1; }
+body.compact .tagchip { max-width: 74px; }

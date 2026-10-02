@@ -297,6 +297,46 @@ window.VIQ_CLOUD = (() => {
     return { id: u.id, name: u.display_name };
   }
 
+  // ── Video tags (what a video is about) — needs tags.sql ──────────────────
+  let hasTags = null;                       // null = not checked yet
+  const normTag = t => String(t || '').trim().replace(/^#+/, '').replace(/\s+/g, ' ').toLowerCase().slice(0, 30);
+
+  async function tagsCall(path, opts) {
+    try { const r = await call(path, opts); hasTags = true; return r; }
+    catch (e) { if (isMissingView(e) || /video_tags/i.test(e.message)) { hasTags = false; return null; } throw e; }
+  }
+  // Is the video_tags table there? (false → show "needs tags.sql")
+  async function tagsReady() {
+    if (hasTags === null) await tagsCall('/rest/v1/video_tags?select=id&limit=1');
+    return !!hasTags;
+  }
+  // Every tag on every video: [{video_id, video_title, tag, added_by}]
+  async function getAllVideoTags() {
+    return (await tagsCall('/rest/v1/video_tags?select=video_id,video_title,tag,added_by&order=created_at.desc&limit=5000')) || [];
+  }
+  async function getVideoTags(videoId) {
+    return (await tagsCall('/rest/v1/video_tags?select=video_id,tag,added_by&video_id=eq.' + encodeURIComponent(videoId) + '&order=created_at.asc')) || [];
+  }
+  async function addVideoTag(videoId, videoTitle, tag) {
+    tag = normTag(tag);
+    if (!tag) throw new Error('Type a tag');
+    if (!(await tagsReady())) throw new Error('Video tags need a database update (tags.sql). Ask the owner to run it');
+    try {
+      await call('/rest/v1/video_tags', { method: 'POST', auth: true, prefer: 'return=minimal',
+        body: { video_id: videoId, video_title: (videoTitle || '').slice(0, 300) || null, tag, added_by: session.user.id } });
+    } catch (e) { if (!(e.status === 409 || e.code === '23505')) throw e; }   // already tagged → fine
+    return tag;
+  }
+  function removeVideoTag(videoId, tag) {
+    return call('/rest/v1/video_tags?video_id=eq.' + encodeURIComponent(videoId) + '&tag=eq.' + encodeURIComponent(normTag(tag)) +
+                '&added_by=eq.' + session.user.id, { method: 'DELETE', auth: true, prefer: 'return=minimal' });
+  }
+  // Danmu of several videos at once (home page filtered by a video tag)
+  function getVideosDanmu(ids) {
+    const q = 'video_id=in.(' + ids.map(encodeURIComponent).join(',') + ')&order=updated_at.desc&limit=3000';
+    return readDanmu('select=' + VIEW_COLS + '&' + q, 'select=' + TABLE_COLS + '&' + q);
+  }
+
   // Create or update our own danmu (idempotent on user_id + client_id).
   // n.nameTo = {id,name} → with a hidden name, only that person may see who wrote it.
   async function upsert(videoId, videoTitle, notes) {
@@ -328,5 +368,6 @@ window.VIQ_CLOUD = (() => {
 
   return { isConfigured, init, isSignedIn, getUser, onChange,
            signUp, signIn, signOut, updateProfile, verifyEmailCode, resendCode,
-           getVideo, getRecent, upsert, remove, findUser, privacyReady };
+           getVideo, getRecent, upsert, remove, findUser, privacyReady,
+           normTag, tagsReady, getAllVideoTags, getVideoTags, addVideoTag, removeVideoTag, getVideosDanmu };
 })();

@@ -30,9 +30,13 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '10';
+  const APP_VERSION = '11';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
-  const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null };
+  // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
+  const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
+  const DEFAULT_CTAGS = ['emotion', 'conversation'];
+  const RECENT_CTAGS_KEY = 'viq_web_recent_ctags', VIEW_TAG_KEY = 'viq_web_view_tag', FEED_TAG_KEY = 'viq_web_feed_tag';
+  const tagOf = r => (r.style && r.style.tag) || '';
   const ANON = { name: '🙈 Anonymous', color: '#9ca3af' };
   const isMine = r => { const u = me(); return !!(u && r.user_id === u.id); };
   // How a danmu's author appears to ME: {name, color, hidden, revealed, note}
@@ -61,6 +65,10 @@
   const live = new Set();        // on-screen danmu animations (paused with the video)
   const lanes = { top: [], bottom: [] };
   let danmuOn = lsGet(DANMU_ON_KEY, true);
+  let viewTag = lsGet(VIEW_TAG_KEY, '*');      // which comment tag to show: '*' all, '' untagged, or a tag
+  let feedTag = lsGet(FEED_TAG_KEY, '');       // home page: only videos with this video tag ('' = all)
+  let videoTagRows = [];                       // tags of the open video: [{tag, added_by}]
+  const matchesView = r => viewTag === '*' || tagOf(r) === viewTag;
   let showNames = lsGet(NAMES_KEY, true);   // "[Lin] text" vs just "text" (viewer's choice)
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -197,7 +205,20 @@
     const list = $('feed-list');
     if (!C.isConfigured()) { list.innerHTML = '<div class="empty">Online danmu are not set up yet.</div>'; return; }
     try {
-      const recent = (await C.getRecent(400)) || [];
+      // Video tags: the chip row on top + which videos to list when a tag is chosen
+      let tagRows = [];
+      if (await C.tagsReady().catch(() => false)) tagRows = await C.getAllVideoTags().catch(() => []);
+      const vtags = new Map(), tagCount = new Map();
+      tagRows.forEach(t => {
+        if (!vtags.has(t.video_id)) vtags.set(t.video_id, []);
+        if (!vtags.get(t.video_id).includes(t.tag)) { vtags.get(t.video_id).push(t.tag); tagCount.set(t.tag, (tagCount.get(t.tag) || 0) + 1); }
+      });
+      if (feedTag && !tagCount.has(feedTag)) { feedTag = ''; lsSet(FEED_TAG_KEY, ''); }
+      renderTagFilter(tagCount);
+      $('feed-title').textContent = feedTag ? '🏷 ' + feedTag : '🔥 New danmu';
+      const tagVids = feedTag ? [...new Set(tagRows.filter(t => t.tag === feedTag).map(t => t.video_id))] : null;
+      const recent = tagVids ? (tagVids.length ? (await C.getVideosDanmu(tagVids.slice(0, 100))) || [] : [])
+                             : (await C.getRecent(400)) || [];
       const u = me(), map = new Map();
       recent.forEach(r => {
         if (!/^[\w-]{11}$/.test(r.video_id || '')) return;
@@ -211,13 +232,18 @@
         if (!v.people.has(pk)) v.people.set(pk, who);
         if (!(u && r.user_id === u.id)) v.lastOther = Math.max(v.lastOther, at);
       });
+      if (tagVids) tagVids.forEach(id => {       // tagged videos without danmu yet
+        if (map.has(id)) return;
+        const tr = tagRows.find(t => t.video_id === id);
+        map.set(id, { id, title: cleanTitle((tr && tr.video_title) || ''), count: 0, people: new Map(), lastAt: 0, latest: null, lastOther: 0 });
+      });
       const all = [...map.values()];
       const hiddenCount = all.filter(v => hiddenVids.has(v.id)).length;
       const vids = all.filter(v => showHidden || !hiddenVids.has(v.id)).slice(0, 30);
       const hiddenNote = hiddenCount
         ? '<div class="hidden-note">' + hiddenCount + ' hidden · <button type="button" id="toggle-hidden">' + (showHidden ? 'Hide them again' : 'Show') + '</button></div>' : '';
       if (!vids.length) {
-        list.innerHTML = '<div class="empty">' + (all.length ? 'You hid all the videos.' : 'No danmu yet. Paste a link above and write the first one!') + '</div>' + hiddenNote;
+        list.innerHTML = '<div class="empty">' + (all.length ? 'You hid all the videos.' : feedTag ? 'No videos with 🏷 ' + esc(feedTag) + ' yet.' : 'No danmu yet. Paste a link above and write the first one!') + '</div>' + hiddenNote;
         wireHidden(); return;
       }
       list.innerHTML = vids.map(v => {
@@ -228,8 +254,10 @@
           '<span class="thumb"><img src="https://i.ytimg.com/vi/' + v.id + '/mqdefault.jpg" alt="" loading="lazy">' +
             (v.lastOther > feedSeen ? '<span class="new">NEW</span>' : '') + '</span>' +
           '<span class="info"><span class="vtitle">' + esc(v.title || 'YouTube video') + '</span>' +
-          '<span class="meta">💬 ' + v.count + ' · ' + names + ' · ' + timeAgo(v.lastAt) + '</span>' +
-          '<span class="last"><b style="color:' + esc(v.latest.who.color) + '">' + esc(v.latest.who.name) + ':</b> ' + esc(v.latest.text) + '</span></span></a>' +
+          ((vtags.get(v.id) || []).length ? '<span class="feed-tags">' + vtags.get(v.id).map(t => '<span>🏷 ' + esc(t) + '</span>').join('') + '</span>' : '') +
+          '<span class="meta">💬 ' + v.count + (names ? ' · ' + names : '') + (v.lastAt ? ' · ' + timeAgo(v.lastAt) : '') + '</span>' +
+          (v.latest ? '<span class="last"><b style="color:' + esc(v.latest.who.color) + '">' + esc(v.latest.who.name) + ':</b> ' + esc(v.latest.text) + '</span>'
+                    : '<span class="last">No danmu yet</span>') + '</span></a>' +
           '<button type="button" class="feed-hide" data-id="' + v.id + '" title="' + (isHidden ? 'Show in my list again' : 'Hide from my list (only on this device)') + '">' + (isHidden ? '↺' : '✕') + '</button></div>';
       }).join('') + hiddenNote;
       list.querySelectorAll('.feed-item').forEach(a => a.onclick = e => { e.preventDefault(); go({ id: a.dataset.id, short: false, t: 0 }); });
@@ -246,6 +274,17 @@
     } catch (e) {
       list.innerHTML = '<div class="empty">⚠ Could not load: ' + esc(e.message) + '</div>';
     }
+  }
+
+  function renderTagFilter(counts) {
+    const row = $('tag-filter');
+    if (!counts.size) { row.classList.add('hidden'); return; }
+    row.classList.remove('hidden');
+    const tags = [...counts.keys()].sort((a, b) => counts.get(b) - counts.get(a) || a.localeCompare(b));
+    row.innerHTML = '<button type="button" class="tag' + (feedTag ? '' : ' active') + '" data-t="">All</button>' +
+      tags.map(t => '<button type="button" class="tag' + (t === feedTag ? ' active' : '') + '" data-t="' + esc(t) + '">🏷 ' + esc(t) +
+                    ' <span class="n">' + counts.get(t) + '</span></button>').join('');
+    row.querySelectorAll('.tag').forEach(b => b.onclick = () => { feedTag = b.dataset.t; lsSet(FEED_TAG_KEY, feedTag); loadFeed(); });
   }
 
   function wireHidden() {
@@ -268,6 +307,8 @@
     }
     loadPlayer();
     loadDanmu(true);
+    if (changed) { videoTagRows = []; renderVideoTags(); }
+    loadVideoTags();
     clearInterval(pollTimer);
     pollTimer = setInterval(() => { if (document.visibilityState === 'visible') loadDanmu(false); }, POLL_MS);
     clearInterval(tickTimer);
@@ -337,7 +378,7 @@
     const jumped = lastSec >= 0 && Math.abs(t - lastSec) > 2;
     lastSec = t;
     let state = -1; try { state = player.getPlayerState(); } catch { /* */ }
-    if (!jumped && state === 1 && danmuOn) rows.forEach(r => { if (r.time_sec === t && !r.is_summary) launch(r); });
+    if (!jumped && state === 1 && danmuOn) rows.forEach(r => { if (r.time_sec === t && !r.is_summary && matchesView(r)) launch(r); });
     highlightNow(t);
   }
 
@@ -457,6 +498,7 @@
     $('st-color').value = s.color;
     updateStyleUI();
     updateNameVis();
+    updateCtagBtn();
   }
   function updateStyleUI() {
     const s = curStyle();
@@ -469,7 +511,7 @@
   ['st-font', 'st-size', 'st-mode', 'st-dur', 'st-color'].forEach(id => $(id).addEventListener(id === 'st-color' ? 'input' : 'change', () => {
     const next = { font: $('st-font').value, size: $('st-size').value, color: $('st-color').value,
                    mode: $('st-mode').value, duration: +$('st-dur').value || 5,
-                   anon: !!baseStyle().anon, nameTo: baseStyle().nameTo || null };
+                   anon: !!baseStyle().anon, nameTo: baseStyle().nameTo || null, tag: baseStyle().tag || '' };
     if (editing) editStyle = next;               // saved with the danmu when you tap Save
     else { style = next; lsSet(STYLE_KEY, style); }
     updateStyleUI();
@@ -642,24 +684,135 @@
     inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
   }
 
+  // ── Tags ───────────────────────────────────────────────────────────────────
+  // A small chooser in the bottom sheet: items [{value, label, count}], optional "new tag" box
+  function openPicker({ title, items, current, allowNew, newPlaceholder, onPick }) {
+    $('sheet-title').textContent = title;
+    $('sheet-bg').classList.remove('hidden');
+    const body = $('sheet-body');
+    body.innerHTML =
+      '<div class="picker-list">' + items.map((it, i) =>
+        '<button type="button" class="tag' + (it.value === current ? ' active' : '') + '" data-i="' + i + '">' + esc(it.label) +
+        (it.count !== undefined ? ' <span class="n">' + it.count + '</span>' : '') + '</button>').join('') + '</div>' +
+      (allowNew ? '<div class="picker-new"><input id="pick-new" type="text" maxlength="30" placeholder="' + esc(newPlaceholder || 'New tag') + '" autocapitalize="off">' +
+                  '<button class="primary" id="pick-add">Add</button></div>' : '');
+    body.querySelectorAll('.picker-list .tag').forEach(b => b.onclick = () => { closeSheet(); onPick(items[+b.dataset.i].value); });
+    if (allowNew) {
+      const add = () => { const v = C.normTag($('pick-new').value); if (!v) return; closeSheet(); onPick(v); };
+      $('pick-add').onclick = add;
+      $('pick-new').onkeydown = e => { if (e.key === 'Enter' && !composing(e)) add(); };
+    }
+  }
+  const countTags = list => list.reduce((m, r) => (m.set(tagOf(r), (m.get(tagOf(r)) || 0) + 1), m), new Map());
+
+  // Comment tag: every danmu you write is saved under it until you switch
+  function updateCtagBtn() {
+    const t = baseStyle().tag || '', b = $('ctag-btn');
+    b.textContent = t ? '#' + t : '#';
+    b.classList.toggle('on', !!t);
+    b.title = t ? 'Your danmu are saved under #' + t + ' (tap to change)' : 'Comment tag: tap to save your danmu under a tag';
+  }
+  $('ctag-btn').onclick = () => {
+    if (!C.isSignedIn()) return openSheet();
+    const counts = countTags(rows);
+    const names = [...new Set([...DEFAULT_CTAGS, ...lsGet(RECENT_CTAGS_KEY, []), ...[...counts.keys()].filter(Boolean)])];
+    const cur = baseStyle().tag || '';
+    openPicker({
+      title: editing ? '# Tag for this danmu' : '# Save my danmu under…',
+      current: cur, allowNew: true, newPlaceholder: 'New comment tag (e.g. vocabulary)',
+      items: [{ value: '', label: 'No tag' }].concat(names.map(n => ({ value: n, label: '#' + n, count: counts.get(n) || 0 }))),
+      onPick: v => {
+        if (editing) editStyle = Object.assign({}, editStyle, { tag: v });
+        else { style = Object.assign({}, style, { tag: v }); lsSet(STYLE_KEY, style); }
+        if (v) lsSet(RECENT_CTAGS_KEY, [v, ...lsGet(RECENT_CTAGS_KEY, []).filter(x => x !== v)].slice(0, 12));
+        updateCtagBtn();
+        toast(editing ? (v ? 'This danmu → #' + v + ' (tap Save)' : 'This danmu → no tag (tap Save)')
+                      : (v ? 'Your danmu are now saved under #' + v : 'Your danmu are saved without a tag'));
+      }
+    });
+  };
+
+  // Which comment tag to show on the video (and in the list)
+  function updateViewBtn() {
+    const b = $('tag-view');
+    b.textContent = viewTag === '*' ? '#' : '#' + (viewTag || 'no tag');
+    b.classList.toggle('on', viewTag !== '*');
+  }
+  $('tag-view').onclick = () => {
+    const counts = countTags(rows);
+    const tags = [...counts.keys()].filter(Boolean).sort((a, b) => counts.get(b) - counts.get(a));
+    if (viewTag && viewTag !== '*' && !counts.has(viewTag)) tags.unshift(viewTag);
+    const items = [{ value: '*', label: 'All danmu', count: rows.length }]
+      .concat(tags.map(t => ({ value: t, label: '#' + t, count: counts.get(t) || 0 })));
+    if (counts.get('')) items.push({ value: '', label: 'No tag', count: counts.get('') });
+    openPicker({ title: '# Show danmu with tag', current: viewTag, items, onPick: v => {
+      viewTag = v; lsSet(VIEW_TAG_KEY, v);
+      updateViewBtn(); renderList(); clearDanmu();
+      toast(v === '*' ? 'Showing all danmu' : 'Showing only ' + (v ? '#' + v : 'danmu without a tag'));
+    } });
+  };
+  updateViewBtn();
+
+  // Video tags (what the video is about) — shared by everyone, needs tags.sql
+  async function loadVideoTags() {
+    if (!C.isConfigured() || !videoId) return;
+    const vid = videoId;
+    try {
+      const ready = await C.tagsReady();
+      if (vid !== videoId) return;
+      if (!ready) { videoTagRows = null; return renderVideoTags(); }
+      const got = await C.getVideoTags(vid);
+      if (vid !== videoId) return;
+      videoTagRows = got || []; renderVideoTags();
+    } catch (e) { console.warn('VideoIQ tags:', e.message); }
+  }
+  function renderVideoTags() {
+    const box = $('vtags'), u = me();
+    if (videoTagRows === null) {
+      box.innerHTML = '<span class="note">🏷 Video tags need a one-time database update (tags.sql).</span>'; return;
+    }
+    box.innerHTML = videoTagRows.map(t =>
+      '<span class="tag">🏷 ' + esc(t.tag) + (u && t.added_by === u.id ? '<button class="x" data-tag="' + esc(t.tag) + '" title="Remove this tag">✕</button>' : '') + '</span>').join('') +
+      '<button type="button" class="tag add" id="vtag-add">＋ Video tag</button>';
+    box.querySelectorAll('.x').forEach(b => b.onclick = async () => {
+      try { await C.removeVideoTag(videoId, b.dataset.tag); toast('Removed 🏷 ' + b.dataset.tag); loadVideoTags(); }
+      catch (e) { toast('❌ ' + e.message, 4000); }
+    });
+    $('vtag-add').onclick = async () => {
+      if (!C.isSignedIn()) return openSheet();
+      let all = [];
+      try { all = await C.getAllVideoTags(); } catch { /* suggestions are optional */ }
+      const have = new Set(videoTagRows.map(t => t.tag));
+      const counts = all.reduce((m, r) => (m.set(r.tag, (m.get(r.tag) || 0) + 1), m), new Map());
+      const items = [...counts.keys()].filter(t => !have.has(t)).sort((a, b) => counts.get(b) - counts.get(a))
+        .map(t => ({ value: t, label: '🏷 ' + t, count: counts.get(t) }));
+      openPicker({ title: '🏷 What is this video about?', items, allowNew: true, newPlaceholder: 'New video tag (e.g. puppy)',
+        onPick: async v => {
+          try { const t = await C.addVideoTag(videoId, $('video-title').textContent, v); toast('Tagged 🏷 ' + t); loadVideoTags(); }
+          catch (e) { toast('❌ ' + e.message, 4000); }
+        } });
+    };
+  }
+
   // ── List ───────────────────────────────────────────────────────────────────
-  document.querySelectorAll('.chip').forEach(c => c.onclick = () => {
-    document.querySelectorAll('.chip').forEach(x => x.classList.toggle('active', x === c));
+  document.querySelectorAll('.filters .chip').forEach(c => c.onclick = () => {
+    document.querySelectorAll('.filters .chip').forEach(x => x.classList.toggle('active', x === c));
     filter = c.dataset.f; renderList();
   });
 
   function renderList() {
     const u = me(), list = $('danmu-list');
-    let items = rows;
-    if (filter === 'mine')   items = rows.filter(r => u && r.user_id === u.id);
-    if (filter === 'others') items = rows.filter(r => !(u && r.user_id === u.id));
+    let items = rows.filter(matchesView);
+    if (filter === 'mine')   items = items.filter(r => u && r.user_id === u.id);
+    if (filter === 'others') items = items.filter(r => !(u && r.user_id === u.id));
     const mineCount = rows.filter(r => u && r.user_id === u.id && !pending.has(r.client_id)).length;
     $('del-mine').classList.toggle('hidden', !mineCount);
     $('del-mine').textContent = '🗑 Delete all mine (' + mineCount + ')';
     const people = new Set(rows.map(r => r.user_id)).size;
-    $('list-title').textContent = rows.length ? '💬 ' + rows.length + ' danmu · ' + people + (people === 1 ? ' person' : ' people') : 'Danmu';
+    $('list-title').textContent = (rows.length ? '💬 ' + rows.length + ' danmu · ' + people + (people === 1 ? ' person' : ' people') : 'Danmu') +
+      (viewTag === '*' ? '' : ' · showing ' + (viewTag ? '#' + viewTag : 'no tag'));
     if (!items.length) {
-      list.innerHTML = '<div class="empty">' + (rows.length ? 'Nothing here.' : 'No danmu on this video yet — be the first!') + '</div>';
+      list.innerHTML = '<div class="empty">' + (rows.length ? (viewTag === '*' ? 'Nothing here.' : 'No danmu with ' + (viewTag ? '#' + esc(viewTag) : 'no tag') + ' here. Tap # on the video to show all.') : 'No danmu on this video yet — be the first!') + '</div>';
       return;
     }
     const mention = u ? new RegExp('@' + escRe(u.name) + '(?![\\w])', 'i') : null;
@@ -670,7 +823,8 @@
       return '<div class="' + cls + '" data-i="' + i + '" data-t="' + r.time_sec + '">' +
         '<span class="t">' + fmt(r.time_sec) + '</span>' +
         '<span class="body"><span class="who" style="color:' + esc(a.color) + '"' + (a.tip ? ' title="' + esc(a.tip) + '"' : '') + '>' + esc(a.name) +
-          (a.note ? '<span class="lock">' + esc(a.note) + '</span>' : '') + '</span>' + esc(r.text) + '</span>' +
+          (a.note ? '<span class="lock">' + esc(a.note) + '</span>' : '') + '</span>' +
+          (tagOf(r) ? '<span class="ctag">#' + esc(tagOf(r)) + '</span>' : '') + esc(r.text) + '</span>' +
         '<span class="acts">' + (mine
           ? '<button data-a="edit" title="Edit">✎</button><button data-a="del" title="Delete">✕</button>'
           : a.hidden ? '' : '<button data-a="reply" title="Reply">↩</button>') + '</span></div>';
@@ -714,6 +868,7 @@
   function closeSheet() { $('sheet-bg').classList.add('hidden'); }
 
   function openSheet() {
+    $('sheet-title').textContent = '👤 Account';
     $('sheet-bg').classList.remove('hidden');
     const body = $('sheet-body'), u = me();
     if (!C.isConfigured()) { body.innerHTML = '<p class="note">Online saving is not set up.</p>'; return; }
@@ -774,6 +929,7 @@
 
   C.onChange(u => {
     updatePill(); updateComposer(); renderList(); buildStyleBar();
+    if (videoId) renderVideoTags();               // ✕ only on tags you added
     // who may see which names depends on who you are → reload with the new account
     if (videoId && !$('watch').classList.contains('hidden')) loadDanmu(false); else if (!$('home').classList.contains('hidden')) loadFeed();
     if (u) { closeSheet(); toast('👋 Signed in as ' + u.name); }
