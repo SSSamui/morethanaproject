@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Puppy Pomodoro</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main class="app" id="app" data-phase="idle">
+    <header class="top">
+      <h1>🐾 Puppy Pomodoro</h1>
+      <a id="openTab" class="link" href="#" title="Open in a tab">⤢</a>
+    </header>
+
+    <p id="blocked" class="blocked" hidden></p>
+
+    <section class="clock">
+      <div id="label" class="label">Ready to focus</div>
+      <div id="time" class="time">25:00</div>
+      <div id="sub" class="sub"></div>
+    </section>
+
+    <svg class="room" id="room" viewBox="0 0 360 200" role="img" aria-label="Puppy room">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#9fd3ff"/>
+          <stop offset="1" stop-color="#d9f0ff"/>
+        </linearGradient>
+      </defs>
+      <!-- room -->
+      <rect class="wall" x="0" y="0" width="360" height="160"/>
+      <rect class="baseboard" x="0" y="154" width="360" height="6"/>
+      <rect class="floor" x="0" y="160" width="360" height="40"/>
+      <!-- window -->
+      <rect x="38" y="30" width="70" height="56" rx="4" class="frame"/>
+      <rect x="43" y="35" width="60" height="46" fill="url(#sky)"/>
+      <line x1="73" y1="35" x2="73" y2="81" class="frameLine"/>
+      <line x1="43" y1="58" x2="103" y2="58" class="frameLine"/>
+      <!-- door frame, and outside through the doorway -->
+      <rect x="266" y="50" width="68" height="110" class="frame"/>
+      <rect x="272" y="56" width="56" height="104" fill="url(#sky)"/>
+      <rect x="272" y="134" width="56" height="26" fill="#6cbf5a"/>
+      <text x="300" y="154" text-anchor="middle" font-size="24" id="outsidePlant">🌳</text>
+      <g id="door" class="door">
+        <rect x="272" y="56" width="56" height="104" class="doorPanel"/>
+        <rect x="279" y="64" width="42" height="36" rx="3" class="doorInset"/>
+        <rect x="279" y="108" width="42" height="44" rx="3" class="doorInset"/>
+        <circle cx="319" cy="108" r="3.4" class="knob"/>
+        <g class="scratches">
+          <path d="M276 118 l6 16 M281 116 l6 17 M286 118 l5 15"/>
+          <path d="M274 130 l5 14 M279 129 l5 15"/>
+        </g>
+      </g>
+      <!-- bed and toys -->
+      <ellipse cx="80" cy="168" rx="46" ry="11" class="bed"/>
+      <ellipse cx="80" cy="164" rx="36" ry="7" class="bedInner"/>
+      <circle id="ball" class="ball" cx="230" cy="166" r="8"/>
+      <!-- speech bubble -->
+      <g id="bubble" class="bubble">
+        <rect x="150" y="14" width="112" height="34" rx="10"/>
+        <path d="M232 47 l10 12 l2 -12z"/>
+        <text x="206" y="36" text-anchor="middle">Woof! Let me out!</text>
+      </g>
+      <g id="zzz" class="zzz">
+        <text x="120" y="120">z</text>
+        <text x="130" y="108">z</text>
+        <text x="142" y="94">Z</text>
+      </g>
+      <!-- puppy (faces right, feet on y=60 in its own space) -->
+      <g id="pupPos" class="pupPos">
+        <g id="pup" class="pup">
+          <path class="tail" d="M16 36 Q2 26 8 10" />
+          <ellipse class="dark" cx="27" cy="49" rx="13" ry="11"/>
+          <ellipse class="leg" cx="31" cy="59" rx="10" ry="3.2"/>
+          <ellipse class="fur" cx="42" cy="40" rx="29" ry="17"/>
+          <ellipse class="light" cx="48" cy="47" rx="17" ry="8"/>
+          <g class="legFront">
+            <rect class="fur" x="57" y="40" width="10" height="20" rx="5"/>
+            <ellipse class="leg" cx="63" cy="59" rx="7.5" ry="3"/>
+          </g>
+          <g class="head">
+            <circle class="fur" cx="78" cy="22" r="17"/>
+            <ellipse class="light" cx="94" cy="29" rx="10" ry="7"/>
+            <ellipse class="nose" cx="102.5" cy="25.5" rx="3.4" ry="2.7"/>
+            <ellipse class="tongue" cx="95" cy="36" rx="2.6" ry="3.6"/>
+            <circle class="eyeOpen" cx="85" cy="17" r="2.4"/>
+            <path class="eyeShut" d="M81.5 18 q3.2 2.6 6.4 0"/>
+            <ellipse class="ear" cx="70" cy="22" rx="6.5" ry="13" transform="rotate(14 70 22)"/>
+            <path class="collar" d="M66 34 q10 7 20 2"/>
+            <circle class="tag" cx="77" cy="40" r="2.6"/>
+          </g>
+          <g class="paw">
+            <rect class="fur" x="63" y="36" width="10" height="23" rx="5"/>
+            <ellipse class="leg" cx="68" cy="58" rx="6.5" ry="3.2"/>
+          </g>
+        </g>
+      </g>
+    </svg>
+
+    <section class="controls" id="controls">
+      <div class="row setup" id="setup">
+        <label>Focus <input id="focusMin" type="number" min="1" max="180" value="25"> min</label>
+        <label>Break <input id="breakMin" type="number" min="1" max="60" value="5"> min</label>
+      </div>
+      <div class="row buttons">
+        <button id="start" class="primary">▶ Start focus</button>
+        <button id="pause">Pause</button>
+        <button id="resume" class="primary">Resume</button>
+        <button id="takeBreak">Take break now</button>
+        <button id="endBreak">Back to work now</button>
+        <button id="release" class="release">🐾 End the fun — let puppy out</button>
+        <button id="stop" class="ghost">Stop</button>
+      </div>
+    </section>
+
+    <section class="garden">
+      <div class="gardenHead">
+        <span>Your forest</span>
+        <span id="gardenCount" class="muted">nothing planted yet</span>
+      </div>
+      <div id="plants" class="plants"></div>
+    </section>
+
+    <details class="settings">
+      <summary>Settings</summary>
+      <label class="check"><input type="checkbox" id="autoBreak"> Start break automatically after focus</label>
+      <label class="check"><input type="checkbox" id="blockDuringFocus"> Keep distraction sites closed during focus</label>
+      <label class="check"><input type="checkbox" id="openTab2"> Open the puppy tab when a session ends</label>
+      <label class="check"><input type="checkbox" id="sound"> Scratching sound</label>
+      <label class="sitesLabel" for="sites">Distraction sites (one per line) — closed when focus starts</label>
+      <textarea id="sites" rows="6" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="saveSettings" class="primary">Save</button>
+        <button id="clearGarden" class="ghost">Clear forest</button>
+        <span id="saved" class="muted"></span>
+      </div>
+    </details>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
