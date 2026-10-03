@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="stylesheet" href="app.css?v=11">
+  <link rel="stylesheet" href="app.css?v=12">
 </head>
 <body>
   <header class="top">
@@ -45,7 +45,7 @@
         <li>In the YouTube app: <b>Share</b> → <b>More</b> → <b>VideoIQ</b>. The video opens here with danmu.</li>
       </ol>
       <p>Tip: in Safari tap <b>Share → Add to Home Screen</b> to use this page like an app.</p>
-      <p class="ver">Version <span id="app-ver"></span></p>
+      <p class="ver">Version <span id="app-ver"></span> · <button type="button" class="linklike" id="dbg-toggle">🔧 Show diagnostics</button></p>
     </details>
 
     <section class="feed">
@@ -60,6 +60,7 @@
     <div class="stage" id="stage">
       <div id="yt-player"></div>
       <div id="overlay" class="overlay"></div>
+      <div id="dbg" class="dbg hidden"></div>
       <div class="stage-btns-left">
         <button id="back-btn" title="Home">‹</button>
         <button id="acc-mini" title="Account">👤</button>
@@ -140,8 +141,8 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script src="../videoiq-extension/config.js?v=11"></script>
-  <script src="../videoiq-extension/cloud.js?v=11"></script>
-  <script src="app.js?v=11"></script>
+  <script src="../videoiq-extension/config.js?v=12"></script>
+  <script src="../videoiq-extension/cloud.js?v=12"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>

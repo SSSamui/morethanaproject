@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '11';
+  const APP_VERSION = '12';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
@@ -374,13 +374,51 @@
     if (!playerReady) return;
     const t = Math.floor(nowSec());
     $('time-hint').textContent = editing ? '✏️ Editing your danmu at ' + fmt(editing.time_sec) + ': change text and/or 🎨 style' : '⏱ Will be added at ' + fmt(t);
-    if (t === lastSec) return;
-    const jumped = lastSec >= 0 && Math.abs(t - lastSec) > 2;
-    lastSec = t;
+    if (t === lastSec) { debugInfo(t); return; }
     let state = -1; try { state = player.getPlayerState(); } catch { /* */ }
-    if (!jumped && state === 1 && danmuOn) rows.forEach(r => { if (r.time_sec === t && !r.is_summary && matchesView(r)) launch(r); });
+    // Show danmu while playing or buffering (phones buffer often; buffered danmu start paused
+    // and move once playback resumes). A second only counts as "done" while playing, so the
+    // danmu at 0:00 still show when you press play. Catch up on seconds a slow timer skipped
+    // and when a Short loops back to the start; real seeks (big jumps) don't replay old danmu.
+    const playing = state === 1 || state === 3;
+    if (!playing) { highlightNow(t); debugInfo(t, state); return; }
+    const prev = lastSec;
+    lastSec = t;
+    const fresh = prev < 0, forward = prev >= 0 && t > prev && t - prev <= 3, looped = prev > t && t <= 1;
+    if (playing && danmuOn && (fresh || forward || looped)) {
+      for (let s = forward ? prev + 1 : t; s <= t; s++)
+        rows.forEach(r => { if (r.time_sec === s && !r.is_summary && matchesView(r)) launch(r); });
+    }
     highlightNow(t);
+    debugInfo(t, state);
   }
+
+  // ── Diagnostics (🔧 in the help section): what the page sees, for troubleshooting ──
+  const DEBUG_KEY = 'viq_web_debug';
+  let lastLoadError = '';
+  function debugInfo(t, state) {
+    const box = $('dbg');
+    if (!lsGet(DEBUG_KEY, false)) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    if (state === undefined) try { state = player.getPlayerState(); } catch { /* not ready */ }
+    const ov = $('overlay');
+    const stateName = { '-1': 'unstarted', 0: 'ended', 1: 'playing', 2: 'paused', 3: 'buffering', 5: 'cued' }[state] ?? state;
+    box.textContent = [
+      'v' + APP_VERSION + ' · ' + (isShort ? 'Short' : 'video') + ' ' + videoId,
+      'player: ' + (state === undefined ? '…' : stateName) + ' · t=' + nowSec().toFixed(1) + 's',
+      'danmu loaded: ' + rows.length + ' · this second: ' + rows.filter(r => r.time_sec === t).length,
+      'on screen: ' + ov.children.length + ' · layer ' + ov.clientWidth + '×' + ov.clientHeight,
+      'show: ' + (danmuOn ? 'on' : 'OFF') + ' · tag: ' + (viewTag === '*' ? 'all' : '#' + (viewTag || 'none')) +
+        ' · signed in: ' + (C.isSignedIn() ? 'yes' : 'no'),
+      lastLoadError ? 'load error: ' + lastLoadError : 'load: ok'
+    ].join('\n');
+  }
+  $('dbg-toggle').onclick = () => {
+    const on = !lsGet(DEBUG_KEY, false); lsSet(DEBUG_KEY, on);
+    $('dbg-toggle').textContent = on ? '🔧 Hide diagnostics' : '🔧 Show diagnostics';
+    toast(on ? 'Diagnostics on: open a video and take a screenshot' : 'Diagnostics off');
+  };
+  $('dbg-toggle').textContent = lsGet(DEBUG_KEY, false) ? '🔧 Hide diagnostics' : '🔧 Show diagnostics';
 
   // ── Danmu data ─────────────────────────────────────────────────────────────
   async function loadDanmu(first) {
@@ -395,6 +433,7 @@
       renderList();
       if (first) lastSec = -1;   // show danmu of the current second too
     } catch (e) {
+      lastLoadError = e.message;
       if (first) toast('⚠ Could not load danmu: ' + e.message, 4000);
     }
   }

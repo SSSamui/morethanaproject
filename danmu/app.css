@@ -241,3 +241,9 @@ body.compact.fs .drawer { display: none; }
 .picker-new { display: flex; gap: 8px; }
 .picker-new input { flex: 1; }
 body.compact .tagchip { max-width: 74px; }
+
+.dbg {
+  position: absolute; left: 8px; top: calc(52px + env(safe-area-inset-top)); z-index: 6; pointer-events: none;
+  white-space: pre; font: 11px/1.4 ui-monospace, Menlo, monospace; color: #9effa0;
+  background: rgba(0,0,0,.72); border-radius: 6px; padding: 6px 8px; max-width: calc(100% - 16px); overflow: hidden;
+}
