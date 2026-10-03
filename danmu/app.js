@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '12';
+  const APP_VERSION = '13';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
@@ -349,8 +349,7 @@
           updateTitle();
         },
         onStateChange: e => {
-          if (e.data === 1) { live.forEach(a => a.play()); updateTitle(); }       // playing
-          else if (e.data === 2 || e.data === 3) live.forEach(a => a.pause());    // paused / buffering
+          if (e.data === 1) updateTitle();   // danmu movement follows the player in frame()
         },
         onError: e => {
           const blocked = e.data === 101 || e.data === 150 || e.data === 153;
@@ -439,7 +438,33 @@
   }
 
   // ── Floating danmu ─────────────────────────────────────────────────────────
-  function clearDanmu() { live.forEach(a => a.cancel()); live.clear(); $('overlay').innerHTML = ''; lanes.top = []; lanes.bottom = []; }
+  function clearDanmu() { live.forEach(d => d.el.remove()); live.clear(); $('overlay').innerHTML = ''; lanes.top = []; lanes.bottom = []; }
+
+  // Danmu are moved by our own frame loop, not the browser's animation engine (which doesn't
+  // run on some Android phones, e.g. with page zoom). Their clock only advances while the video
+  // plays, so they pause with it; your own just-sent danmu ("free") move even when paused.
+  let rafId = 0, lastFrame = 0;
+  function frame(ts) {
+    const dt = lastFrame ? Math.min(100, ts - lastFrame) : 0;
+    lastFrame = ts;
+    let playing = false; try { playing = !!player && player.getPlayerState() === 1; } catch { /* not ready */ }
+    live.forEach(d => {
+      if (playing || d.free) d.t += dt;
+      const p = Math.min(1, d.t / d.dur);
+      if (d.scroll) d.el.style.left = Math.round(d.mode === 'rtl' ? d.W - p * d.dist : p * d.dist - d.w) + 'px';
+      else d.el.style.opacity = String(p < 0.04 ? p / 0.04 : p > 0.92 ? Math.max(0, (1 - p) / 0.08) : 1);
+      if (p >= 1) { d.el.remove(); live.delete(d); }
+    });
+    if (live.size) rafId = requestAnimationFrame(frame); else { rafId = 0; lastFrame = 0; }
+  }
+  // On phones the button row sits on top of the video: start danmu just below it
+  function topSafe() {
+    const btns = document.querySelector('.stage-btns');
+    if (!btns || !document.body.classList.contains('compact')) return 6;
+    const o = $('overlay').getBoundingClientRect(), r = btns.getBoundingClientRect();
+    return Math.max(6, Math.round(r.bottom - o.top + 6));
+  }
+  function startFrames() { if (!rafId) { lastFrame = 0; rafId = requestAnimationFrame(frame); } }
 
   function launch(r, now) {   // now = show right away even if paused (your own new danmu)
     const overlay = $('overlay');
@@ -455,7 +480,7 @@
     const u = me();
 
     const el = document.createElement('div');
-    el.className = 'dm ' + mode + (u && r.user_id === u.id ? ' mine' : '');
+    el.className = 'dm dm-' + mode + (u && r.user_id === u.id ? ' dm-mine' : '');
     // name shows if the viewer wants names AND the writer didn't hide it from this viewer
     const showName = showNames && !a.hidden && !a.mineAnon;
     el.textContent = (showName ? '[' + a.name + (a.revealed ? ' 🔒' : '') + '] ' : '') + r.text;
@@ -464,26 +489,29 @@
     el.style.fontSize = px + 'px';
     overlay.appendChild(el);
 
-    let anim;
+    let d;
     if (mode === 'top' || mode === 'bottom') {
-      const laneH = Math.round(px * 1.5), maxL = Math.max(1, Math.floor(H * 0.42 / laneH)), now = Date.now();
+      const ts = mode === 'top' ? topSafe() : 6;
+      const laneH = Math.round(px * 1.5), maxL = Math.max(1, Math.floor((H * 0.42 - ts) / laneH)), now = Date.now();
       const L = lanes[mode];
       let i = L.findIndex((until, k) => k < maxL && until <= now);
       if (i === -1) i = L.length < maxL ? L.length : L.indexOf(Math.min(...L.slice(0, maxL)));
       L[i] = now + dur;
-      el.style[mode] = (6 + i * laneH) + 'px';
+      el.style[mode] = (ts + i * laneH) + 'px';
       if (el.offsetWidth > W * 0.92) el.style.fontSize = Math.max(10, Math.floor(px * W * 0.92 / el.offsetWidth)) + 'px';
-      anim = el.animate([{ opacity: 0 }, { opacity: 1, offset: 0.04 }, { opacity: 1, offset: 0.92 }, { opacity: 0 }],
-                        { duration: dur, easing: 'linear', fill: 'forwards' });
+      el.style.opacity = '0';
+      d = { el, scroll: false, dur, t: 0 };
     } else {
-      el.style.top = Math.round(6 + Math.random() * Math.max(1, H * 0.72 - px)) + 'px';
-      const dist = W + el.offsetWidth;
-      anim = el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(' + (mode === 'rtl' ? -dist : dist) + 'px)' }],
-                        { duration: SCROLL_MS, easing: 'linear', fill: 'forwards' });
+      const ts = topSafe();
+      el.style.top = Math.round(ts + Math.random() * Math.max(1, H * 0.72 - px - ts)) + 'px';
+      const w = el.offsetWidth;
+      el.style.right = 'auto';
+      el.style.left = (mode === 'rtl' ? W : -w) + 'px';
+      d = { el, scroll: true, mode, W, w, dist: W + w, dur: SCROLL_MS, t: 0 };
     }
-    live.add(anim);
-    anim.onfinish = () => { live.delete(anim); el.remove(); };
-    try { if (!now && player.getPlayerState() !== 1) anim.pause(); } catch { /* */ }
+    d.free = !!now;
+    live.add(d);
+    startFrames();
   }
 
   $('danmu-toggle').onclick = () => {
@@ -747,7 +775,7 @@
   // Comment tag: every danmu you write is saved under it until you switch
   function updateCtagBtn() {
     const t = baseStyle().tag || '', b = $('ctag-btn');
-    b.textContent = t ? '#' + t : '#';
+    b.textContent = t && window.innerWidth > 320 ? '#' + t : '#';   // tiny screens: just a gold #
     b.classList.toggle('on', !!t);
     b.title = t ? 'Your danmu are saved under #' + t + ' (tap to change)' : 'Comment tag: tap to save your danmu under a tag';
   }

@@ -97,12 +97,13 @@ body.fs .fs-compose:focus-within, body.fs .fs-compose:hover { opacity: 1; }
 .dm {
   position: absolute; white-space: nowrap; font-weight: 700; line-height: 1.25;
   text-shadow: 1px 1px 2px rgba(0,0,0,.95), -1px -1px 2px rgba(0,0,0,.95), 0 0 4px rgba(0,0,0,.7);
-  padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,.25); will-change: transform;
+  padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,.25);
 }
-.dm.rtl { left: 100%; }          /* movement is animated from app.js (pauses with the video) */
-.dm.ltr { right: 100%; }
-.dm.top, .dm.bottom { left: 50%; transform: translateX(-50%); max-width: 94%; overflow: hidden; text-overflow: ellipsis; }
-.dm.mine { box-shadow: 0 0 0 1.5px rgba(255,255,255,.75); }
+/* dm-* names: plain "top" would clash with the page header's .top class */
+.dm-rtl { left: 100%; }          /* movement comes from app.js frame(), which pauses with the video */
+.dm-ltr { right: 100%; }
+.dm-top, .dm-bottom { left: 50%; transform: translateX(-50%); max-width: 94%; overflow: hidden; text-overflow: ellipsis; }
+.dm-mine { box-shadow: 0 0 0 1.5px rgba(255,255,255,.75); }
 
 .compose { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
 .compose-row { display: flex; gap: 8px; }
@@ -246,4 +247,17 @@ body.compact .tagchip { max-width: 74px; }
   position: absolute; left: 8px; top: calc(52px + env(safe-area-inset-top)); z-index: 6; pointer-events: none;
   white-space: pre; font: 11px/1.4 ui-monospace, Menlo, monospace; color: #9effa0;
   background: rgba(0,0,0,.72); border-radius: 6px; padding: 6px 8px; max-width: calc(100% - 16px); overflow: hidden;
+}
+/* very narrow screens (small phones, or large page zoom): give the text box the room */
+@media (max-width: 400px) {
+  body.compact .compose-row { gap: 5px; }
+  body.compact .compose-row button { padding: 8px 8px; min-width: 38px; }
+  body.compact .tagchip { max-width: 54px; }
+  body.compact #send-btn { font-size: 0; padding: 8px 12px; }
+  body.compact #send-btn::after { content: '➤'; font-size: 17px; }
+  body.compact #danmu-input { padding: 9px 10px; }
+}
+@media (max-width: 320px) {
+  body.compact .drawer:not(.open) #emoji-btn { display: none; }   /* back when the panel is open (⌃) */
+  body.compact .tagchip { max-width: 40px; }
 }
