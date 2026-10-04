@@ -26,11 +26,11 @@ Safari extensions have to be wrapped in a small Mac app. You need **Xcode** (fre
    Then **Develop → Allow Unsigned Extensions** (you need to do this again after you quit Safari).
 4. **Safari → Settings → Extensions →** turn on **Puppy Pomodoro**.
 5. Click **Always Allow on Every Website** for Puppy Pomodoro. This lets it see which site is open, close distraction tabs and show the puppy window on pages. Without it, the clock still works but it can't do those.
-
-Quick way without Xcode: Safari Settings → **Developer** → **Add Temporary Extension…** → pick the `puppy-pomodoro` folder. It's removed when you quit Safari.
 6. Click the paw icon in the toolbar. Use **⤢** to open the puppy in its own tab.
 
 For iPhone/iPad as well, leave out `--macos-only`.
+
+Quick way without Xcode: Safari Settings → **Developer** → **Add Temporary Extension…** → pick the `puppy-pomodoro` folder. It's removed when you quit Safari.
 
 ## Settings
 
