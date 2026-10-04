@@ -11,6 +11,12 @@ if (isTab) document.body.classList.add('tab');
 
 const app = $('app');
 const MIN = 60000;
+const PACE_MS = 2 * MIN; // after the break: pace this long, then scratch
+
+$('pupPos').innerHTML = PORK_SVG;
+const porkStyle = document.createElement('style');
+porkStyle.textContent = PORK_CSS;
+document.head.appendChild(porkStyle);
 let state = null;
 let releasingUntil = 0;
 let seenTreats = null;
@@ -104,19 +110,21 @@ function render() {
         const treats = 1 + Math.floor(extra / every);
         label = 'Extra focus' + paused;
         time = '+' + fmt(extra);
-        sub = `Puppy earned ${'🦴'.repeat(Math.min(treats, 8))}${treats > 8 ? ' ×' + treats : ''} · next treat in ${fmt(every - (extra % every))}. Open another site to take your break.`;
+        sub = `Pork earned ${'🦴'.repeat(Math.min(treats, 8))}${treats > 8 ? ' ×' + treats : ''} · next treat in ${fmt(every - (extra % every))}. Open another site to take your break.`;
       }
       break;
     }
     case 'break':
       label = s.paused ? 'Break · paused' : 'Break';
       time = fmt(Math.max(0, left));
-      sub = 'Puppy is playing 🎾';
+      sub = 'Pork is waiting by the door 🚪';
       break;
     case 'overtime':
       label = 'Break is over!';
       time = '−' + fmt(now - s.overtimeFrom);
-      sub = 'Puppy is scratching the door. This time gets added to your next focus.';
+      sub = now - s.overtimeFrom < PACE_MS
+        ? 'Pork is pacing, he wants to go out! This time gets added to your next focus.'
+        : 'Pork is scratching the door! This time gets added to your next focus.';
       break;
     default:
       label = 'Ready to focus';
@@ -127,14 +135,15 @@ function render() {
   $('time').textContent = time;
   $('sub').textContent = sub;
 
-  let scene = 'sleep';
-  if (now < releasingUntil) scene = 'out';
-  else if (s.phase === 'break') scene = 'play';
-  else if (s.phase === 'overtime') scene = 'door';
-  app.dataset.scene = scene;
+  let pose = 'sleep';
+  if (now < releasingUntil) pose = 'out';
+  else if (s.phase === 'break') pose = 'wait';
+  else if (s.phase === 'overtime') pose = now - s.overtimeFrom < PACE_MS ? 'pace' : 'door';
+  app.dataset.pose = pose;
+  $('bubbleText').textContent = pose === 'pace' ? 'Can we go out? 🥺' : 'Woof! Let me out!';
 
   document.title = s.phase === 'idle' ? 'Puppy Pomodoro' : `${time} · ${label}`;
-  scratchSound(scene === 'door' && s.settings.sound);
+  scratchSound(pose === 'door' && s.settings.sound);
 }
 
 function renderTreats() {
@@ -145,7 +154,7 @@ function renderTreats() {
   if (!list.length) {
     const el = document.createElement('span');
     el.className = 'empty';
-    el.textContent = 'Finish a focus session to give the puppy a treat. Extra focus = bonus treats!';
+    el.textContent = 'Finish a focus session to give Pork a treat. Extra focus = bonus treats!';
     box.appendChild(el);
   }
   for (const t of list) {

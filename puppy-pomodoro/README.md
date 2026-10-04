@@ -1,16 +1,16 @@
 # 🐾 Puppy Pomodoro — Safari extension
 
-A focus clock with a puppy.
+A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 
-- **Focus**: click **▶ Start focus**. Every tab that isn't a focus site closes. Until you reach your focus goal, only focus sites open; anything else is sent back to the puppy.
+- **Focus**: click **▶ Start focus**. Every tab that isn't a focus site closes. Until you reach your focus goal, only focus sites open; anything else is sent back to Pork.
 - **Focus sites** (you can add more in Settings): anything ending in `mit.edu`, MIT's YouTube channels (`@mit`, `@mitocw`) and their videos, ChatGPT, Claude, Gemini, and library/book sites (Google Books, Open Library, Internet Archive, Project Gutenberg, Libby/OverDrive, O'Reilly).
-- **Focus goal reached**: there's no automatic break. The clock keeps going as **+00:01, +00:02…** and the puppy keeps earning treats: 1 treat for reaching the goal, plus 1 bonus treat for every 5 minutes of extra focus.
-- **Break**: starts only when the goal is reached **and** you open a non-focus site (or click **Take a break**). The puppy gets its treats and plays with its ball.
-- **Break is over**: the puppy scratches the door and the clock goes negative (−00:01…). A small puppy window stays on top of every web page until you click **🐾 End the fun — let puppy out**. Non-focus tabs close and the next focus starts, with the extra break time added to the goal (25:00 focus + 1:36 late = 26:36).
+- **Focus goal reached**: there's no automatic break. The clock keeps going as **+00:01, +00:02…** and Pork keeps earning treats: 1 treat for reaching the goal, plus 1 bonus treat for every 5 minutes of extra focus.
+- **Break**: starts only when the goal is reached **and** you open a non-focus site (or click **Take a break**). Pork gets his treats and **sits by the glass door, waiting** for the whole break.
+- **Break is over**: the clock goes negative (−00:01…). For the first 2 minutes Pork **paces back and forth** ("Can we go out? 🥺"); after that he **stands up and scratches the door** ("Woof! Let me out!"). A small window with Pork stays on top of every web page until you click **🐾 End the fun — let Pork out**. Non-focus tabs close and the next focus starts, with the extra break time added to the goal (25:00 focus + 1:36 late = 26:36).
 
 The toolbar icon next to the address bar shows the time: green `24m` left, gold `+3m` extra focus, blue `4m` of break, red `-2m` over the break, `||` paused.
 
-Every treat goes into **Puppy's treats** jar in the popup: 🦴 🍖 🧀 🥕 🍪 🍗 🥩.
+Every treat goes into **Pork's treats** jar in the popup: 🦴 🍖 🧀 🥕 🍪 🍗 🥩.
 
 ## Install in Safari (Mac)
 
@@ -47,7 +47,8 @@ Open **Settings** at the bottom of the popup:
 |---|---|
 | `manifest.json` | Extension setup (Manifest V3) |
 | `background.js` | The timer, focus-site rules, closing/blocking distraction tabs, treats, badge |
-| `content.js` | Runs on web pages: reports the page (and YouTube channel), shows the puppy window when the break is over, and short messages |
-| `app.html` / `app.css` / `app.js` | The popup and puppy tab: clock, room with puppy and door, treat jar, settings |
+| `pork.js` | The drawing of Pork and his poses (napping, waiting, pacing, scratching), shared by the popup and the on-page window |
+| `content.js` | Runs on web pages: reports the page (and YouTube channel), shows Pork's window when the break is over, and short messages |
+| `app.html` / `app.css` / `app.js` | The popup and puppy tab: clock, room with Pork and the glass door, treat jar, settings |
 
 It also runs in Chrome: `chrome://extensions` → Developer mode → **Load unpacked** → pick this folder.

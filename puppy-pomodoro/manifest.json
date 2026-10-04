@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Puppy Pomodoro",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "A focus clock with a puppy. Focus on your study sites; after the goal your puppy earns treats. When the break is over, the puppy scratches the door until you let it out.",
   "permissions": [
     "storage",
@@ -21,6 +21,7 @@
         "https://*/*"
       ],
       "js": [
+        "pork.js",
         "content.js"
       ],
       "run_at": "document_idle",

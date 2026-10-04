@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
-  <main class="app" id="app" data-phase="idle">
+  <main class="app" id="app" data-phase="idle" data-pose="sleep">
     <header class="top">
       <h1>🐾 Puppy Pomodoro</h1>
       <a id="openTab" class="link" href="#" title="Open in a tab">⤢</a>
@@ -21,7 +21,7 @@
       <div id="sub" class="sub"></div>
     </section>
 
-    <svg class="room" id="room" viewBox="0 0 360 200" role="img" aria-label="Puppy room">
+    <svg class="room" id="room" viewBox="0 0 360 200" role="img" aria-label="Pork's room">
       <defs>
         <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#9fd3ff"/>
@@ -37,66 +37,40 @@
       <rect x="43" y="35" width="60" height="46" fill="url(#sky)"/>
       <line x1="73" y1="35" x2="73" y2="81" class="frameLine"/>
       <line x1="43" y1="58" x2="103" y2="58" class="frameLine"/>
-      <!-- door frame, and outside through the doorway -->
-      <rect x="266" y="50" width="68" height="110" class="frame"/>
-      <rect x="272" y="56" width="56" height="104" fill="url(#sky)"/>
-      <rect x="272" y="134" width="56" height="26" fill="#6cbf5a"/>
-      <text x="300" y="154" text-anchor="middle" font-size="24" id="outsidePlant">🌳</text>
+      <!-- glass door (like Pork's), with the deck and yard outside -->
+      <rect x="264" y="48" width="72" height="112" class="doorFrame"/>
+      <rect x="270" y="54" width="60" height="106" fill="url(#sky)"/>
+      <rect x="270" y="112" width="60" height="22" fill="#6cbf5a"/>
+      <rect x="270" y="134" width="60" height="26" class="deck"/>
+      <path d="M270 142 h60 M270 150 h60" class="deckLine"/>
       <g id="door" class="door">
-        <rect x="272" y="56" width="56" height="104" class="doorPanel"/>
-        <rect x="279" y="64" width="42" height="36" rx="3" class="doorInset"/>
-        <rect x="279" y="108" width="42" height="44" rx="3" class="doorInset"/>
-        <circle cx="319" cy="108" r="3.4" class="knob"/>
+        <rect x="270" y="54" width="60" height="106" class="doorPanel"/>
+        <rect x="276" y="60" width="48" height="88" class="glass"/>
+        <path d="M300 60 v88 M276 89 h48 M276 118 h48" class="muntin"/>
+        <rect x="318" y="100" width="3" height="14" rx="1.5" class="handle"/>
         <g class="scratches">
-          <path d="M276 118 l6 16 M281 116 l6 17 M286 118 l5 15"/>
-          <path d="M274 130 l5 14 M279 129 l5 15"/>
+          <ellipse cx="284" cy="134" rx="3" ry="2.4"/><ellipse cx="291" cy="130" rx="3" ry="2.4"/>
+          <ellipse cx="286" cy="124" rx="2.6" ry="2"/><ellipse cx="293" cy="138" rx="2.6" ry="2"/>
         </g>
       </g>
-      <!-- bed and toys -->
+      <rect x="226" y="160" width="58" height="8" rx="2" class="mat"/>
+      <!-- bed -->
       <ellipse cx="80" cy="168" rx="46" ry="11" class="bed"/>
       <ellipse cx="80" cy="164" rx="36" ry="7" class="bedInner"/>
       <text id="bone" class="bone" x="132" y="176" font-size="16">🦴</text>
-      <circle id="ball" class="ball" cx="230" cy="166" r="8"/>
       <!-- speech bubble -->
       <g id="bubble" class="bubble">
-        <rect x="150" y="14" width="112" height="34" rx="10"/>
-        <path d="M232 47 l10 12 l2 -12z"/>
-        <text x="206" y="36" text-anchor="middle">Woof! Let me out!</text>
+        <rect x="140" y="12" width="124" height="34" rx="10"/>
+        <path d="M236 45 l10 12 l2 -12z"/>
+        <text id="bubbleText" x="202" y="34" text-anchor="middle">Woof! Let me out!</text>
       </g>
       <g id="zzz" class="zzz">
         <text x="120" y="120">z</text>
         <text x="130" y="108">z</text>
         <text x="142" y="94">Z</text>
       </g>
-      <!-- puppy (faces right, feet on y=60 in its own space) -->
-      <g id="pupPos" class="pupPos">
-        <g id="pup" class="pup">
-          <path class="tail" d="M16 36 Q2 26 8 10" />
-          <ellipse class="dark" cx="27" cy="49" rx="13" ry="11"/>
-          <ellipse class="leg" cx="31" cy="59" rx="10" ry="3.2"/>
-          <ellipse class="fur" cx="42" cy="40" rx="29" ry="17"/>
-          <ellipse class="light" cx="48" cy="47" rx="17" ry="8"/>
-          <g class="legFront">
-            <rect class="fur" x="57" y="40" width="10" height="20" rx="5"/>
-            <ellipse class="leg" cx="63" cy="59" rx="7.5" ry="3"/>
-          </g>
-          <g class="head">
-            <circle class="fur" cx="78" cy="22" r="17"/>
-            <ellipse class="light" cx="94" cy="29" rx="10" ry="7"/>
-            <ellipse class="nose" cx="102.5" cy="25.5" rx="3.4" ry="2.7"/>
-            <ellipse class="tongue" cx="95" cy="36" rx="2.6" ry="3.6"/>
-            <circle class="eyeOpen" cx="85" cy="17" r="2.4"/>
-            <path class="eyeShut" d="M81.5 18 q3.2 2.6 6.4 0"/>
-            <ellipse class="ear" cx="70" cy="22" rx="6.5" ry="13" transform="rotate(14 70 22)"/>
-            <path class="collar" d="M66 34 q10 7 20 2"/>
-            <circle class="tag" cx="77" cy="40" r="2.6"/>
-          </g>
-          <g class="paw">
-            <rect class="fur" x="63" y="36" width="10" height="23" rx="5"/>
-            <ellipse class="leg" cx="68" cy="58" rx="6.5" ry="3.2"/>
-          </g>
-        </g>
-      </g>
+      <!-- Pork (drawn by pork.js) -->
+      <g id="pupPos" class="pupPos"></g>
     </svg>
 
     <section class="controls" id="controls">
@@ -110,14 +84,14 @@
         <button id="resume" class="primary">Resume</button>
         <button id="takeBreak">Take a break</button>
         <button id="endBreak">Back to focus now</button>
-        <button id="release" class="release">🐾 End the fun — let puppy out</button>
+        <button id="release" class="release">🐾 End the fun — let Pork out</button>
         <button id="stop" class="ghost">Stop</button>
       </div>
     </section>
 
     <section class="jar">
       <div class="jarHead">
-        <span>🫙 Puppy's treats</span>
+        <span>🫙 Pork's treats</span>
         <span id="treatCount" class="muted">no treats yet</span>
       </div>
       <div id="treats" class="treats"></div>
@@ -137,6 +111,7 @@
       </div>
     </details>
   </main>
+  <script src="pork.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
