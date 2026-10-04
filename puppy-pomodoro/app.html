@@ -55,6 +55,7 @@
       <!-- bed and toys -->
       <ellipse cx="80" cy="168" rx="46" ry="11" class="bed"/>
       <ellipse cx="80" cy="164" rx="36" ry="7" class="bedInner"/>
+      <text id="bone" class="bone" x="132" y="176" font-size="16">🦴</text>
       <circle id="ball" class="ball" cx="230" cy="166" r="8"/>
       <!-- speech bubble -->
       <g id="bubble" class="bubble">
@@ -107,32 +108,31 @@
         <button id="start" class="primary">▶ Start focus</button>
         <button id="pause">Pause</button>
         <button id="resume" class="primary">Resume</button>
-        <button id="takeBreak">Take break now</button>
-        <button id="endBreak">Back to work now</button>
+        <button id="takeBreak">Take a break</button>
+        <button id="endBreak">Back to focus now</button>
         <button id="release" class="release">🐾 End the fun — let puppy out</button>
         <button id="stop" class="ghost">Stop</button>
       </div>
     </section>
 
-    <section class="garden">
-      <div class="gardenHead">
-        <span>Your forest</span>
-        <span id="gardenCount" class="muted">nothing planted yet</span>
+    <section class="jar">
+      <div class="jarHead">
+        <span>🫙 Puppy's treats</span>
+        <span id="treatCount" class="muted">no treats yet</span>
       </div>
-      <div id="plants" class="plants"></div>
+      <div id="treats" class="treats"></div>
     </section>
 
     <details class="settings">
       <summary>Settings</summary>
-      <label class="check"><input type="checkbox" id="autoBreak"> Start break automatically after focus</label>
-      <label class="check"><input type="checkbox" id="blockDuringFocus"> Keep distraction sites closed during focus</label>
-      <label class="check"><input type="checkbox" id="openTab2"> Open the puppy tab when a session ends</label>
+      <label class="check">Bonus treat for every <input id="bonusEveryMin" type="number" min="1" max="60" value="5"> min of extra focus</label>
       <label class="check"><input type="checkbox" id="sound"> Scratching sound</label>
-      <label class="sitesLabel" for="sites">Distraction sites (one per line) — closed when focus starts</label>
-      <textarea id="sites" rows="6" spellcheck="false"></textarea>
+      <label class="sitesLabel" for="sites">Focus sites (one per line). During focus every other site is a distraction.
+        <span class="hint">mit.edu also covers ocw.mit.edu · youtube.com/@mitocw allows that channel and its videos</span></label>
+      <textarea id="sites" rows="9" spellcheck="false"></textarea>
       <div class="row">
         <button id="saveSettings" class="primary">Save</button>
-        <button id="clearGarden" class="ghost">Clear forest</button>
+        <button id="clearTreats" class="ghost">Empty treat jar</button>
         <span id="saved" class="muted"></span>
       </div>
     </details>

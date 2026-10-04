@@ -10,14 +10,15 @@ const isTab = params.has('tab');
 if (isTab) document.body.classList.add('tab');
 
 const app = $('app');
+const MIN = 60000;
 let state = null;
 let releasingUntil = 0;
-let seenPlants = null;
+let seenTreats = null;
 let lastSync = 0;
 
 if (params.get('blocked')) {
   $('blocked').hidden = false;
-  $('blocked').textContent = `🐶 No ${params.get('blocked')} during focus — the puppy is napping, keep going!`;
+  $('blocked').textContent = `🐶 ${params.get('blocked')} isn't a focus site. Reach your focus goal first — after that, opening it starts your break.`;
 }
 
 function send(cmd, extra = {}) {
@@ -38,15 +39,14 @@ function fmt(ms) {
 }
 
 function setState(s) {
-  const first = !state;
-  const r = s.lastRelease;
-  if (!first && r && r.at !== state.lastRelease?.at && Date.now() - r.at < 3000) {
-    releasingUntil = Math.max(releasingUntil, r.at + 3200);
+  const prev = state;
+  // Back to focus from the break: play the door animation.
+  if (prev && (prev.phase === 'break' || prev.phase === 'overtime') && s.phase === 'focus') {
+    releasingUntil = Math.max(releasingUntil, Date.now() + 3200);
   }
   state = s;
-  if (r) $('outsidePlant').textContent = r.plant;
-  if (first) fillSettings();
-  renderGarden();
+  if (!prev) fillSettings();
+  renderTreats();
   render();
 }
 
@@ -54,22 +54,18 @@ function fillSettings() {
   const st = state.settings;
   $('focusMin').value = st.focusMin;
   $('breakMin').value = st.breakMin;
-  $('autoBreak').checked = st.autoBreak;
-  $('blockDuringFocus').checked = st.blockDuringFocus;
-  $('openTab2').checked = st.openTab;
+  $('bonusEveryMin').value = st.bonusEveryMin;
   $('sound').checked = st.sound;
-  $('sites').value = st.sites.join('\n');
+  $('sites').value = st.focusSites.join('\n');
 }
 
 function readSettings() {
   return {
     focusMin: Number($('focusMin').value),
     breakMin: Number($('breakMin').value),
-    autoBreak: $('autoBreak').checked,
-    blockDuringFocus: $('blockDuringFocus').checked,
-    openTab: $('openTab2').checked,
+    bonusEveryMin: Number($('bonusEveryMin').value),
     sound: $('sound').checked,
-    sites: $('sites').value.split(/[\s,]+/)
+    focusSites: $('sites').value.split(/[\s,]+/)
   };
 }
 
@@ -78,9 +74,10 @@ function render() {
   const now = Date.now();
   const s = state;
   const left = s.paused ? s.remaining : s.endsAt ? s.endsAt - now : 0;
+  const goal = s.phase === 'focus' && left <= 0;
 
-  // The worker may be asleep; nudge it if a phase should have ended.
-  if (!s.paused && s.endsAt && left <= 0 && now - lastSync > 1000) {
+  // The worker may be asleep; nudge it if the break should have ended.
+  if (s.phase === 'break' && !s.paused && left <= 0 && now - lastSync > 1000) {
     lastSync = now;
     send('sync');
   }
@@ -88,14 +85,29 @@ function render() {
   app.dataset.phase = s.phase;
   if (s.paused) app.dataset.paused = '';
   else delete app.dataset.paused;
+  if (goal) app.dataset.goal = '';
+  else delete app.dataset.goal;
 
   let label, time, sub = '';
   switch (s.phase) {
-    case 'focus':
-      label = s.paused ? 'Focus · paused' : 'Focus';
-      time = fmt(Math.max(0, left));
-      if (s.extraMs > 0) sub = `${fmt(s.settings.focusMin * 60000)} + ${fmt(s.extraMs)} extra from the long break`;
+    case 'focus': {
+      const paused = s.paused ? ' · paused' : '';
+      if (!goal) {
+        label = 'Focus' + paused;
+        time = fmt(left);
+        sub = s.carryMs > 0
+          ? `${fmt(s.settings.focusMin * MIN)} + ${fmt(s.carryMs)} from the long break`
+          : 'Only focus sites until the goal 🐶';
+      } else {
+        const extra = -left;
+        const every = s.settings.bonusEveryMin * MIN;
+        const treats = 1 + Math.floor(extra / every);
+        label = 'Extra focus' + paused;
+        time = '+' + fmt(extra);
+        sub = `Puppy earned ${'🦴'.repeat(Math.min(treats, 8))}${treats > 8 ? ' ×' + treats : ''} · next treat in ${fmt(every - (extra % every))}. Open another site to take your break.`;
+      }
       break;
+    }
     case 'break':
       label = s.paused ? 'Break · paused' : 'Break';
       time = fmt(Math.max(0, left));
@@ -108,7 +120,7 @@ function render() {
       break;
     default:
       label = 'Ready to focus';
-      time = fmt(Number($('focusMin').value || s.settings.focusMin) * 60000);
+      time = fmt(Number($('focusMin').value || s.settings.focusMin) * MIN);
       sub = s.sessions ? `${s.sessions} focus session${s.sessions > 1 ? 's' : ''} done` : '';
   }
   $('label').textContent = label;
@@ -125,21 +137,26 @@ function render() {
   scratchSound(scene === 'door' && s.settings.sound);
 }
 
-function renderGarden() {
-  const g = state.garden;
-  const box = $('plants');
-  const known = seenPlants;
+function renderTreats() {
+  const list = state.treats || [];
+  const box = $('treats');
+  const known = seenTreats;
   box.textContent = '';
-  for (const p of g) {
+  if (!list.length) {
     const el = document.createElement('span');
-    el.textContent = p.plant;
-    const late = p.overtimeMs > 0 ? `, ${fmt(p.overtimeMs)} late` : ', right on time';
-    el.title = new Date(p.at).toLocaleString() + late;
-    if (known !== null && !known.has(p.at)) el.className = 'new';
+    el.className = 'empty';
+    el.textContent = 'Finish a focus session to give the puppy a treat. Extra focus = bonus treats!';
     box.appendChild(el);
   }
-  seenPlants = new Set(g.map(p => p.at));
-  $('gardenCount').textContent = g.length ? `${g.length} planted` : 'nothing planted yet';
+  for (const t of list) {
+    const el = document.createElement('span');
+    el.textContent = t.t;
+    el.title = new Date(t.at).toLocaleString() + (t.bonus ? ' · bonus for extra focus' : ' · focus goal');
+    if (known !== null && !known.has(t.at)) el.className = 'new';
+    box.appendChild(el);
+  }
+  seenTreats = new Set(list.map(t => t.at));
+  $('treatCount').textContent = list.length ? `${list.length} treat${list.length > 1 ? 's' : ''}` : 'no treats yet';
   box.scrollTop = box.scrollHeight;
 }
 
@@ -202,8 +219,8 @@ $('saveSettings').onclick = async () => {
   $('saved').textContent = 'Saved ✓';
   setTimeout(() => ($('saved').textContent = ''), 1500);
 };
-$('clearGarden').onclick = () => {
-  if (confirm('Remove every plant from your forest?')) send('clearGarden');
+$('clearTreats').onclick = () => {
+  if (confirm('Empty the treat jar?')) send('clearTreats');
 };
 $('focusMin').oninput = render;
 $('openTab').onclick = e => {

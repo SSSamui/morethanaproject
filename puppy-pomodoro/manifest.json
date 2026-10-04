@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Puppy Pomodoro",
-  "version": "1.0.0",
-  "description": "A focus/break clock with a puppy. When break is over the puppy scratches the door until you let it out and get back to work.",
+  "version": "2.0.0",
+  "description": "A focus clock with a puppy. Focus on your study sites; after the goal your puppy earns treats. When the break is over, the puppy scratches the door until you let it out.",
   "permissions": [
     "storage",
     "tabs",
@@ -14,6 +14,19 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
   "action": {
     "default_popup": "app.html",
     "default_title": "Puppy Pomodoro",
