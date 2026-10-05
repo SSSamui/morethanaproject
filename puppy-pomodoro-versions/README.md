@@ -1,0 +1,13 @@
+# Puppy Pomodoro — all versions
+
+Every change to Puppy Pomodoro is saved here as its own zip. Old versions are never overwritten.
+
+Each zip unzips to its own folder (for example `puppy-pomodoro-v2.1.0`), so different versions can sit side by side on your Mac. To use one in Safari: Settings → **Developer** → **Add Temporary Extension…** → pick that folder.
+
+To download a single version, click its zip below, then **Download raw file** (the ⬇ button).
+
+| Version | What changed | Download |
+|---|---|---|
+| **2.1.0** (latest) | The dog is now **Pork**: white fluffy coat, gray ears, navy harness, white glass door. During the break Pork waits by the door; when it ends he paces back and forth, and after 2 minutes he stands up and scratches the door. Pork's face as the toolbar icon. | [puppy-pomodoro-v2.1.0.zip](puppy-pomodoro-v2.1.0.zip) |
+| 2.0.0 | Focus-only sites (mit.edu, MIT YouTube, ChatGPT/Claude/Gemini, library sites). After the focus goal the clock counts up (+mm:ss) and earns bonus treats. Break only starts when the goal is reached and you open a non-focus site. Small puppy window on top of web pages when the break is over. Treat jar instead of the forest. Time shown on the toolbar icon. | [puppy-pomodoro-v2.0.0.zip](puppy-pomodoro-v2.0.0.zip) |
+| 1.0.0 | First version: focus and break clock, cartoon puppy scratches the door when the break is over, clock goes negative, letting the puppy out plants a tree or flower, next focus gets the extra break time, distraction sites close when focus starts. | [puppy-pomodoro-v1.0.0.zip](puppy-pomodoro-v1.0.0.zip) |
