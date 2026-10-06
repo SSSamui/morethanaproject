@@ -66,6 +66,11 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
                           "Your break is over (−\(PorkClock.text(late))). Pork is \(pacing ? "pacing by" : "scratching") the door. Let him out to end your break; the late time is added to your next focus.",
                           "🐾 End the fun — let Pork out", red, "Not now")
         default:
+            if s.settings.isNight(now) {
+                return shield("PorkSleep", "It's late, Pork is asleep 🌙",
+                              "Only focus apps until \(PorkSettings.timeText(s.settings.nightEnd)). \(name) can wait until morning.",
+                              "OK", UIColor(red: 0.29, green: 0.25, blue: 0.47, alpha: 1), nil)
+            }
             return shield("PorkWait", "Pork is here 🐾", "\(name) is blocked by Puppy Pomodoro.", "OK", green, nil)
         }
     }

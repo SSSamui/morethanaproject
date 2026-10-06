@@ -39,13 +39,19 @@ struct SettingsView: View {
                     Button("Choose focus apps…") { pickApps = true }
                         .disabled(!blocking)
                     Text(appsSummary).font(.footnote).foregroundStyle(.secondary)
+                    Toggle("Only focus apps late at night", isOn: $st.nightOn)
+                        .disabled(!blocking)
+                    if st.nightOn {
+                        DatePicker("From", selection: nightTime(\.nightStart), displayedComponents: .hourAndMinute)
+                        DatePicker("Until", selection: nightTime(\.nightEnd), displayedComponents: .hourAndMinute)
+                    }
                     if let screenTimeError {
                         Text(screenTimeError).font(.footnote).foregroundStyle(.red)
                     }
                 } header: {
                     Text("Blocking (Screen Time)")
                 } footer: {
-                    Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Pick Safari plus ChatGPT, Claude, Gemini, Libby, Books… and Messages, Mail and Phone if you want them.")
+                    Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Late at night (12:00 am to 7:00 am unless you change it) only focus apps and sites open, even without a focus session. Pick your focus apps: Safari, Kindle, Outlook, Handshake, Slack, Phone, Messages, Canvas, Google Calendar, Google Tasks, Calendar, Reminders, Notes, Notion, Gmail, Clock, Claude, Maps, WeChat, Puppy Pomodoro, ChatGPT, Gemini, Libby, Books… (Phone calls, alarms and Settings always work.)")
                 }
                 #endif
 
@@ -105,7 +111,7 @@ struct SettingsView: View {
             .onChange(of: pickApps) { _, open in
                 guard !open else { return }
                 ScreenTime.focusApps = focusApps
-                PorkCommands.apply(PorkStore.load())
+                PorkCommands.apply(PorkStore.load()) // also updates the late-night block
             }
             #endif
             .onAppear {
@@ -139,6 +145,16 @@ struct SettingsView: View {
     }
 
     #if !LITE
+    /// A time picker for minutes after midnight.
+    private func nightTime(_ key: WritableKeyPath<PorkSettings, Int>) -> Binding<Date> {
+        Binding(
+            get: { Calendar.current.date(from: DateComponents(hour: st[keyPath: key] / 60, minute: st[keyPath: key] % 60)) ?? Date() },
+            set: { date in
+                let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+                st[keyPath: key] = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+            })
+    }
+
     private var appsSummary: String {
         let a = focusApps.applicationTokens.count, c = focusApps.categoryTokens.count
         if !blocking { return "Blocking is off." }
@@ -150,14 +166,18 @@ struct SettingsView: View {
         screenTimeError = nil
         guard on else {
             ScreenTime.isOn = false
-            PorkCommands.apply(PorkStore.load())
+            let s = PorkStore.load()
+            PorkCommands.apply(s)
+            ScreenTime.scheduleNight(s.settings) // stops the late-night block
             return
         }
         Task {
             do {
                 try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
                 ScreenTime.isOn = true
-                PorkCommands.apply(PorkStore.load())
+                let s = PorkStore.load()
+                PorkCommands.apply(s)
+                ScreenTime.scheduleNight(s.settings)
             } catch {
                 blocking = false
                 screenTimeError = "Screen Time wasn't allowed: \(error.localizedDescription)"

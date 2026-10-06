@@ -13,6 +13,9 @@ import ManagedSettings
 
 enum ScreenTime {
     static let store = ManagedSettingsStore(named: ManagedSettingsStore.Name("pork"))
+    /// Late-night blocking has its own store, so focus and night don't undo each other.
+    static let nightStore = ManagedSettingsStore(named: ManagedSettingsStore.Name("porkNight"))
+    static let nightActivity = DeviceActivityName("pork.night")
     static let goalActivity = DeviceActivityName("pork.goal")
     static let overtimeActivity = DeviceActivityName("pork.breakOver")
 
@@ -51,6 +54,31 @@ enum ScreenTime {
             store.clearAllSettings()
         }
         watch(s)
+        applyNight(s.settings)
+    }
+
+    /// Late at night: only focus apps and focus sites, focus session or not.
+    static func applyNight(_ st: PorkSettings, now: Date = Date()) {
+        if isOn && st.isNight(now) {
+            nightStore.shield.applicationCategories = .all(except: focusApps.applicationTokens)
+            nightStore.webContent.blockedByFilter = .all(except: Set(allowedHosts(st.focusSites).map { WebDomain(domain: $0) }))
+        } else {
+            nightStore.clearAllSettings()
+        }
+    }
+
+    /// Ask Screen Time to wake the monitor at the start and end of the night
+    /// every day.
+    static func scheduleNight(_ st: PorkSettings) {
+        let center = DeviceActivityCenter()
+        center.stopMonitoring([nightActivity])
+        applyNight(st)
+        guard isOn, st.nightOn, st.nightStart != st.nightEnd else { return }
+        let schedule = DeviceActivitySchedule(
+            intervalStart: DateComponents(hour: st.nightStart / 60, minute: st.nightStart % 60),
+            intervalEnd: DateComponents(hour: st.nightEnd / 60, minute: st.nightEnd % 60),
+            repeats: true)
+        try? center.startMonitoring(nightActivity, during: schedule)
     }
 
     /// Players that focus sites embed (for example the YouTube player on the

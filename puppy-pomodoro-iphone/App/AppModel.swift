@@ -28,6 +28,9 @@ final class AppModel: ObservableObject {
     func becameActive() {
         let s = PorkCommands.run(.sync)
         PorkCommands.apply(s) // also catches up after changes made from the blocked-app screen
+        #if !LITE
+        ScreenTime.scheduleNight(s.settings)
+        #endif
         setState(s)
         Task { await LiveActivities.update(s) }
         Alerts.requestPermission()

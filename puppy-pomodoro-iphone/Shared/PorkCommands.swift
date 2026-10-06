@@ -58,6 +58,9 @@ enum PorkCommands {
         case .settings(let settings):
             s.settings = settings.cleaned()
             changed = true
+            #if !LITE
+            ScreenTime.scheduleNight(s.settings)
+            #endif
         case .clearTreats:
             s.treats = []
             changed = true

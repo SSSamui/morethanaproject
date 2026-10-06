@@ -40,7 +40,18 @@ struct PorkSettings: Codable, Equatable {
         "gemini.google.com", "accounts.google.com",
         "books.google.com", "openlibrary.org", "archive.org", "gutenberg.org",
         "libbyapp.com", "overdrive.com", "learning.oreilly.com",
-        "sssamui.github.io/morethanaproject/danmu"
+        "sssamui.github.io/morethanaproject/danmu",
+        // school, work and everyday tools (also allowed late at night)
+        "instructure.com",                                   // Canvas
+        "joinhandshake.com",                                 // Handshake
+        "slack.com",
+        "notion.so", "notion.com",
+        "mail.google.com", "calendar.google.com", "tasks.google.com", "maps.google.com",
+        "outlook.office.com", "outlook.office365.com", "outlook.live.com",
+        "login.microsoftonline.com", "login.live.com",
+        "read.amazon.com",                                   // Kindle
+        "maps.apple.com",
+        "wechat.com"
     ]
 
     var focusMin = 25
@@ -55,6 +66,11 @@ struct PorkSettings: Codable, Equatable {
     var hiGraceMin = 15
     var hiAlbum = "Pork"
     var hiMuted = false
+
+    // Late at night only focus apps and sites open (minutes after midnight)
+    var nightOn = true
+    var nightStart = 0      // 12:00 am
+    var nightEnd = 7 * 60   // 7:00 am
 
     init() {}
 
@@ -71,6 +87,26 @@ struct PorkSettings: Codable, Equatable {
         hiGraceMin = try c.decodeIfPresent(Int.self, forKey: .hiGraceMin) ?? d.hiGraceMin
         hiAlbum = try c.decodeIfPresent(String.self, forKey: .hiAlbum) ?? d.hiAlbum
         hiMuted = try c.decodeIfPresent(Bool.self, forKey: .hiMuted) ?? d.hiMuted
+        nightOn = try c.decodeIfPresent(Bool.self, forKey: .nightOn) ?? d.nightOn
+        nightStart = try c.decodeIfPresent(Int.self, forKey: .nightStart) ?? d.nightStart
+        nightEnd = try c.decodeIfPresent(Int.self, forKey: .nightEnd) ?? d.nightEnd
+    }
+
+    /// Is `date` inside the late-night hours? (They may cross midnight, like 11 pm–7 am.)
+    func isNight(_ date: Date = Date(), calendar: Calendar = .current) -> Bool {
+        guard nightOn, nightStart != nightEnd else { return false }
+        let c = calendar.dateComponents([.hour, .minute], from: date)
+        let m = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+        return nightStart < nightEnd ? (m >= nightStart && m < nightEnd) : (m >= nightStart || m < nightEnd)
+    }
+
+    /// "7:00 am" style text for a time of night.
+    static func timeText(_ minutes: Int) -> String {
+        var c = DateComponents()
+        c.hour = minutes / 60
+        c.minute = minutes % 60
+        let date = Calendar.current.date(from: c) ?? Date()
+        return DateFormatter.localizedString(from: date, dateStyle: .none, timeStyle: .short)
     }
 
     /// Keeps numbers in range and tidies the focus-site list.
@@ -81,6 +117,8 @@ struct PorkSettings: Codable, Equatable {
         s.bonusEveryMin = min(60, max(1, bonusEveryMin))
         s.hiSeconds = min(600, max(5, hiSeconds))
         s.hiGraceMin = min(240, max(0, hiGraceMin))
+        s.nightStart = min(24 * 60 - 1, max(0, nightStart))
+        s.nightEnd = min(24 * 60 - 1, max(0, nightEnd))
         var seen = Set<String>()
         s.focusSites = focusSites.compactMap(FocusSite.parse).map(\.text).filter { seen.insert($0).inserted }
         return s

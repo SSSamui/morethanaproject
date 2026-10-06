@@ -30,7 +30,7 @@ class ShieldActionExtension: ShieldActionDelegate {
         case .focus where s.left(now) <= 0:
             PorkCommands.run(.takeBreak, announce: true)
             return .defer // shields are off now, so the app opens
-        case .overtime, .break:
+        case .overtime:
             PorkCommands.run(.release, announce: true)
             return .defer // next focus: the screen now shows the focus message
         default:

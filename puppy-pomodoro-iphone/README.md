@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 1.0.2** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 1.1.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -36,6 +36,8 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
 - **Widgets**: small and medium Home Screen widgets (Pork's room), and Lock Screen widgets (clock, `24m` / `+3m` / `−2m`).
 - **Blocking** with Screen Time instead of closing tabs: you choose your **focus apps** (for example Safari, ChatGPT, Claude, Gemini, Libby, Books, Messages, Mail, Phone). Websites use the same focus-site list as Safari.
 - **Notifications** with buttons: *Take a break* (goal reached) and *Let Pork out* (break over). The scratching sound is the notification sound.
+- **Late night: only focus apps** (new in 1.1.0): from 12:00 am to 7:00 am (change the times in Settings), only your focus apps and focus sites open, even without a focus session. Other apps show *"It's late, Pork is asleep 🌙"*. Needs blocking turned on (full version, not Lite).
+- **Focus apps and sites for school, work and everyday**: pick Kindle, Outlook, Handshake, Slack, Phone, Messages, Canvas, Google Calendar, Google Tasks, Calendar, Reminders, Notes, Notion, Gmail, Clock, Claude, Maps, WeChat and Puppy Pomodoro in **Choose focus apps** (Apple only lets you pick apps yourself; an app can't add them by name). Their websites are already in the focus-site list: Canvas (`instructure.com`), Handshake, Slack, Notion, Gmail, Google Calendar, Google Tasks, Google Maps, Outlook, Kindle (`read.amazon.com`), Apple Maps, WeChat.
 - **Focus sites**: the danmu site (`sssamui.github.io/morethanaproject/danmu`) is a focus site; its YouTube videos play during focus.
 - **Treat jar**: tap a treat (instead of hovering) to see when it was earned and whether it was a goal treat or a bonus.
 - **Pork's room** in the app is the same drawing and animations as the Safari version.
@@ -59,8 +61,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v1.0.2.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v1.0.2**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v1.1.0.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v1.1.0**.
 
 ### 2. Open it in Xcode
 
@@ -93,9 +95,10 @@ If Xcode later says an identifier like `com.sssamui.puppypomodoro` *"is not avai
 
 1. Open **Puppy Pomodoro** and tap **Allow** for notifications.
 2. Tap the ⚙︎ (top right) → **Block distractions during focus** → **Continue** and confirm with Face ID or your passcode.
-3. Tap **Choose focus apps…** and pick the apps you may use while focusing. Pick **Safari** if you want the focus sites. Also pick Messages, Mail and Phone if you want them. Tap **Done**.
-4. **Pork says hi**: in the Photos app make an album called **Pork** and add Pork's photos and videos. (Or pick another album in Settings → *Album in Photos*.) The first time, allow Photos access.
-5. Tap **Done** to save.
+3. Tap **Choose focus apps…** and pick the apps you may use while focusing and late at night: **Safari** (for focus sites), Kindle, Outlook, Handshake, Slack, Phone, Messages, Canvas, Google Calendar, Google Tasks, Calendar, Reminders, Notes, Notion, Gmail, Clock, Claude, ChatGPT, Gemini, Maps, WeChat, Puppy Pomodoro. Use the search box at the top of the list to find each one. Tap **Done**.
+4. **Only focus apps late at night** is on (12:00 am–7:00 am). Change **From** / **Until** if you like.
+5. **Pork says hi**: in the Photos app make an album called **Pork** and add Pork's photos and videos. (Or pick another album in Settings → *Album in Photos*.) The first time, allow Photos access.
+6. Tap **Done** to save.
 
 ### 7. Turn on "Pork says hi" (Shortcuts automation, once)
 
@@ -124,7 +127,7 @@ Open **PuppyPomodoroLite.xcodeproj** instead of PuppyPomodoro.xcodeproj and do t
 ⚙︎ in the top right:
 
 - Focus minutes, break minutes, minutes of extra focus per bonus treat, scratching sound on/off
-- Blocking (Screen Time) on/off, focus apps
+- Blocking (Screen Time) on/off, focus apps, only focus apps late at night (from / until)
 - Focus sites, one per line (`mit.edu` also covers `ocw.mit.edu`). If you installed 1.0.0 and saved your settings, add `sssamui.github.io/morethanaproject/danmu` here yourself (new defaults only apply to a fresh install).
 - Pork says hi: on/off, album, how long, how long Pork leaves you alone after *Yes, continue*, videos with or without sound, **Try it now**
 - Empty treat jar
