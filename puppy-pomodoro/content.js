@@ -91,6 +91,18 @@
       button.go { all: unset; cursor: pointer; display: block; width: 100%; margin-top: 8px; background: #d9433b;
         color: #fff; font-weight: 700; font-size: 14px; padding: 9px 0; border-radius: 10px; }
       button.go:hover { filter: brightness(.95); }
+      .mini { position: fixed; right: 12px; bottom: 12px; pointer-events: auto; display: none;
+        align-items: center; gap: 5px; height: 28px; padding: 0 9px 0 3px; border-radius: 14px;
+        background: rgba(255, 250, 242, .94); color: #2d2620; border: 1px solid #e3d6c3;
+        box-shadow: 0 2px 8px rgba(0,0,0,.18); font-size: 13px; font-weight: 700; cursor: pointer;
+        font-variant-numeric: tabular-nums; user-select: none; transition: opacity .2s; line-height: 1; }
+      .mini.on { display: flex; }
+      .mini.left { right: auto; left: 12px; }
+      .mini:hover { opacity: .2; }
+      .mini svg { width: 22px; height: 22px; flex: none; }
+      .mini .t.goal { color: #c58a00; }
+      .mini .t.brk { color: #3b7dd8; }
+      .mini .tr { font-weight: 600; font-size: 12px; color: #8a7f74; }
       .toast { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); pointer-events: auto;
         background: #2d2620; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px;
         box-shadow: 0 8px 24px rgba(0,0,0,.3); max-width: 90vw; display: none; }
@@ -122,6 +134,17 @@
       <div class="msg"></div>
       <button class="go">🐾 End the fun — let Pork out</button>
     </div>
+    <div class="mini" title="Puppy Pomodoro (click to move to the other side)">
+      <svg viewBox="0 0 128 128" aria-hidden="true">
+        <circle cx="64" cy="64" r="62" fill="#22396b"/>
+        <ellipse cx="28" cy="70" rx="15" ry="30" fill="#9c9c98" transform="rotate(14 28 70)"/>
+        <ellipse cx="100" cy="70" rx="15" ry="30" fill="#9c9c98" transform="rotate(-14 100 70)"/>
+        <circle cx="64" cy="64" r="36" fill="#fbfbf8"/>
+        <circle cx="50" cy="60" r="6" fill="#3a2418"/><circle cx="78" cy="60" r="6" fill="#3a2418"/>
+        <ellipse cx="64" cy="78" rx="9" ry="7" fill="#1d1d1d"/>
+      </svg>
+      <span class="t"></span><span class="tr"></span>
+    </div>
     <div class="toast"></div>`;
 
   const card = root.querySelector('.card');
@@ -129,6 +152,10 @@
   const msgEl = root.querySelector('.msg');
   const PACE_MS = 2 * 60000; // after the break: pace this long, then scratch
   const toastEl = root.querySelector('.toast');
+  const mini = root.querySelector('.mini');
+  const miniTime = mini.querySelector('.t');
+  const miniTreat = mini.querySelector('.tr');
+  mini.addEventListener('click', () => mini.classList.toggle('left'));
 
   root.querySelector('.go').addEventListener('click', () => send({ cmd: 'release' }));
   root.querySelector('.move').addEventListener('click', () => card.classList.toggle('left'));
@@ -176,6 +203,31 @@
       if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     } else {
       card.classList.remove('on');
+    }
+
+    // Small Pork clock in the corner while focusing or on a break.
+    const showMini = s.settings.miniClock !== false && !over &&
+      (s.phase === 'focus' || s.phase === 'break') && !document.fullscreenElement;
+    mini.classList.toggle('on', showMini);
+    if (showMini) {
+      mount();
+      const left = s.paused ? s.remaining : s.endsAt - now;
+      const pause = s.paused ? '⏸ ' : '';
+      miniTime.className = 't';
+      if (s.phase === 'break') {
+        miniTime.classList.add('brk');
+        miniTime.textContent = pause + '☕ ' + fmt(Math.max(0, left));
+        miniTreat.textContent = '';
+      } else if (left > 0) {
+        miniTime.textContent = pause + fmt(left);
+        miniTreat.textContent = s.nextTreat || '🦴';
+      } else {
+        miniTime.classList.add('goal');
+        miniTime.textContent = pause + '+' + fmt(-left);
+        const every = s.settings.bonusEveryMin * 60000;
+        const next = left + (s.paid || 0) * every;
+        miniTreat.textContent = `${s.nextTreat || '🦴'} ${fmt(Math.max(0, next))}`;
+      }
     }
   }
 

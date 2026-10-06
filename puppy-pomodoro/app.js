@@ -85,6 +85,7 @@ function fillSettings() {
   $('nightStart').value = st.nightStart;
   $('nightEnd').value = st.nightEnd;
   $('keepTab').checked = st.keepTab;
+  $('miniClock').checked = st.miniClock;
   $('sound').checked = st.sound;
   $('sites').value = st.focusSites.join('\n');
 }
@@ -97,6 +98,7 @@ function readSettings() {
     autoStartOnOpen: $('autoStartOnOpen').checked,
     autoRestartMin: Number($('autoRestartMin').value),
     keepTab: $('keepTab').checked,
+    miniClock: $('miniClock').checked,
     sound: $('sound').checked,
     focusSites: $('sites').value.split(/[\s,]+/)
   };

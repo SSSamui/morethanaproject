@@ -14,6 +14,8 @@ A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 - **Pork's tab is always open**: Pork's page stays open as a pinned tab, first in the window. If you close it, it opens again. (Settings → "Keep Pork's page open as a tab" turns this off.)
 - **Starts by itself**: focus starts without a click when Safari opens or the Mac wakes up from sleep. If you pause or stop, it starts again by itself after 30 minutes (a paused clock resumes; a stopped clock starts a new focus). The popup shows when: "🐶 Focus starts by itself at 3:45 PM".
 
+**Small Pork clock on every page**: while you focus or take a break, a small pill with Pork's face sits in the bottom-right corner of every web page: `24:58 🦴` (time left and the treat he'll get), `+07:00 🍖 02:59` (extra focus and the next bonus treat), `☕ 04:59` (break), `⏸` when paused. Hover over it and it fades almost away so you can read underneath; click it to move it to the other corner. It hides in fullscreen video. (Settings → "Show a small Pork clock" turns it off.)
+
 The toolbar icon next to the address bar shows the time: green `24m` left, gold `+3m` extra focus (hours from 1 hour on: `+2h`), blue `4m` of break, red `-2m` over the break, `||` paused.
 
 Every treat goes into **Pork's treats** jar in the popup: 🦴 🍖 🧀 🥕 🍪 🍗 🥩.
@@ -51,6 +53,7 @@ Open **Settings** at the bottom of the popup:
 - Start focus by itself when Safari opens or the Mac wakes up (on by default)
 - After pausing or stopping, start again by itself after N minutes (default 30, 0 = never)
 - Keep Pork's page open as a tab (on by default)
+- Show a small Pork clock in the corner of web pages (on by default)
 - Focus sites, one per line. `mit.edu` also covers `ocw.mit.edu` etc. `youtube.com/@channel` allows that channel's pages and its videos. Remove `google.com` if you only want some Google services: keep e.g. `mail.google.com` and `drive.google.com`.
 - Empty treat jar
 

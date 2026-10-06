@@ -72,6 +72,7 @@ const DEFAULTS = {
     nightStart: '00:00',
     nightEnd: '06:00',
     keepTab: true,           // keep Pork's page open as a (pinned) tab
+    miniClock: true,         // small Pork clock in the corner of web pages
     focusSites: DEFAULT_FOCUS_SITES,
     sitesRev: SITES_REV      // which default sites the saved list already has
   }
@@ -519,6 +520,7 @@ function cleanSettings(cur, inc) {
   out.autoStartOnOpen = !!out.autoStartOnOpen;
   out.nightLock = !!out.nightLock;
   out.keepTab = !!out.keepTab;
+  out.miniClock = !!out.miniClock;
   const hhmm = (v, d) => (/^\d{1,2}:\d{2}$/.test(String(v)) ? String(v).padStart(5, '0') : d);
   out.nightStart = hhmm(out.nightStart, cur.nightStart);
   out.nightEnd = hhmm(out.nightEnd, cur.nightEnd);
