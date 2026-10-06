@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Puppy Pomodoro",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "A focus clock with a puppy. Focus on your study sites; after the goal your puppy earns treats. When the break is over, the puppy scratches the door until you let it out.",
   "permissions": [
     "storage",

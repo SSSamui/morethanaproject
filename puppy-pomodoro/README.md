@@ -3,7 +3,7 @@
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 
 - **Focus**: click **▶ Start focus**. Every tab that isn't a focus site closes. Until you reach your focus goal, only focus sites open; anything else is sent back to Pork.
-- **Focus sites** (you can add more in Settings): anything ending in `mit.edu`, MIT's YouTube channels (`@mit`, `@mitocw`) and their videos, ChatGPT, Claude, Gemini, Outlook and Word on the web (Microsoft 365, OneDrive, SharePoint), Kindle (read.amazon.com), the danmu site (sssamui.github.io/morethanaproject/danmu — its YouTube videos play inside the page, so they work during focus), and library/book sites (Google Books, Open Library, Internet Archive, Project Gutenberg, Libby/OverDrive, O'Reilly). The Outlook, Word and Kindle Mac apps are never blocked; the extension only works inside Safari.
+- **Focus sites** (you can add more in Settings): anything ending in `mit.edu`, MIT's YouTube channels (`@mit`, `@mitocw`) and their videos, ChatGPT, Claude, Gemini, Google (search, Gmail, Drive, Docs, Calendar, Tasks and every other google.com page), Notion, Outlook and Word on the web (Microsoft 365, OneDrive, SharePoint), Kindle (read.amazon.com), the danmu site (sssamui.github.io/morethanaproject/danmu — its YouTube videos play inside the page, so they work during focus), and library/book sites (Google Books, Open Library, Internet Archive, Project Gutenberg, Libby/OverDrive, O'Reilly). The Outlook, Word and Kindle Mac apps are never blocked; the extension only works inside Safari.
 - **Treats**: next to the clock, Pork's next treat shows with **"Pork will get a treat after 12:34"**. He gets it right when you reach the focus goal (25 min), and a bonus treat for every 5 minutes of extra focus after that. Each one goes straight into the treat jar, with a message on the page.
 - **Focus goal reached**: there's no automatic break and no reminder to take one. Focus can go on as long as you like: the clock keeps going as **+00:01 … +3:01:00** and the next bonus treat counts down next to it. Focus goals can be up to 720 minutes.
 - **Break**: starts only when the goal is reached **and** you open a non-focus site (or click **Take a break**). Pork **sits by the glass door, waiting** for the whole break.
@@ -47,7 +47,7 @@ Open **Settings** at the bottom of the popup:
 - Start focus by itself when Safari opens or the Mac wakes up (on by default)
 - After pausing or stopping, start again by itself after N minutes (default 30, 0 = never)
 - Night mode: only focus sites from [12:00 AM] to [6:00 AM] (on by default)
-- Focus sites, one per line. `mit.edu` also covers `ocw.mit.edu` etc. `youtube.com/@channel` allows that channel's pages and its videos. Add e.g. `google.com` if you want Google search while focusing.
+- Focus sites, one per line. `mit.edu` also covers `ocw.mit.edu` etc. `youtube.com/@channel` allows that channel's pages and its videos. Remove `google.com` if you only want some Google services: keep e.g. `mail.google.com` and `drive.google.com`.
 - Empty treat jar
 
 ## Files

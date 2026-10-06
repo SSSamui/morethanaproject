@@ -30,10 +30,17 @@ const ADDED_SITES_2 = [
 // Added in 2.3.2: the danmu site (YouTube videos with danmu, played inside the page).
 const ADDED_SITES_3 = ['sssamui.github.io/morethanaproject/danmu'];
 
+// Added in 2.4.1: Google (search and all google.com services) and Notion.
+const ADDED_SITES_4 = [
+  'google.com', 'mail.google.com', 'drive.google.com', 'docs.google.com',
+  'calendar.google.com', 'tasks.google.com',
+  'notion.so', 'notion.com', 'notion.site'
+];
+
 // Sites added in each update, so saved lists get them too.
-const ADDED_SITES = { 2: ADDED_SITES_2, 3: ADDED_SITES_3 };
-DEFAULT_FOCUS_SITES.push(...ADDED_SITES_2, ...ADDED_SITES_3);
-const SITES_REV = 3;
+const ADDED_SITES = { 2: ADDED_SITES_2, 3: ADDED_SITES_3, 4: ADDED_SITES_4 };
+DEFAULT_FOCUS_SITES.push(...ADDED_SITES_2, ...ADDED_SITES_3, ...ADDED_SITES_4);
+const SITES_REV = 4;
 
 const TREATS = ['🦴', '🍖', '🧀', '🥕', '🍪', '🍗', '🥩'];
 
