@@ -70,7 +70,7 @@ struct PorkSettings: Codable, Equatable {
     // Late at night only focus apps and sites open (minutes after midnight)
     var nightOn = true
     var nightStart = 0      // 12:00 am
-    var nightEnd = 7 * 60   // 7:00 am
+    var nightEnd = 6 * 60   // 6:00 am
 
     init() {}
 
@@ -100,7 +100,7 @@ struct PorkSettings: Codable, Equatable {
         return nightStart < nightEnd ? (m >= nightStart && m < nightEnd) : (m >= nightStart || m < nightEnd)
     }
 
-    /// "7:00 am" style text for a time of night.
+    /// "6:00 am" style text for a time of night.
     static func timeText(_ minutes: Int) -> String {
         var c = DateComponents()
         c.hour = minutes / 60

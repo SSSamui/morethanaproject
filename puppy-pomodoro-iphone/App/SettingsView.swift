@@ -51,7 +51,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Blocking (Screen Time)")
                 } footer: {
-                    Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Late at night (12:00 am to 7:00 am unless you change it) only focus apps and sites open, even without a focus session. Pick your focus apps: Safari, Kindle, Outlook, Handshake, Slack, Phone, Messages, Canvas, Google Calendar, Google Tasks, Calendar, Reminders, Notes, Notion, Gmail, Clock, Claude, Maps, WeChat, Puppy Pomodoro, ChatGPT, Gemini, Libby, Books… (Phone calls, alarms and Settings always work.)")
+                    Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Late at night (12:00 am to 6:00 am unless you change it) only focus apps and sites open, even without a focus session. Pick your focus apps: Safari, Kindle, Outlook, Handshake, Slack, Phone, Messages, Canvas, Google Calendar, Google Tasks, Calendar, Reminders, Notes, Notion, Gmail, Clock, Claude, Maps, WeChat, Puppy Pomodoro, ChatGPT, Gemini, Libby, Books… (Phone calls, alarms and Settings always work.)")
                 }
                 #endif
 
