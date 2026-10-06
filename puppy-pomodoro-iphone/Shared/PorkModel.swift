@@ -193,6 +193,13 @@ struct PorkState: Codable {
         }
     }
 
+    /// A copy as it is at `now`.
+    func advanced(to now: Date = Date()) -> PorkState {
+        var s = self
+        s.advance(now)
+        return s
+    }
+
     // MARK: changes
 
     mutating func startFocus(_ now: Date = Date(), carry: TimeInterval = 0) {

@@ -61,7 +61,8 @@ struct PorkScreen: View {
     let now: Date
 
     var body: some View {
-        let s = model.state
+        // The saved state, caught up to now (the break may have just run out).
+        let s = model.state.advanced(to: now)
         let releasing = now < model.releasingUntil
         let pose: Pose = releasing ? .out : s.pose(now)
         let goal = s.goalReached(now)
@@ -93,6 +94,9 @@ struct PorkScreen: View {
             ControlsView(state: s, goal: goal)
         }
         .onChange(of: scratching, initial: true) { _, on in ScratchPlayer.shared.set(on) }
+        // Break ran out while watching: save it, so the reminders, Lock Screen and
+        // widgets switch to "break is over" too.
+        .onChange(of: s.phase) { _, _ in model.send(.sync) }
     }
 
     private func clockColor(_ s: PorkState, _ goal: Bool) -> Color {
