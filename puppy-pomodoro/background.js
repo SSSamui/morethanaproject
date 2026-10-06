@@ -27,8 +27,13 @@ const ADDED_SITES_2 = [
   'onedrive.live.com', 'sharepoint.com', 'login.microsoftonline.com', 'login.live.com',
   'read.amazon.com', 'amazon.com/ap'
 ];
-DEFAULT_FOCUS_SITES.push(...ADDED_SITES_2);
-const SITES_REV = 2;
+// Added in 2.3.2: the danmu site (YouTube videos with danmu, played inside the page).
+const ADDED_SITES_3 = ['sssamui.github.io/morethanaproject/danmu'];
+
+// Sites added in each update, so saved lists get them too.
+const ADDED_SITES = { 2: ADDED_SITES_2, 3: ADDED_SITES_3 };
+DEFAULT_FOCUS_SITES.push(...ADDED_SITES_2, ...ADDED_SITES_3);
+const SITES_REV = 3;
 
 const TREATS = ['🦴', '🍖', '🧀', '🥕', '🍪', '🍗', '🥩'];
 
@@ -70,8 +75,10 @@ async function load() {
   delete s.garden;
   delete s.settings.sites;
   // Give an older saved list the sites added since.
-  if (saved.settings && (saved.settings.sitesRev || 1) < SITES_REV) {
-    s.settings.focusSites = [...new Set([...s.settings.focusSites, ...ADDED_SITES_2])];
+  const rev = saved.settings ? saved.settings.sitesRev || 1 : SITES_REV;
+  if (rev < SITES_REV) {
+    const added = Object.keys(ADDED_SITES).filter(r => r > rev).flatMap(r => ADDED_SITES[r]);
+    s.settings.focusSites = [...new Set([...s.settings.focusSites, ...added])];
     s.settings.sitesRev = SITES_REV;
     s.dirty = true;
   }
