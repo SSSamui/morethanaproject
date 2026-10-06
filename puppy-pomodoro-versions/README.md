@@ -8,7 +8,8 @@ To download a single version, click its zip below, then **Download raw file** (t
 
 | Version | What changed | Download |
 |---|---|---|
-| **2.5.1** (latest) | Night mode is folded away again: one click on "🌙 Night mode" near the bottom of the popup shows the hours, and changes need its Save button. Night mode messages no longer show when it ends. | [puppy-pomodoro-v2.5.1.zip](puppy-pomodoro-v2.5.1.zip) |
+| **2.5.2** (latest) | Removed the "Allow on every website" button and banner (it didn't work in Safari). Website and Private Browsing access are set in Safari's own extension settings again, with the steps written under Settings. Fixes a checkbox sitting on its own line in Settings. | [puppy-pomodoro-v2.5.2.zip](puppy-pomodoro-v2.5.2.zip) |
+| 2.5.1 | Night mode is folded away again: one click on "🌙 Night mode" near the bottom of the popup shows the hours, and changes need its Save button. Night mode messages no longer show when it ends. | [puppy-pomodoro-v2.5.1.zip](puppy-pomodoro-v2.5.1.zip) |
 | 2.5.0 | Night mode has its own box in the popup, always visible, and saves right away. Pork's page always stays open as a pinned tab (reopens if closed). Pork's page asks for website access with one button and shows how to allow private windows. A focus under 25 min or a break over 5 min only counts for one session; the next session goes back to ≥25 min focus and ≤5 min break. | [puppy-pomodoro-v2.5.0.zip](puppy-pomodoro-v2.5.0.zip) |
 | 2.4.1 | Google (search, Gmail, Drive, Docs, Calendar, Tasks) and Notion added as focus sites. | [puppy-pomodoro-v2.4.1.zip](puppy-pomodoro-v2.4.1.zip) |
 | 2.4.0 | Night mode: from 12:00 AM to 6:00 AM only focus sites can open, whatever the clock is doing. Non-focus tabs close at 12:00 AM. Hours can be changed in Settings. Also fixes Start overwriting settings changed elsewhere. | [puppy-pomodoro-v2.4.0.zip](puppy-pomodoro-v2.4.0.zip) |
