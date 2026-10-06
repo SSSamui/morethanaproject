@@ -20,6 +20,16 @@ const DEFAULT_FOCUS_SITES = [
   'libbyapp.com', 'overdrive.com', 'learning.oreilly.com'
 ];
 
+// Added in 2.3.0: Outlook and Word on the web, and Kindle.
+const ADDED_SITES_2 = [
+  'outlook.office.com', 'outlook.office365.com', 'outlook.live.com', 'outlook.com',
+  'office.com', 'microsoft365.com', 'cloud.microsoft', 'officeapps.live.com',
+  'onedrive.live.com', 'sharepoint.com', 'login.microsoftonline.com', 'login.live.com',
+  'read.amazon.com', 'amazon.com/ap'
+];
+DEFAULT_FOCUS_SITES.push(...ADDED_SITES_2);
+const SITES_REV = 2;
+
 const TREATS = ['🦴', '🍖', '🧀', '🥕', '🍪', '🍗', '🥩'];
 
 const DEFAULTS = {
@@ -30,9 +40,11 @@ const DEFAULTS = {
   overtimeFrom: null,   // when the break ran out and the puppy went to the door
   targetMs: 0,          // length of this focus goal or break
   carryMs: 0,           // late-from-break time added to this focus goal
-  sessions: 0,          // finished focus sessions
+  sessions: 0,          // focus sessions that reached the goal
+  paid: 0,              // treats already given in this focus session
+  nextTreat: null,      // the treat Pork gets next (shown next to the time)
   treats: [],           // [{ t, at, bonus }]
-  lastReward: null,     // { at, items } — shown as a toast
+  lastReward: null,     // { at, items, bonus } — shown as a toast
   stoppedAt: null,      // when the clock was stopped (idle)
   pausedAt: null,       // when the clock was paused
   lastAuto: null,       // { at, how: 'start' | 'resume', why } — shown as a toast
@@ -43,7 +55,8 @@ const DEFAULTS = {
     sound: true,
     autoStartOnOpen: true,   // start when Safari opens or the Mac wakes up
     autoRestartMin: 30,      // start again after paused/stopped this long (0 = never)
-    focusSites: DEFAULT_FOCUS_SITES
+    focusSites: DEFAULT_FOCUS_SITES,
+    sitesRev: SITES_REV      // which default sites the saved list already has
   }
 };
 
@@ -56,10 +69,18 @@ async function load() {
   };
   delete s.garden;
   delete s.settings.sites;
+  // Give an older saved list the sites added since.
+  if (saved.settings && (saved.settings.sitesRev || 1) < SITES_REV) {
+    s.settings.focusSites = [...new Set([...s.settings.focusSites, ...ADDED_SITES_2])];
+    s.settings.sitesRev = SITES_REV;
+    s.dirty = true;
+  }
+  if (!s.nextTreat) s.nextTreat = pickTreat();
   return s;
 }
 
 async function save(s) {
+  delete s.dirty;
   await api.storage.local.set({ [KEY]: s });
   await schedule(s);
   await updateBadge(s);
@@ -143,18 +164,19 @@ async function autoStart(s, now, why) {
 // Move the clock along: end the break, or restart after a long pause/stop.
 // Returns true if anything changed.
 async function tick(s, now) {
-  const before = s.phase + s.paused;
+  const before = s.phase + s.paused + s.paid;
   advance(s, now);
+  if (s.phase === 'focus' && !s.paused) payTreats(s, now);
   if (s.phase === 'idle' && !s.stoppedAt) s.stoppedAt = now;
   const at = autoAt(s);
   if (at && now >= at) await autoStart(s, now, 'timer');
-  return s.phase + s.paused !== before || s.stoppedAt === now;
+  return s.phase + s.paused + s.paid !== before || s.stoppedAt === now;
 }
 
 function startFocus(s, now, carryMs) {
   Object.assign(s, {
     phase: 'focus', paused: false, remaining: null, overtimeFrom: null,
-    stoppedAt: null, pausedAt: null,
+    stoppedAt: null, pausedAt: null, paid: 0,
     carryMs, targetMs: s.settings.focusMin * MIN + carryMs
   });
   s.endsAt = now + s.targetMs;
@@ -175,17 +197,27 @@ function toIdle(s, now) {
   });
 }
 
-// Give the puppy its treats for this focus session.
-function reward(s, now) {
+const pickTreat = () => TREATS[Math.floor(Math.random() * TREATS.length)];
+
+// When Pork gets his next treat in this focus session (goal, then every bonus).
+function nextTreatAt(s) {
+  if (s.phase !== 'focus' || s.paused || !s.endsAt) return null;
+  return s.endsAt + (s.paid || 0) * s.settings.bonusEveryMin * MIN;
+}
+
+// Give Pork every treat he has earned so far in this focus session.
+function payTreats(s, now) {
   const n = earned(s, now);
-  if (!n) return false;
-  const items = Array.from({ length: n }, (_, i) => ({
-    t: TREATS[Math.floor(Math.random() * TREATS.length)], at: now + i, bonus: i > 0
-  }));
+  const items = [];
+  while ((s.paid || 0) < n) {
+    items.push({ t: s.nextTreat || pickTreat(), at: now + items.length, bonus: (s.paid || 0) > 0 });
+    if (!s.paid) s.sessions += 1;
+    s.paid = (s.paid || 0) + 1;
+    s.nextTreat = pickTreat();
+  }
+  if (!items.length) return;
   s.treats = [...s.treats, ...items];
-  s.lastReward = { at: now, items: items.map(x => x.t) };
-  s.sessions += 1;
-  return true;
+  s.lastReward = { at: now, items: items.map(x => x.t), bonus: items[0].bonus };
 }
 
 // ---------- which sites are for focus ----------
@@ -264,7 +296,7 @@ async function visit(s, now, tabId, url, channel) {
     api.tabs.update(tabId, { url: appUrl('?tab=1&blocked=' + encodeURIComponent(host)) }).catch(() => {});
     return false;
   }
-  reward(s, now);
+  payTreats(s, now);
   startBreak(s, now);
   return true;
 }
@@ -285,7 +317,10 @@ async function schedule(s) {
   await api.alarms.clear('phase');
   await api.alarms.clear('tick');
   await api.alarms.clear('auto');
+  await api.alarms.clear('treat');
   if (s.endsAt && !s.paused) api.alarms.create('phase', { when: s.endsAt });
+  const treatAt = nextTreatAt(s);
+  if (treatAt && treatAt > s.endsAt) api.alarms.create('treat', { when: treatAt });
   if (s.phase !== 'idle') api.alarms.create('tick', { periodInMinutes: 0.5 });
   const at = autoAt(s);
   if (at) api.alarms.create('auto', { when: Math.max(at, Date.now() + 1000) });
@@ -325,7 +360,7 @@ async function sync(why) {
   const now = Date.now();
   let changed = await tick(s, now);
   if (why && s.settings.autoStartOnOpen) changed = (await autoStart(s, now, why)) || changed;
-  if (changed) await save(s);
+  if (changed || s.dirty) await save(s);
   else await updateBadge(s);
   return s;
 }
@@ -389,11 +424,14 @@ async function command(msg, sender) {
       resume(s, now);
       break;
     case 'stop':
-      reward(s, now);
+      payTreats(s, now);
       toIdle(s, now);
       break;
     case 'takeBreak':
-      if (reward(s, now)) startBreak(s, now);
+      if (earned(s, now)) {
+        payTreats(s, now);
+        startBreak(s, now);
+      }
       break;
     case 'release': // let the puppy out and go back to focus
       if (s.phase === 'break' || s.phase === 'overtime') {

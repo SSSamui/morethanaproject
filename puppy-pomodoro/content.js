@@ -155,8 +155,6 @@
     return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${String(m).padStart(2, '0')}:${s}`;
   }
 
-  let wasBeforeGoal = null;
-
   function render() {
     if (!state) return;
     const now = Date.now();
@@ -179,26 +177,23 @@
     } else {
       card.classList.remove('on');
     }
-
-    // Focus goal reached while this page is in front.
-    if (s.phase === 'focus' && !s.paused && s.endsAt) {
-      const before = s.endsAt - now > 0;
-      if (wasBeforeGoal && !before && document.visibilityState === 'visible') {
-        toast('🎉 Focus goal reached! Pork earned a treat 🦴 Keep going for bonus treats, or open another site to start your break.');
-      }
-      wasBeforeGoal = before;
-    } else {
-      wasBeforeGoal = null;
-    }
   }
 
   function setState(s) {
     const prev = state;
     state = s;
+    const now = Date.now();
+    const visible = document.visibilityState === 'visible';
     const r = s.lastReward;
-    if (r && r.at !== prev?.lastReward?.at && Date.now() - r.at < 5000 &&
-        s.phase === 'break' && document.visibilityState === 'visible') {
-      toast(`☕ Break time! Pork got ${r.items.join('')} — enjoy your ${s.settings.breakMin} min break.`);
+    const newTreat = r && r.at !== prev?.lastReward?.at && now - r.at < 5000;
+    const breakStart = s.phase === 'break' && s.endsAt ? s.endsAt - s.targetMs : null;
+    const newBreak = breakStart && now - breakStart < 5000 && prev?.phase !== 'break';
+    if (visible && newBreak) {
+      toast(`☕ Break time!${newTreat ? ` Pork got ${r.items.join('')}.` : ''} Enjoy your ${s.settings.breakMin} min break, Pork is waiting by the door.`);
+    } else if (visible && newTreat && s.phase === 'focus') {
+      toast(r.bonus
+        ? `🎁 Bonus treat! Pork got ${r.items.join('')} for your extra focus.`
+        : `🎉 Focus goal reached! Pork got ${r.items.join('')} Keep going for bonus treats, or open another site to start your break.`);
     }
     const a = s.lastAuto;
     if (a && a.at !== prev?.lastAuto?.at && Date.now() - a.at < 5000 && document.visibilityState === 'visible') {

@@ -3,9 +3,10 @@
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 
 - **Focus**: click **▶ Start focus**. Every tab that isn't a focus site closes. Until you reach your focus goal, only focus sites open; anything else is sent back to Pork.
-- **Focus sites** (you can add more in Settings): anything ending in `mit.edu`, MIT's YouTube channels (`@mit`, `@mitocw`) and their videos, ChatGPT, Claude, Gemini, and library/book sites (Google Books, Open Library, Internet Archive, Project Gutenberg, Libby/OverDrive, O'Reilly).
-- **Focus goal reached**: there's no automatic break. The clock keeps going as **+00:01, +00:02…** and Pork keeps earning treats: 1 treat for reaching the goal, plus 1 bonus treat for every 5 minutes of extra focus.
-- **Break**: starts only when the goal is reached **and** you open a non-focus site (or click **Take a break**). Pork gets his treats and **sits by the glass door, waiting** for the whole break.
+- **Focus sites** (you can add more in Settings): anything ending in `mit.edu`, MIT's YouTube channels (`@mit`, `@mitocw`) and their videos, ChatGPT, Claude, Gemini, Outlook and Word on the web (Microsoft 365, OneDrive, SharePoint), Kindle (read.amazon.com), and library/book sites (Google Books, Open Library, Internet Archive, Project Gutenberg, Libby/OverDrive, O'Reilly). The Outlook, Word and Kindle Mac apps are never blocked; the extension only works inside Safari.
+- **Treats**: next to the clock, Pork's next treat shows with **"Pork will get a treat after 12:34"**. He gets it right when you reach the focus goal (25 min), and a bonus treat for every 5 minutes of extra focus after that. Each one goes straight into the treat jar, with a message on the page.
+- **Focus goal reached**: there's no automatic break. The clock keeps going as **+00:01, +00:02…** and the next bonus treat counts down next to it.
+- **Break**: starts only when the goal is reached **and** you open a non-focus site (or click **Take a break**). Pork **sits by the glass door, waiting** for the whole break.
 - **Break is over**: the clock goes negative (−00:01…). For the first 2 minutes Pork **paces back and forth** ("Can we go out? 🥺"); after that he **stands up and scratches the door** ("Woof! Let me out!"). A small window with Pork stays on top of every web page until you click **🐾 End the fun — let Pork out**. Non-focus tabs close and the next focus starts, with the extra break time added to the goal (25:00 focus + 1:36 late = 26:36).
 
 - **Starts by itself**: focus starts without a click when Safari opens or the Mac wakes up from sleep. If you pause or stop, it starts again by itself after 30 minutes (a paused clock resumes; a stopped clock starts a new focus). The popup shows when: "🐶 Focus starts by itself at 3:45 PM".

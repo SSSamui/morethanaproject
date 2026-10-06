@@ -86,8 +86,15 @@ function render() {
   const left = s.paused ? s.remaining : s.endsAt ? s.endsAt - now : 0;
   const goal = s.phase === 'focus' && left <= 0;
 
-  // The worker may be asleep; nudge it if the break should have ended.
-  if (s.phase === 'break' && !s.paused && left <= 0 && now - lastSync > 1000) {
+  // Next treat: at the focus goal, then every bonus interval of extra focus.
+  const every = s.settings.bonusEveryMin * MIN;
+  const paid = s.paid || 0;
+  const untilTreat = s.phase === 'focus' ? left + paid * every
+    : s.phase === 'idle' ? Number($('focusMin').value || s.settings.focusMin) * MIN : null;
+
+  // The worker may be asleep; nudge it if the break should have ended or a treat is due.
+  const due = (s.phase === 'break' && left <= 0) || (s.phase === 'focus' && untilTreat <= 0);
+  if (due && !s.paused && now - lastSync > 1000) {
     lastSync = now;
     send('sync');
   }
@@ -109,12 +116,11 @@ function render() {
           ? `${fmt(s.settings.focusMin * MIN)} + ${fmt(s.carryMs)} from the long break`
           : 'Only focus sites until the goal 🐶';
       } else {
-        const extra = -left;
-        const every = s.settings.bonusEveryMin * MIN;
-        const treats = 1 + Math.floor(extra / every);
+        const got = paid ? (s.treats || []).slice(-paid).map(t => t.t) : [];
         label = 'Extra focus' + paused;
-        time = '+' + fmt(extra);
-        sub = `Pork earned ${'🦴'.repeat(Math.min(treats, 8))}${treats > 8 ? ' ×' + treats : ''} · next treat in ${fmt(every - (extra % every))}. Open another site to take your break.`;
+        time = '+' + fmt(-left);
+        sub = (got.length ? `Pork got ${got.slice(-8).join('')}${got.length > 8 ? ' ×' + got.length : ''} this session. ` : '') +
+          'Open another site to take your break.';
       }
       break;
     }
@@ -144,6 +150,13 @@ function render() {
     ? `🐶 ${s.paused ? 'Resumes' : 'Focus starts'} by itself at ${new Date(autoAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} (in ${fmt(Math.max(0, autoAt - now))})`
     : '';
 
+  $('treatChip').hidden = untilTreat == null;
+  if (untilTreat != null) {
+    $('chipTreat').textContent = s.nextTreat || '🦴';
+    $('chipLabel').textContent = paid ? 'Pork will get a bonus treat after' : 'Pork will get a treat after';
+    $('chipTime').textContent = fmt(Math.max(0, untilTreat));
+  }
+
   $('label').textContent = label;
   $('time').textContent = time;
   $('sub').textContent = sub;
@@ -167,7 +180,7 @@ function renderTreats() {
   if (!list.length) {
     const el = document.createElement('span');
     el.className = 'empty';
-    el.textContent = 'Finish a focus session to give Pork a treat. Extra focus = bonus treats!';
+    el.textContent = `Focus ${state.settings.focusMin} min to give Pork a treat. Every ${state.settings.bonusEveryMin} min of extra focus = a bonus treat!`;
     box.appendChild(el);
   }
   for (const t of list) {
