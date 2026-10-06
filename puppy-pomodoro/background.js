@@ -53,6 +53,7 @@ const DEFAULTS = {
   stoppedAt: null,      // when the clock was stopped (idle)
   pausedAt: null,       // when the clock was paused
   lastAuto: null,       // { at, how: 'start' | 'resume', why } — shown as a toast
+  nightShut: null,      // which night (start time + hours) already closed the non-focus tabs
   settings: {
     focusMin: 25,
     breakMin: 5,
@@ -60,6 +61,9 @@ const DEFAULTS = {
     sound: true,
     autoStartOnOpen: true,   // start when Safari opens or the Mac wakes up
     autoRestartMin: 30,      // start again after paused/stopped this long (0 = never)
+    nightLock: true,         // night mode: only focus sites between these times
+    nightStart: '00:00',
+    nightEnd: '06:00',
     focusSites: DEFAULT_FOCUS_SITES,
     sitesRev: SITES_REV      // which default sites the saved list already has
   }
@@ -125,6 +129,34 @@ function advance(s, now) {
   }
 }
 
+// ---------- night mode ----------
+
+const toMinutes = hhmm => {
+  const [h, m] = String(hhmm).split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+
+// Is `now` inside the night-mode hours? (They can wrap past midnight, e.g. 22:00–06:00.)
+function isNight(s, now) {
+  const st = s.settings;
+  if (!st.nightLock) return false;
+  const d = new Date(now);
+  const m = d.getHours() * 60 + d.getMinutes();
+  const a = toMinutes(st.nightStart);
+  const b = toMinutes(st.nightEnd);
+  if (a === b) return true;
+  return a < b ? m >= a && m < b : m >= a || m < b;
+}
+
+// Names the current night: the date it began plus its hours, e.g. "2026-10-06 00:00-06:00".
+function nightKey(s, now) {
+  const d = new Date(now);
+  const m = d.getHours() * 60 + d.getMinutes();
+  if (m < toMinutes(s.settings.nightStart)) d.setDate(d.getDate() - 1);
+  const day = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  return `${day} ${s.settings.nightStart}-${s.settings.nightEnd}`;
+}
+
 // When a paused or stopped clock starts again by itself (null = never).
 function autoAt(s) {
   const n = s.settings.autoRestartMin;
@@ -174,10 +206,20 @@ async function tick(s, now) {
   const before = s.phase + s.paused + s.paid;
   advance(s, now);
   if (s.phase === 'focus' && !s.paused) payTreats(s, now);
+  // Night mode just began (or Safari opened during it): close non-focus tabs once per night.
+  let nightNow = false;
+  if (isNight(s, now)) {
+    const key = nightKey(s, now);
+    if (s.nightShut !== key) {
+      s.nightShut = key;
+      nightNow = true;
+      await closeDistractions(s.settings.focusSites);
+    }
+  }
   if (s.phase === 'idle' && !s.stoppedAt) s.stoppedAt = now;
   const at = autoAt(s);
   if (at && now >= at) await autoStart(s, now, 'timer');
-  return s.phase + s.paused + s.paid !== before || s.stoppedAt === now;
+  return s.phase + s.paused + s.paid !== before || s.stoppedAt === now || nightNow;
 }
 
 function startFocus(s, now, carryMs) {
@@ -295,12 +337,20 @@ async function closeDistractions(sites) {
 // A tab is showing `url`. Before the focus goal, distractions are sent back
 // to the puppy; after the goal, opening one starts the break.
 async function visit(s, now, tabId, url, channel) {
-  if (s.phase !== 'focus' || s.paused) return false;
   if (classify(url, channel, s.settings.focusSites) !== 'distraction') return false;
+  let host = '';
+  try { host = new URL(url).hostname.replace(/^www\./, ''); } catch {}
+  const block = extra => api.tabs.update(tabId, {
+    url: appUrl('?tab=1&blocked=' + encodeURIComponent(host) + extra)
+  }).catch(() => {});
+  // Night mode: only focus sites, whatever the clock is doing.
+  if (isNight(s, now)) {
+    block('&night=1');
+    return false;
+  }
+  if (s.phase !== 'focus' || s.paused) return false;
   if (leftMs(s, now) > 0) {
-    let host = '';
-    try { host = new URL(url).hostname.replace(/^www\./, ''); } catch {}
-    api.tabs.update(tabId, { url: appUrl('?tab=1&blocked=' + encodeURIComponent(host)) }).catch(() => {});
+    block('');
     return false;
   }
   payTreats(s, now);
@@ -372,6 +422,7 @@ async function sync(why) {
   if (why && s.settings.autoStartOnOpen) changed = (await autoStart(s, now, why)) || changed;
   if (changed || s.dirty) await save(s);
   else await updateBadge(s);
+  if (!(await api.alarms.get('beat'))) api.alarms.create('beat', { periodInMinutes: 1 });
   return s;
 }
 
@@ -410,6 +461,10 @@ function cleanSettings(cur, inc) {
   out.bonusEveryMin = num(out.bonusEveryMin, 1, 60, cur.bonusEveryMin);
   out.autoRestartMin = num(out.autoRestartMin, 0, 600, cur.autoRestartMin);
   out.autoStartOnOpen = !!out.autoStartOnOpen;
+  out.nightLock = !!out.nightLock;
+  const hhmm = (v, d) => (/^\d{1,2}:\d{2}$/.test(String(v)) ? String(v).padStart(5, '0') : d);
+  out.nightStart = hhmm(out.nightStart, cur.nightStart);
+  out.nightEnd = hhmm(out.nightEnd, cur.nightEnd);
   if (!Array.isArray(out.focusSites)) out.focusSites = cur.focusSites;
   out.focusSites = [...new Set(out.focusSites
     .map(parseEntry).filter(Boolean).map(e => e.host + e.path))];

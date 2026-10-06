@@ -27,6 +27,22 @@ if (params.get('blocked')) {
   $('blocked').textContent = `🐶 ${params.get('blocked')} isn't a focus site. Pork is napping, keep focusing!`;
 }
 
+const timeText = hhmm => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return new Date(2000, 0, 1, h, m).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+};
+
+function isNight(st, now) {
+  if (!st.nightLock) return false;
+  const d = new Date(now);
+  const m = d.getHours() * 60 + d.getMinutes();
+  const mins = t => t.split(':').map(Number).reduce((h, x) => h * 60 + x);
+  const a = mins(st.nightStart);
+  const b = mins(st.nightEnd);
+  if (a === b) return true;
+  return a < b ? m >= a && m < b : m >= a || m < b;
+}
+
 function send(cmd, extra = {}) {
   return api.runtime.sendMessage({ cmd, ...extra }).then(s => {
     if (s && !s.error) setState(s);
@@ -52,6 +68,9 @@ function setState(s) {
   }
   state = s;
   if (!prev) fillSettings();
+  if (!prev && params.get('night')) {
+    $('blocked').textContent = `🌙 Night mode: from ${timeText(s.settings.nightStart)} to ${timeText(s.settings.nightEnd)} only focus sites can open. ${params.get('blocked')} is blocked.`;
+  }
   renderTreats();
   render();
 }
@@ -63,6 +82,9 @@ function fillSettings() {
   $('bonusEveryMin').value = st.bonusEveryMin;
   $('autoStartOnOpen').checked = st.autoStartOnOpen;
   $('autoRestartMin').value = st.autoRestartMin;
+  $('nightLock').checked = st.nightLock;
+  $('nightStart').value = st.nightStart;
+  $('nightEnd').value = st.nightEnd;
   $('sound').checked = st.sound;
   $('sites').value = st.focusSites.join('\n');
 }
@@ -74,6 +96,9 @@ function readSettings() {
     bonusEveryMin: Number($('bonusEveryMin').value),
     autoStartOnOpen: $('autoStartOnOpen').checked,
     autoRestartMin: Number($('autoRestartMin').value),
+    nightLock: $('nightLock').checked,
+    nightStart: $('nightStart').value || '00:00',
+    nightEnd: $('nightEnd').value || '06:00',
     sound: $('sound').checked,
     focusSites: $('sites').value.split(/[\s,]+/)
   };
@@ -147,6 +172,10 @@ function render() {
     : s.paused && s.pausedAt ? s.pausedAt + n * MIN : null;
   $('autoNote').textContent = autoAt
     ? `🐶 ${s.paused ? 'Resumes' : 'Focus starts'} by itself at ${new Date(autoAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} (in ${fmt(Math.max(0, autoAt - now))})`
+    : '';
+
+  $('nightNote').textContent = isNight(s.settings, now)
+    ? `🌙 Night mode until ${timeText(s.settings.nightEnd)}: only focus sites`
     : '';
 
   $('treatChip').hidden = untilTreat == null;
@@ -233,7 +262,9 @@ function scratchSound(on) {
 
 // ---------- buttons ----------
 
-$('start').onclick = () => send('start', { settings: readSettings() });
+$('start').onclick = () => send('start', {
+  settings: { focusMin: Number($('focusMin').value), breakMin: Number($('breakMin').value) }
+});
 $('pause').onclick = () => send('pause');
 $('resume').onclick = () => send('resume');
 $('stop').onclick = () => send('stop');
