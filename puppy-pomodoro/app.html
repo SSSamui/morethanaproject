@@ -107,11 +107,6 @@
       </div>
     </section>
 
-    <section class="night" id="nightBox">
-      <label class="nightToggle"><input type="checkbox" id="nightLock"> <span>🌙 <b>Night mode</b></span></label>
-      <div class="nightTimes">only focus sites from <input id="nightStart" type="time" value="00:00"> to <input id="nightEnd" type="time" value="06:00"></div>
-    </section>
-
     <section class="jar">
       <div class="jarHead">
         <span>🫙 Pork's treats</span>
@@ -119,6 +114,13 @@
       </div>
       <div id="treats" class="treats"></div>
     </section>
+
+    <details class="night" id="nightBox">
+      <summary>🌙 Night mode</summary>
+      <label class="nightToggle"><input type="checkbox" id="nightLock"> On</label>
+      <div class="nightTimes">Only focus sites from <input id="nightStart" type="time" value="00:00"> to <input id="nightEnd" type="time" value="06:00"></div>
+      <div class="row"><button id="saveNight" class="primary">Save</button><span id="nightSaved" class="muted"></span></div>
+    </details>
 
     <details class="settings">
       <summary>Settings</summary>

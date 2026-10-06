@@ -27,11 +27,6 @@ if (params.get('blocked')) {
   $('blocked').textContent = `🐶 ${params.get('blocked')} isn't a focus site. Pork is napping, keep focusing!`;
 }
 
-const timeText = hhmm => {
-  const [h, m] = hhmm.split(':').map(Number);
-  return new Date(2000, 0, 1, h, m).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-};
-
 function isNight(st, now) {
   if (!st.nightLock) return false;
   const d = new Date(now);
@@ -73,7 +68,7 @@ function setState(s) {
     if (prev && document.activeElement !== $(k) && prev.settings[k] !== s.settings[k]) $(k).value = s.settings[k];
   }
   if (!prev && params.get('night')) {
-    $('blocked').textContent = `🌙 Night mode: from ${timeText(s.settings.nightStart)} to ${timeText(s.settings.nightEnd)} only focus sites can open. ${params.get('blocked')} is blocked.`;
+    $('blocked').textContent = `🌙 Night mode: only focus sites can open now. ${params.get('blocked')} is blocked.`;
   }
   renderTreats();
   render();
@@ -89,7 +84,6 @@ function fillSettings() {
   $('nightLock').checked = st.nightLock;
   $('nightStart').value = st.nightStart;
   $('nightEnd').value = st.nightEnd;
-  $('nightBox').classList.toggle('on', st.nightLock);
   $('keepTab').checked = st.keepTab;
   $('sound').checked = st.sound;
   $('sites').value = st.focusSites.join('\n');
@@ -102,9 +96,6 @@ function readSettings() {
     bonusEveryMin: Number($('bonusEveryMin').value),
     autoStartOnOpen: $('autoStartOnOpen').checked,
     autoRestartMin: Number($('autoRestartMin').value),
-    nightLock: $('nightLock').checked,
-    nightStart: $('nightStart').value || '00:00',
-    nightEnd: $('nightEnd').value || '06:00',
     keepTab: $('keepTab').checked,
     sound: $('sound').checked,
     focusSites: $('sites').value.split(/[\s,]+/)
@@ -182,7 +173,7 @@ function render() {
     : '';
 
   $('nightNote').textContent = isNight(s.settings, now)
-    ? `🌙 Night mode until ${timeText(s.settings.nightEnd)}: only focus sites`
+    ? '🌙 Night mode: only focus sites'
     : '';
 
   $('treatChip').hidden = untilTreat == null;
@@ -291,17 +282,23 @@ $('saveSettings').onclick = async () => {
   $('saved').textContent = 'Saved ✓';
   setTimeout(() => ($('saved').textContent = ''), 1500);
 };
-// Night mode saves as soon as it changes.
-for (const id of ['nightLock', 'nightStart', 'nightEnd']) {
-  $(id).onchange = () => {
-    $('nightBox').classList.toggle('on', $('nightLock').checked);
-    send('settings', { settings: {
-      nightLock: $('nightLock').checked,
-      nightStart: $('nightStart').value || '00:00',
-      nightEnd: $('nightEnd').value || '06:00'
-    } });
-  };
-}
+// Night mode only changes when you press its Save button.
+$('saveNight').onclick = async () => {
+  await send('settings', { settings: {
+    nightLock: $('nightLock').checked,
+    nightStart: $('nightStart').value || '00:00',
+    nightEnd: $('nightEnd').value || '06:00'
+  } });
+  $('nightSaved').textContent = 'Saved ✓';
+  setTimeout(() => ($('nightSaved').textContent = ''), 1500);
+};
+// Closing the box without saving puts the saved values back.
+$('nightBox').ontoggle = () => {
+  if ($('nightBox').open || !state) return;
+  $('nightLock').checked = state.settings.nightLock;
+  $('nightStart').value = state.settings.nightStart;
+  $('nightEnd').value = state.settings.nightEnd;
+};
 
 // Safari permissions: websites can be asked for; private windows only in Safari Settings.
 const ALL_SITES = { origins: ['<all_urls>'] };
