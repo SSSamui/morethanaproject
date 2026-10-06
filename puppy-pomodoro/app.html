@@ -19,6 +19,7 @@
       <div id="label" class="label">Ready to focus</div>
       <div id="time" class="time">25:00</div>
       <div id="sub" class="sub"></div>
+      <div id="autoNote" class="autoNote"></div>
     </section>
 
     <svg class="room" id="room" viewBox="0 0 360 200" role="img" aria-label="Pork's room">
@@ -101,6 +102,8 @@
       <summary>Settings</summary>
       <label class="check">Bonus treat for every <input id="bonusEveryMin" type="number" min="1" max="60" value="5"> min of extra focus</label>
       <label class="check"><input type="checkbox" id="sound"> Scratching sound</label>
+      <label class="check"><input type="checkbox" id="autoStartOnOpen"> Start focus by itself when Safari opens or the Mac wakes up</label>
+      <label class="check">After pausing or stopping, start again by itself after <input id="autoRestartMin" type="number" min="0" max="600" value="30"> min <span class="muted">(0 = never)</span></label>
       <label class="sitesLabel" for="sites">Focus sites (one per line). During focus every other site is a distraction.
         <span class="hint">mit.edu also covers ocw.mit.edu · youtube.com/@mitocw allows that channel and its videos</span></label>
       <textarea id="sites" rows="9" spellcheck="false"></textarea>

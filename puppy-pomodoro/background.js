@@ -33,11 +33,16 @@ const DEFAULTS = {
   sessions: 0,          // finished focus sessions
   treats: [],           // [{ t, at, bonus }]
   lastReward: null,     // { at, items } — shown as a toast
+  stoppedAt: null,      // when the clock was stopped (idle)
+  pausedAt: null,       // when the clock was paused
+  lastAuto: null,       // { at, how: 'start' | 'resume', why } — shown as a toast
   settings: {
     focusMin: 25,
     breakMin: 5,
     bonusEveryMin: 5,
     sound: true,
+    autoStartOnOpen: true,   // start when Safari opens or the Mac wakes up
+    autoRestartMin: 30,      // start again after paused/stopped this long (0 = never)
     focusSites: DEFAULT_FOCUS_SITES
   }
 };
@@ -92,9 +97,64 @@ function advance(s, now) {
   }
 }
 
+// When a paused or stopped clock starts again by itself (null = never).
+function autoAt(s) {
+  const n = s.settings.autoRestartMin;
+  if (!n) return null;
+  if (s.phase === 'idle' && s.stoppedAt) return s.stoppedAt + n * MIN;
+  if (s.paused && s.pausedAt) return s.pausedAt + n * MIN;
+  return null;
+}
+
+function pause(s, now) {
+  if ((s.phase === 'focus' || s.phase === 'break') && !s.paused) {
+    s.remaining = s.endsAt - now;
+    s.endsAt = null;
+    s.paused = true;
+    s.pausedAt = now;
+  }
+}
+
+function resume(s, now) {
+  if (s.paused) {
+    s.endsAt = now + s.remaining;
+    s.remaining = null;
+    s.paused = false;
+    s.pausedAt = null;
+  }
+}
+
+// Start focus (if stopped) or resume (if paused) without a click.
+async function autoStart(s, now, why) {
+  if (s.phase === 'idle') {
+    startFocus(s, now, 0);
+    s.lastAuto = { at: now, how: 'start', why };
+    await closeDistractions(s.settings.focusSites);
+    return true;
+  }
+  if (s.paused) {
+    resume(s, now);
+    s.lastAuto = { at: now, how: 'resume', why };
+    return true;
+  }
+  return false;
+}
+
+// Move the clock along: end the break, or restart after a long pause/stop.
+// Returns true if anything changed.
+async function tick(s, now) {
+  const before = s.phase + s.paused;
+  advance(s, now);
+  if (s.phase === 'idle' && !s.stoppedAt) s.stoppedAt = now;
+  const at = autoAt(s);
+  if (at && now >= at) await autoStart(s, now, 'timer');
+  return s.phase + s.paused !== before || s.stoppedAt === now;
+}
+
 function startFocus(s, now, carryMs) {
   Object.assign(s, {
     phase: 'focus', paused: false, remaining: null, overtimeFrom: null,
+    stoppedAt: null, pausedAt: null,
     carryMs, targetMs: s.settings.focusMin * MIN + carryMs
   });
   s.endsAt = now + s.targetMs;
@@ -102,16 +162,16 @@ function startFocus(s, now, carryMs) {
 
 function startBreak(s, now) {
   Object.assign(s, {
-    phase: 'break', paused: false, remaining: null, carryMs: 0,
+    phase: 'break', paused: false, remaining: null, carryMs: 0, pausedAt: null,
     targetMs: s.settings.breakMin * MIN
   });
   s.endsAt = now + s.targetMs;
 }
 
-function toIdle(s) {
+function toIdle(s, now) {
   Object.assign(s, {
     phase: 'idle', paused: false, endsAt: null, remaining: null,
-    overtimeFrom: null, targetMs: 0, carryMs: 0
+    overtimeFrom: null, targetMs: 0, carryMs: 0, stoppedAt: now, pausedAt: null
   });
 }
 
@@ -214,8 +274,8 @@ api.tabs.onUpdated.addListener((tabId, change) => {
   serial(async () => {
     const s = await load();
     const now = Date.now();
-    advance(s, now);
-    if (await visit(s, now, tabId, change.url, null)) await save(s);
+    const changed = await tick(s, now);
+    if ((await visit(s, now, tabId, change.url, null)) || changed) await save(s);
   });
 });
 
@@ -224,8 +284,13 @@ api.tabs.onUpdated.addListener((tabId, change) => {
 async function schedule(s) {
   await api.alarms.clear('phase');
   await api.alarms.clear('tick');
+  await api.alarms.clear('auto');
   if (s.endsAt && !s.paused) api.alarms.create('phase', { when: s.endsAt });
   if (s.phase !== 'idle') api.alarms.create('tick', { periodInMinutes: 0.5 });
+  const at = autoAt(s);
+  if (at) api.alarms.create('auto', { when: Math.max(at, Date.now() + 1000) });
+  // Heartbeat: a long gap between beats means the Mac was asleep.
+  if (!(await api.alarms.get('beat'))) api.alarms.create('beat', { periodInMinutes: 1 });
 }
 
 async function updateBadge(s) {
@@ -255,18 +320,37 @@ async function updateBadge(s) {
   await api.action.setTitle?.({ title: label }).catch(() => {});
 }
 
-async function sync() {
+async function sync(why) {
   const s = await load();
-  const before = s.phase;
-  advance(s, Date.now());
-  if (s.phase !== before) await save(s);
+  const now = Date.now();
+  let changed = await tick(s, now);
+  if (why && s.settings.autoStartOnOpen) changed = (await autoStart(s, now, why)) || changed;
+  if (changed) await save(s);
   else await updateBadge(s);
   return s;
 }
 
-api.alarms.onAlarm.addListener(() => serial(sync));
-api.runtime.onStartup?.addListener(() => serial(sync));
-api.runtime.onInstalled.addListener(() => serial(sync));
+const SLEEP_GAP = 5 * MIN;
+
+async function heartbeat() {
+  const now = Date.now();
+  const last = (await api.storage.local.get('ppBeat')).ppBeat || now;
+  await api.storage.local.set({ ppBeat: now });
+  return sync(now - last > SLEEP_GAP ? 'wake' : null);
+}
+
+api.alarms.onAlarm.addListener(a => serial(() => (a.name === 'beat' ? heartbeat() : sync())));
+// Safari opened.
+api.runtime.onStartup?.addListener(() => serial(async () => {
+  await api.storage.local.set({ ppBeat: Date.now() });
+  return sync('open');
+}));
+api.runtime.onInstalled.addListener(() => serial(() => sync()));
+// First Safari window opened again after all windows were closed.
+api.windows?.onCreated?.addListener(() => serial(async () => {
+  const wins = await api.windows.getAll().catch(() => []);
+  return sync(wins.length <= 1 ? 'open' : null);
+}));
 
 // ---------- commands from the pages ----------
 
@@ -279,6 +363,8 @@ function cleanSettings(cur, inc) {
   out.focusMin = num(out.focusMin, 1, 180, cur.focusMin);
   out.breakMin = num(out.breakMin, 1, 60, cur.breakMin);
   out.bonusEveryMin = num(out.bonusEveryMin, 1, 60, cur.bonusEveryMin);
+  out.autoRestartMin = num(out.autoRestartMin, 0, 600, cur.autoRestartMin);
+  out.autoStartOnOpen = !!out.autoStartOnOpen;
   if (!Array.isArray(out.focusSites)) out.focusSites = cur.focusSites;
   out.focusSites = [...new Set(out.focusSites
     .map(parseEntry).filter(Boolean).map(e => e.host + e.path))];
@@ -288,7 +374,7 @@ function cleanSettings(cur, inc) {
 async function command(msg, sender) {
   const s = await load();
   const now = Date.now();
-  advance(s, now);
+  const changed = await tick(s, now);
 
   switch (msg.cmd) {
     case 'start':
@@ -297,22 +383,14 @@ async function command(msg, sender) {
       await closeDistractions(s.settings.focusSites);
       break;
     case 'pause':
-      if ((s.phase === 'focus' || s.phase === 'break') && !s.paused) {
-        s.remaining = s.endsAt - now;
-        s.endsAt = null;
-        s.paused = true;
-      }
+      pause(s, now);
       break;
     case 'resume':
-      if (s.paused) {
-        s.endsAt = now + s.remaining;
-        s.remaining = null;
-        s.paused = false;
-      }
+      resume(s, now);
       break;
     case 'stop':
       reward(s, now);
-      toIdle(s);
+      toIdle(s, now);
       break;
     case 'takeBreak':
       if (reward(s, now)) startBreak(s, now);
@@ -325,9 +403,8 @@ async function command(msg, sender) {
       }
       break;
     case 'visit':
-      if (sender?.tab?.id == null || !(await visit(s, now, sender.tab.id, msg.url, msg.channel))) {
-        return s;
-      }
+      const visited = sender?.tab?.id != null && (await visit(s, now, sender.tab.id, msg.url, msg.channel));
+      if (!visited && !changed) return s;
       break;
     case 'settings':
       s.settings = cleanSettings(s.settings, msg.settings || {});

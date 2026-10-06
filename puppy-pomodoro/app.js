@@ -61,6 +61,8 @@ function fillSettings() {
   $('focusMin').value = st.focusMin;
   $('breakMin').value = st.breakMin;
   $('bonusEveryMin').value = st.bonusEveryMin;
+  $('autoStartOnOpen').checked = st.autoStartOnOpen;
+  $('autoRestartMin').value = st.autoRestartMin;
   $('sound').checked = st.sound;
   $('sites').value = st.focusSites.join('\n');
 }
@@ -70,6 +72,8 @@ function readSettings() {
     focusMin: Number($('focusMin').value),
     breakMin: Number($('breakMin').value),
     bonusEveryMin: Number($('bonusEveryMin').value),
+    autoStartOnOpen: $('autoStartOnOpen').checked,
+    autoRestartMin: Number($('autoRestartMin').value),
     sound: $('sound').checked,
     focusSites: $('sites').value.split(/[\s,]+/)
   };
@@ -131,6 +135,15 @@ function render() {
       time = fmt(Number($('focusMin').value || s.settings.focusMin) * MIN);
       sub = s.sessions ? `${s.sessions} focus session${s.sessions > 1 ? 's' : ''} done` : '';
   }
+  // When a paused or stopped clock starts again by itself.
+  const n = s.settings.autoRestartMin;
+  const autoAt = !n ? null
+    : s.phase === 'idle' && s.stoppedAt ? s.stoppedAt + n * MIN
+    : s.paused && s.pausedAt ? s.pausedAt + n * MIN : null;
+  $('autoNote').textContent = autoAt
+    ? `🐶 ${s.paused ? 'Resumes' : 'Focus starts'} by itself at ${new Date(autoAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} (in ${fmt(Math.max(0, autoAt - now))})`
+    : '';
+
   $('label').textContent = label;
   $('time').textContent = time;
   $('sub').textContent = sub;

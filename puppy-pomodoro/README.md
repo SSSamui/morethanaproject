@@ -8,6 +8,8 @@ A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 - **Break**: starts only when the goal is reached **and** you open a non-focus site (or click **Take a break**). Pork gets his treats and **sits by the glass door, waiting** for the whole break.
 - **Break is over**: the clock goes negative (−00:01…). For the first 2 minutes Pork **paces back and forth** ("Can we go out? 🥺"); after that he **stands up and scratches the door** ("Woof! Let me out!"). A small window with Pork stays on top of every web page until you click **🐾 End the fun — let Pork out**. Non-focus tabs close and the next focus starts, with the extra break time added to the goal (25:00 focus + 1:36 late = 26:36).
 
+- **Starts by itself**: focus starts without a click when Safari opens or the Mac wakes up from sleep. If you pause or stop, it starts again by itself after 30 minutes (a paused clock resumes; a stopped clock starts a new focus). The popup shows when: "🐶 Focus starts by itself at 3:45 PM".
+
 The toolbar icon next to the address bar shows the time: green `24m` left, gold `+3m` extra focus, blue `4m` of break, red `-2m` over the break, `||` paused.
 
 Every treat goes into **Pork's treats** jar in the popup: 🦴 🍖 🧀 🥕 🍪 🍗 🥩.
@@ -30,7 +32,9 @@ Safari extensions have to be wrapped in a small Mac app. You need **Xcode** (fre
 
 For iPhone/iPad as well, leave out `--macos-only`.
 
-Quick way without Xcode: Safari Settings → **Developer** → **Add Temporary Extension…** → pick the `puppy-pomodoro` folder. It's removed when you quit Safari.
+Quick way without Xcode: Safari Settings → **Developer** → **Add Temporary Extension…** → pick the `puppy-pomodoro` folder. It's removed when you quit Safari, so "start when Safari opens" only works with the Xcode version.
+
+To have Safari (and Pork) start when you log in to your Mac: System Settings → **General** → **Login Items** → **+** → choose **Safari**.
 
 ## Settings
 
@@ -38,6 +42,8 @@ Open **Settings** at the bottom of the popup:
 
 - How many minutes of extra focus earn a bonus treat (default 5)
 - Scratching sound
+- Start focus by itself when Safari opens or the Mac wakes up (on by default)
+- After pausing or stopping, start again by itself after N minutes (default 30, 0 = never)
 - Focus sites, one per line. `mit.edu` also covers `ocw.mit.edu` etc. `youtube.com/@channel` allows that channel's pages and its videos. Add e.g. `google.com` if you want Google search while focusing.
 - Empty treat jar
 

@@ -200,6 +200,12 @@
         s.phase === 'break' && document.visibilityState === 'visible') {
       toast(`☕ Break time! Pork got ${r.items.join('')} — enjoy your ${s.settings.breakMin} min break.`);
     }
+    const a = s.lastAuto;
+    if (a && a.at !== prev?.lastAuto?.at && Date.now() - a.at < 5000 && document.visibilityState === 'visible') {
+      toast(a.how === 'resume'
+        ? '🐶 Pork resumed your focus by itself. Back to work!'
+        : `🐶 Pork started your focus by itself (${s.settings.focusMin} min). Only focus sites until the goal!`);
+    }
     render();
   }
 

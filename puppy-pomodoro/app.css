@@ -64,6 +64,8 @@ h1 { font-size: 16px; margin: 0; }
 .label { font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-size: 12px; }
 .time { font-size: 52px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .sub { min-height: 18px; color: var(--muted); font-size: 12px; }
+.autoNote { font-size: 12px; color: var(--focus); font-weight: 600; min-height: 0; }
+.autoNote:empty { display: none; }
 [data-phase="focus"] .label { color: var(--focus); }
 [data-goal] .label, [data-goal] .time { color: var(--bonus); }
 [data-phase="break"] .label { color: var(--break); }
