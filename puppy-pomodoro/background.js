@@ -71,6 +71,7 @@ const DEFAULTS = {
     nightLock: true,         // night mode: only focus sites between these times
     nightStart: '00:00',
     nightEnd: '06:00',
+    keepTab: true,           // keep Pork's page open as a (pinned) tab
     focusSites: DEFAULT_FOCUS_SITES,
     sitesRev: SITES_REV      // which default sites the saved list already has
   }
@@ -192,8 +193,18 @@ function resume(s, now) {
 }
 
 // Start focus (if stopped) or resume (if paused) without a click.
+// A shorter focus or longer break only counts for one session: the next
+// session goes back to at least 25 min of focus and at most 5 min of break.
+const MIN_FOCUS = 25;
+const MAX_BREAK = 5;
+function backToNormal(s) {
+  s.settings.focusMin = Math.max(MIN_FOCUS, s.settings.focusMin);
+  s.settings.breakMin = Math.min(MAX_BREAK, s.settings.breakMin);
+}
+
 async function autoStart(s, now, why) {
   if (s.phase === 'idle') {
+    backToNormal(s);
     startFocus(s, now, 0);
     s.lastAuto = { at: now, how: 'start', why };
     await closeDistractions(s.settings.focusSites);
@@ -430,6 +441,7 @@ async function sync(why) {
   if (changed || s.dirty) await save(s);
   else await updateBadge(s);
   if (!(await api.alarms.get('beat'))) api.alarms.create('beat', { periodInMinutes: 1 });
+  await ensurePorkTab(s);
   return s;
 }
 
@@ -448,7 +460,44 @@ api.runtime.onStartup?.addListener(() => serial(async () => {
   await api.storage.local.set({ ppBeat: Date.now() });
   return sync('open');
 }));
-api.runtime.onInstalled.addListener(() => serial(() => sync()));
+api.runtime.onInstalled.addListener(details => serial(async () => {
+  const s = await sync();
+  // Just installed: show Pork's page (it explains the Safari permissions).
+  if (details?.reason === 'install') await ensurePorkTab(s, true);
+}));
+
+// ---------- Pork's tab, always open ----------
+
+let porkTabMadeAt = 0;
+
+// Make sure one tab shows Pork's page (pinned, first in the window).
+async function ensurePorkTab(s, show = false) {
+  if (!s.settings.keepTab && !show) return;
+  const tabs = await api.tabs.query({}).catch(() => []);
+  if (!tabs.length) return; // no Safari window open
+  const base = appUrl();
+  const mine = tabs.find(t => (t.url || t.pendingUrl || '').startsWith(base));
+  if (mine) {
+    if (show) await api.tabs.update(mine.id, { active: true }).catch(() => {});
+    return;
+  }
+  if (Date.now() - porkTabMadeAt < 5000) return; // one is still loading
+  porkTabMadeAt = Date.now();
+  const win = await api.windows?.getLastFocused?.().catch(() => null);
+  const opts = { url: appUrl('?tab=1'), active: show, index: 0 };
+  if (win && win.id != null) opts.windowId = win.id;
+  try {
+    await api.tabs.create({ ...opts, pinned: true });
+  } catch {
+    await api.tabs.create(opts).catch(() => {});
+  }
+}
+
+// Pork's tab was closed: open it again (unless the whole window is closing).
+api.tabs.onRemoved.addListener((tabId, info) => {
+  if (info && info.isWindowClosing) return;
+  serial(async () => ensurePorkTab(await load()));
+});
 // First Safari window opened again after all windows were closed.
 api.windows?.onCreated?.addListener(() => serial(async () => {
   const wins = await api.windows.getAll().catch(() => []);
@@ -469,6 +518,7 @@ function cleanSettings(cur, inc) {
   out.autoRestartMin = num(out.autoRestartMin, 0, 600, cur.autoRestartMin);
   out.autoStartOnOpen = !!out.autoStartOnOpen;
   out.nightLock = !!out.nightLock;
+  out.keepTab = !!out.keepTab;
   const hhmm = (v, d) => (/^\d{1,2}:\d{2}$/.test(String(v)) ? String(v).padStart(5, '0') : d);
   out.nightStart = hhmm(out.nightStart, cur.nightStart);
   out.nightEnd = hhmm(out.nightEnd, cur.nightEnd);
@@ -508,6 +558,7 @@ async function command(msg, sender) {
     case 'release': // let the puppy out and go back to focus
       if (s.phase === 'break' || s.phase === 'overtime') {
         const late = s.phase === 'overtime' ? Math.max(0, now - s.overtimeFrom) : 0;
+        backToNormal(s);
         startFocus(s, now, late);
         await closeDistractions(s.settings.focusSites);
       }

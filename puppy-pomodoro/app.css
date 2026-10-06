@@ -9,6 +9,7 @@
   --over: #d9433b;
   --bonus: #c58a00;
   --jar: #fbe9c8;
+  --nightBg: #eceafd;
   --btn: #f1e9de;
   --wall: #f6e7cf;
   --floor: #c99a6b;
@@ -28,13 +29,14 @@
     --wall: #4a3f35;
     --floor: #6e5137;
     --jar: #4a3b26;
+    --nightBg: #2c2a45;
     --bonus: #e6b13a;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #1d1a17; --card: #27231f; --text: #f2ebe2; --muted: #a59a8d;
-  --line: #3a342e; --btn: #36302a; --wall: #4a3f35; --floor: #6e5137; --jar: #4a3b26; --bonus: #e6b13a;
+  --line: #3a342e; --btn: #36302a; --wall: #4a3f35; --floor: #6e5137; --jar: #4a3b26; --bonus: #e6b13a; --nightBg: #2c2a45;
   color-scheme: dark;
 }
 
@@ -157,6 +159,20 @@ button.release { background: var(--over); color: #fff; font-size: 15px; padding:
 [data-phase="overtime"] #release,
 .app:not([data-phase="idle"]) #stop { display: inline-block; }
 .app:not([data-phase="idle"]) .setup { display: none; }
+
+/* ---------- night mode ---------- */
+.night { margin-top: 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line);
+  background: var(--nightBg); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.nightToggle { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.nightToggle input { width: 16px; height: 16px; }
+.nightTimes { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.night:not(.on) .nightTimes { opacity: .55; }
+
+/* ---------- permission helper ---------- */
+.perm { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--jar); font-size: 12px; line-height: 1.45; }
+#permSites:not([hidden]) + #permPrivate:not([hidden]) { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.perm [hidden] { display: none; }
+.perm button { display: block; margin: 6px 0 4px; }
 
 /* ---------- treat jar ---------- */
 .jar { margin-top: 12px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }

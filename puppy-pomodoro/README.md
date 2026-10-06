@@ -9,7 +9,9 @@ A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 - **Break**: starts only when the goal is reached **and** you open a non-focus site (or click **Take a break**). Pork **sits by the glass door, waiting** for the whole break.
 - **Break is over**: the clock goes negative (−00:01…). For the first 2 minutes Pork **paces back and forth** ("Can we go out? 🥺"); after that he **stands up and scratches the door** ("Woof! Let me out!"). A small window with Pork stays on top of every web page until you click **🐾 End the fun — let Pork out**. Non-focus tabs close and the next focus starts, with the extra break time added to the goal (25:00 focus + 1:36 late = 26:36).
 
-- **Night mode**: from 12:00 AM to 6:00 AM only focus sites can open, whatever the clock is doing (stopped, paused, break, or extra focus). At 12:00 AM every non-focus tab closes, and opening one shows Pork's page with "🌙 Night mode…". Opening a non-focus site doesn't start a break at night. The hours can be changed or night mode turned off in Settings.
+- **Night mode**: from 12:00 AM to 6:00 AM only focus sites can open, whatever the clock is doing (stopped, paused, break, or extra focus). At 12:00 AM every non-focus tab closes, and opening one shows Pork's page with "🌙 Night mode…". Opening a non-focus site doesn't start a break at night. The **🌙 Night mode** box in the popup (always visible, below the buttons) turns it on or off and sets the hours; changes save right away.
+- **Back to normal after a custom session**: a focus shorter than 25 minutes or a break longer than 5 minutes only counts for that one session. When the next focus starts by itself (after letting Pork out, or the automatic start), focus goes back to at least 25 minutes and the break to at most 5. Longer focus and shorter breaks are kept.
+- **Pork's tab is always open**: Pork's page stays open as a pinned tab, first in the window. If you close it, it opens again. (Settings → "Keep Pork's page open as a tab" turns this off.)
 - **Starts by itself**: focus starts without a click when Safari opens or the Mac wakes up from sleep. If you pause or stop, it starts again by itself after 30 minutes (a paused clock resumes; a stopped clock starts a new focus). The popup shows when: "🐶 Focus starts by itself at 3:45 PM".
 
 The toolbar icon next to the address bar shows the time: green `24m` left, gold `+3m` extra focus (hours from 1 hour on: `+2h`), blue `4m` of break, red `-2m` over the break, `||` paused.
@@ -29,7 +31,11 @@ Safari extensions have to be wrapped in a small Mac app. You need **Xcode** (fre
 3. In Safari: **Settings → Advanced →** turn on **Show features for web developers**.
    Then **Develop → Allow Unsigned Extensions** (you need to do this again after you quit Safari).
 4. **Safari → Settings → Extensions →** turn on **Puppy Pomodoro**.
-5. Click **Always Allow on Every Website** for Puppy Pomodoro. This lets it see which site is open, close distraction tabs and show the puppy window on pages. Without it, the clock still works but it can't do those.
+5. Safari never turns these on by itself, for any extension. Pork's page shows a button for the first one and the steps for the second:
+   - **Allow on every website**: click the button on Pork's page and choose **Always Allow on Every Website**.
+   - **Private windows**: Safari Settings → **Extensions** → **Puppy Pomodoro** → check **Allow in Private Browsing**.
+
+   Click **Always Allow on Every Website** for Puppy Pomodoro. This lets it see which site is open, close distraction tabs and show the puppy window on pages. Without it, the clock still works but it can't do those.
 6. Click the paw icon in the toolbar. Use **⤢** to open the puppy in its own tab.
 
 For iPhone/iPad as well, leave out `--macos-only`.
@@ -46,7 +52,7 @@ Open **Settings** at the bottom of the popup:
 - Scratching sound
 - Start focus by itself when Safari opens or the Mac wakes up (on by default)
 - After pausing or stopping, start again by itself after N minutes (default 30, 0 = never)
-- Night mode: only focus sites from [12:00 AM] to [6:00 AM] (on by default)
+- Keep Pork's page open as a tab (on by default)
 - Focus sites, one per line. `mit.edu` also covers `ocw.mit.edu` etc. `youtube.com/@channel` allows that channel's pages and its videos. Remove `google.com` if you only want some Google services: keep e.g. `mail.google.com` and `drive.google.com`.
 - Empty treat jar
 

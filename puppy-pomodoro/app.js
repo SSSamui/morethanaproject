@@ -68,6 +68,10 @@ function setState(s) {
   }
   state = s;
   if (!prev) fillSettings();
+  // Focus/break minutes can change by themselves (back to 25/5): show the new values.
+  for (const k of ['focusMin', 'breakMin']) {
+    if (prev && document.activeElement !== $(k) && prev.settings[k] !== s.settings[k]) $(k).value = s.settings[k];
+  }
   if (!prev && params.get('night')) {
     $('blocked').textContent = `🌙 Night mode: from ${timeText(s.settings.nightStart)} to ${timeText(s.settings.nightEnd)} only focus sites can open. ${params.get('blocked')} is blocked.`;
   }
@@ -85,6 +89,8 @@ function fillSettings() {
   $('nightLock').checked = st.nightLock;
   $('nightStart').value = st.nightStart;
   $('nightEnd').value = st.nightEnd;
+  $('nightBox').classList.toggle('on', st.nightLock);
+  $('keepTab').checked = st.keepTab;
   $('sound').checked = st.sound;
   $('sites').value = st.focusSites.join('\n');
 }
@@ -99,6 +105,7 @@ function readSettings() {
     nightLock: $('nightLock').checked,
     nightStart: $('nightStart').value || '00:00',
     nightEnd: $('nightEnd').value || '06:00',
+    keepTab: $('keepTab').checked,
     sound: $('sound').checked,
     focusSites: $('sites').value.split(/[\s,]+/)
   };
@@ -284,6 +291,35 @@ $('saveSettings').onclick = async () => {
   $('saved').textContent = 'Saved ✓';
   setTimeout(() => ($('saved').textContent = ''), 1500);
 };
+// Night mode saves as soon as it changes.
+for (const id of ['nightLock', 'nightStart', 'nightEnd']) {
+  $(id).onchange = () => {
+    $('nightBox').classList.toggle('on', $('nightLock').checked);
+    send('settings', { settings: {
+      nightLock: $('nightLock').checked,
+      nightStart: $('nightStart').value || '00:00',
+      nightEnd: $('nightEnd').value || '06:00'
+    } });
+  };
+}
+
+// Safari permissions: websites can be asked for; private windows only in Safari Settings.
+const ALL_SITES = { origins: ['<all_urls>'] };
+async function checkPermissions() {
+  let sites = true;
+  let priv = true;
+  try { sites = await api.permissions.contains(ALL_SITES); } catch {}
+  try { if (api.extension?.isAllowedIncognitoAccess) priv = await api.extension.isAllowedIncognitoAccess(); } catch {}
+  $('permSites').hidden = sites;
+  $('permPrivate').hidden = priv;
+  $('perm').hidden = sites && priv;
+}
+$('grantSites').onclick = async () => {
+  try { await api.permissions.request(ALL_SITES); } catch {}
+  checkPermissions();
+};
+checkPermissions();
+
 $('clearTreats').onclick = () => {
   if (confirm('Empty the treat jar?')) send('clearTreats');
 };
