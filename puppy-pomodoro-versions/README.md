@@ -8,7 +8,8 @@ To download a single version, click its zip below, then **Download raw file** (t
 
 | Version | What changed | Download |
 |---|---|---|
-| **2.3.1** (latest) | No more reminders to take a break: focus can go on as long as you like. Focus goals up to 720 minutes. The toolbar badge shows hours for long sessions (`+3h`). | [puppy-pomodoro-v2.3.1.zip](puppy-pomodoro-v2.3.1.zip) |
+| **2.3.2** (latest) | The danmu website (sssamui.github.io/morethanaproject/danmu) is a focus site, so its YouTube videos with danmu play during focus. | [puppy-pomodoro-v2.3.2.zip](puppy-pomodoro-v2.3.2.zip) |
+| 2.3.1 | No more reminders to take a break: focus can go on as long as you like. Focus goals up to 720 minutes. The toolbar badge shows hours for long sessions (`+3h`). | [puppy-pomodoro-v2.3.1.zip](puppy-pomodoro-v2.3.1.zip) |
 | 2.3.0 | Outlook, Word (Microsoft 365, OneDrive, SharePoint) and Kindle added as focus sites. Pork gets his treat right when the focus goal is reached, and each bonus treat right when it's earned, instead of at the break. Next to the time: the next treat and "Pork will get a treat after 12:34". | [puppy-pomodoro-v2.3.0.zip](puppy-pomodoro-v2.3.0.zip) |
 | 2.2.0 | Focus starts by itself when Safari opens or the Mac wakes up. After a pause or stop, it starts again by itself after 30 minutes (paused → resumes, stopped → new focus). The popup shows when it will start; a message on the page says when it did. Both can be changed or turned off in Settings. | [puppy-pomodoro-v2.2.0.zip](puppy-pomodoro-v2.2.0.zip) |
 | 2.1.0 | The dog is now **Pork**: white fluffy coat, gray ears, navy harness, white glass door. During the break Pork waits by the door; when it ends he paces back and forth, and after 2 minutes he stands up and scratches the door. Pork's face as the toolbar icon. | [puppy-pomodoro-v2.1.0.zip](puppy-pomodoro-v2.1.0.zip) |
