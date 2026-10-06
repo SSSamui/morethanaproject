@@ -8,6 +8,7 @@ const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const isTab = params.has('tab');
 if (isTab) document.body.classList.add('tab');
+if (params.has('mini')) document.body.classList.add('mini');
 
 const app = $('app');
 const MIN = 60000;
@@ -306,6 +307,148 @@ $('clearTreats').onclick = () => {
   if (confirm('Empty the treat jar?')) send('clearTreats');
 };
 $('focusMin').oninput = render;
+// ---------- 📌 Float: a small Pork clock on top of every window ----------
+// Picture-in-Picture keeps a small video above all windows and apps. Pork's
+// room and the clock are drawn into a canvas, and the canvas is that video.
+// It has to start from a click on Pork's tab (the popup closes too soon).
+
+let pip = null;
+
+function roomCss() {
+  return [...document.styleSheets].map(ss => {
+    try { return [...ss.cssRules].map(r => r.cssText).join('\n'); } catch { return ''; }
+  }).join('\n');
+}
+
+// A picture of the room as it looks now (redrawn when Pork's pose changes).
+function roomPicture() {
+  const key = app.dataset.pose + (app.dataset.goal != null) + $('bubbleText').textContent;
+  if (pip.roomKey === key) return pip.room;
+  pip.roomKey = key;
+  const svg = $('room').cloneNode(true);
+  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  svg.setAttribute('width', '720');
+  svg.setAttribute('height', '400');
+  svg.setAttribute('data-pose', app.dataset.pose);
+  if (app.dataset.goal != null) svg.setAttribute('data-goal', '');
+  const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+  style.textContent = roomCss();
+  svg.insertBefore(style, svg.firstChild);
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
+  pip.room = img;
+  return img;
+}
+
+function drawFloat() {
+  const { ctx, canvas } = pip;
+  const W = canvas.width;
+  const H = canvas.height;
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  ctx.fillStyle = dark ? '#4a3f35' : '#f6e7cf';
+  ctx.fillRect(0, 0, W, H);
+  const room = roomPicture();
+  if (room.complete && room.naturalWidth) ctx.drawImage(room, 0, 0, W, H);
+
+  // Clock band across the top.
+  ctx.fillStyle = 'rgba(25, 20, 16, .72)';
+  ctx.fillRect(0, 0, W, 92);
+  const phase = app.dataset.phase;
+  const color = phase === 'overtime' ? '#ff6b61'
+    : phase === 'break' ? '#8fbfff'
+    : app.dataset.goal != null ? '#f2c14e' : '#ffffff';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#d8cfc4';
+  ctx.font = '600 15px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillText($('label').textContent.toUpperCase(), 18, 20);
+  ctx.fillStyle = color;
+  ctx.font = '800 54px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillText($('time').textContent, 16, 60);
+  if (!$('treatChip').hidden) {
+    ctx.font = '40px -apple-system, "Apple Color Emoji", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText($('chipTreat').textContent, W - 130, 50);
+    ctx.fillStyle = '#d8cfc4';
+    ctx.font = '600 14px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillText('treat after', W - 18, 34);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 26px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillText($('chipTime').textContent, W - 18, 62);
+    ctx.textAlign = 'left';
+  }
+}
+
+function setupFloat() {
+  if (pip) return pip;
+  const canvas = document.createElement('canvas');
+  canvas.width = 480;
+  canvas.height = 267;
+  const video = document.createElement('video');
+  video.id = 'pipVideo';
+  video.muted = true;
+  video.playsInline = true;
+  document.body.appendChild(video);
+  pip = { canvas, ctx: canvas.getContext('2d'), video, room: null, roomKey: null };
+  drawFloat();
+  video.srcObject = canvas.captureStream(4);
+  setInterval(drawFloat, 500);
+  return pip;
+}
+
+// Fallback: a small separate Safari window with just the clock and the room.
+function openMiniWindow() {
+  api.windows.create({ url: api.runtime.getURL('app.html?tab=1&mini=1'), type: 'popup', width: 360, height: 330 })
+    .catch(() => {});
+}
+
+async function startFloat() {
+  setupFloat();
+  const v = pip.video;
+  try {
+    if (document.pictureInPictureElement) {
+      await document.exitPictureInPicture();
+      return;
+    }
+    await v.play();
+    if (v.requestPictureInPicture) await v.requestPictureInPicture();
+    else if (v.webkitSupportsPresentationMode?.('picture-in-picture')) v.webkitSetPresentationMode('picture-in-picture');
+    else throw new Error('no Picture-in-Picture');
+    $('floatPrompt').hidden = true;
+    $('floatBtn').classList.remove('glow');
+  } catch {
+    openMiniWindow();
+  }
+}
+
+if (isTab) {
+  $('floatBtn').onclick = startFloat;
+  if (params.has('float')) {
+    $('floatPrompt').hidden = false;
+    $('floatBtn').classList.add('glow');
+  }
+  api.runtime.onMessage.addListener(msg => {
+    if (msg && msg.cmd === 'floatPrompt') {
+      $('floatPrompt').hidden = false;
+      $('floatBtn').classList.add('glow');
+    }
+  });
+} else {
+  // In the toolbar popup: go to Pork's tab, where one click starts floating.
+  $('floatBtn').onclick = async () => {
+    const base = api.runtime.getURL('app.html');
+    const tabs = await api.tabs.query({}).catch(() => []);
+    const tab = tabs.find(t => (t.url || '').startsWith(base) && t.url.includes('tab=1'));
+    if (tab) {
+      await api.tabs.update(tab.id, { active: true }).catch(() => {});
+      await api.windows?.update(tab.windowId, { focused: true }).catch(() => {});
+      api.runtime.sendMessage({ cmd: 'floatPrompt' }).catch(() => {});
+    } else {
+      await api.tabs.create({ url: api.runtime.getURL('app.html?tab=1&float=1') }).catch(() => {});
+    }
+    window.close();
+  };
+}
+
 $('openTab').onclick = e => {
   e.preventDefault();
   api.tabs.create({ url: api.runtime.getURL('app.html?tab=1') });

@@ -577,6 +577,8 @@ async function command(msg, sender) {
       break;
     case 'sync':
       break;
+    case 'floatPrompt': // for Pork's tab, nothing to change here
+      return s;
   }
 
   await save(s);

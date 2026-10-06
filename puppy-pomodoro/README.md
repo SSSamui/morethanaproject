@@ -14,6 +14,8 @@ A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 - **Pork's tab is always open**: Pork's page stays open as a pinned tab, first in the window. If you close it, it opens again. (Settings → "Keep Pork's page open as a tab" turns this off.)
 - **Starts by itself**: focus starts without a click when Safari opens or the Mac wakes up from sleep. If you pause or stop, it starts again by itself after 30 minutes (a paused clock resumes; a stopped clock starts a new focus). The popup shows when: "🐶 Focus starts by itself at 3:45 PM".
 
+**📌 Float Pork on top of everything**: click **📌 Float** at the top of Pork's tab (from the toolbar popup, 📌 Float takes you to Pork's tab, then click it there). A small Picture-in-Picture window with Pork's room, the clock and the next treat floats above every window and app, even outside Safari. Drag it anywhere and resize it from its corner. It stays as long as Pork's tab is open; click 📌 Float again (or the PiP close button) to stop. If Picture-in-Picture isn't available, a small separate Safari window opens instead.
+
 **Small Pork clock on every page**: while you focus or take a break, a small pill with Pork's face sits in the bottom-right corner of every web page: `24:58 🦴` (time left and the treat he'll get), `+07:00 🍖 02:59` (extra focus and the next bonus treat), `☕ 04:59` (break), `⏸` when paused. Hover over it and it fades almost away so you can read underneath; click it to move it to the other corner. It hides in fullscreen video. (Settings → "Show a small Pork clock" turns it off.)
 
 The toolbar icon next to the address bar shows the time: green `24m` left, gold `+3m` extra focus (hours from 1 hour on: `+2h`), blue `4m` of break, red `-2m` over the break, `||` paused.

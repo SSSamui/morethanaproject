@@ -10,8 +10,14 @@
   <main class="app" id="app" data-phase="idle" data-pose="sleep">
     <header class="top">
       <h1>🐾 Puppy Pomodoro</h1>
-      <a id="openTab" class="link" href="#" title="Open in a tab">⤢</a>
+      <span class="topBtns">
+        <button id="floatBtn" class="floatBtn" title="Float a small Pork clock on top of every window">📌 Float</button>
+        <a id="openTab" class="link" href="#" title="Open in a tab">⤢</a>
+      </span>
     </header>
+    <div id="floatPrompt" class="floatPrompt" hidden>
+      Click <b>📌 Float</b> above to keep a small Pork clock floating on top of every window, even other apps.
+    </div>
 
     <p id="blocked" class="blocked" hidden></p>
     </div>

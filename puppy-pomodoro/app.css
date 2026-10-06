@@ -51,6 +51,18 @@ body.tab .app { max-width: 560px; margin: 24px auto; padding: 20px; background: 
   border: 1px solid var(--line); border-radius: 18px; }
 body.tab .time { font-size: 72px; }
 body.tab #openTab { display: none; }
+.topBtns { display: flex; align-items: center; gap: 8px; }
+.floatBtn { padding: 4px 10px; font-size: 12px; border-radius: 8px; }
+.floatPrompt { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--jar); font-size: 13px; }
+.floatBtn.glow { animation: glow 1.2s ease-in-out infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 0 4px rgba(58, 141, 92, .45); } }
+#pipVideo { position: fixed; left: 0; bottom: 0; width: 2px; height: 2px; opacity: .01; pointer-events: none; }
+/* Small window (fallback when Picture-in-Picture isn't available) */
+body.mini { width: auto; }
+body.mini .app { padding: 6px 8px; }
+body.mini .app > :not(.clock):not(.room) { display: none; }
+body.mini .time { font-size: 40px; }
+body.mini .sub, body.mini .autoNote, body.mini .nightNote { display: none; }
 
 .app { padding: 12px 14px 14px; }
 .top { display: flex; align-items: center; justify-content: space-between; }
