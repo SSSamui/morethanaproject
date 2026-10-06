@@ -58,7 +58,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Focus sites (one per line)")
                 } footer: {
-                    Text("During focus, Safari only opens these sites. “mit.edu” also covers ocw.mit.edu and other subdomains. Lines like youtube.com/@mitocw can't be checked per channel on iPhone, so they're skipped while blocking; add youtube.com if you need YouTube.")
+                    Text("During focus, Safari only opens these sites. “mit.edu” also covers ocw.mit.edu and other subdomains. On iPhone a line with a path allows the whole site (sssamui.github.io/morethanaproject/danmu allows sssamui.github.io). YouTube players inside focus sites (like the danmu site) play; lines like youtube.com/@mitocw are skipped, because that would open all of YouTube. Add youtube.com if you need YouTube itself.")
                 }
 
                 Section {

@@ -43,13 +43,7 @@ enum ScreenTime {
             let apps = focusApps
             store.shield.applicationCategories = .all(except: apps.applicationTokens)
             if focusing {
-                // Safari: only focus sites. (Entries like youtube.com/@mit can't
-                // be checked per channel here, so they are left out.)
-                let domains = s.settings.focusSites
-                    .compactMap(FocusSite.parse)
-                    .filter { $0.path.isEmpty }
-                    .map { WebDomain(domain: $0.host) }
-                store.webContent.blockedByFilter = .all(except: Set(domains))
+                store.webContent.blockedByFilter = .all(except: Set(allowedHosts(s.settings.focusSites).map { WebDomain(domain: $0) }))
             } else {
                 store.webContent.blockedByFilter = nil
             }
@@ -57,6 +51,27 @@ enum ScreenTime {
             store.clearAllSettings()
         }
         watch(s)
+    }
+
+    /// Players that focus sites embed (for example the YouTube player on the
+    /// danmu site). They only show videos inside other pages, so allowing them
+    /// doesn't open YouTube itself.
+    static let embeddedPlayers = ["youtube-nocookie.com", "googlevideo.com", "ytimg.com", "ggpht.com"]
+
+    /// Websites Safari may open during focus. Screen Time only knows whole
+    /// sites: "sssamui.github.io/morethanaproject/danmu" allows
+    /// sssamui.github.io, and youtube.com/@channel lines are left out (that
+    /// would allow all of YouTube).
+    static func allowedHosts(_ focusSites: [String]) -> [String] {
+        var hosts: [String] = []
+        for site in focusSites.compactMap(FocusSite.parse) {
+            let isYouTube = site.host == "youtube.com" || site.host.hasSuffix(".youtube.com")
+            if isYouTube && !site.path.isEmpty { continue }
+            hosts.append(site.host)
+        }
+        if !hosts.isEmpty { hosts += embeddedPlayers }
+        var seen = Set<String>()
+        return (hosts + hosts.map { "www." + $0 }).filter { seen.insert($0).inserted }
     }
 
     /// Put the blocked-app screens up again so they show the new message

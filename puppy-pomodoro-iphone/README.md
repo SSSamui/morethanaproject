@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 1.0.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 1.0.1** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -36,12 +36,15 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
 - **Widgets**: small and medium Home Screen widgets (Pork's room), and Lock Screen widgets (clock, `24m` / `+3m` / `−2m`).
 - **Blocking** with Screen Time instead of closing tabs: you choose your **focus apps** (for example Safari, ChatGPT, Claude, Gemini, Libby, Books, Messages, Mail, Phone). Websites use the same focus-site list as Safari.
 - **Notifications** with buttons: *Take a break* (goal reached) and *Let Pork out* (break over). The scratching sound is the notification sound.
+- **Focus sites**: the danmu site (`sssamui.github.io/morethanaproject/danmu`) is a focus site; its YouTube videos play during focus.
 - **Treat jar**: tap a treat (instead of hovering) to see when it was earned and whether it was a goal treat or a bonus.
 - **Pork's room** in the app is the same drawing and animations as the Safari version.
 
 Not possible on iPhone (Apple doesn't allow it):
 
 - **MIT YouTube channels only**: Screen Time can only allow or block a whole website or app, not one YouTube channel. Lines like `youtube.com/@mitocw` are skipped while blocking. Add `youtube.com` to the focus sites (and the YouTube app to focus apps) if you need YouTube while focusing.
+- **Lines with a path allow the whole site**: `sssamui.github.io/morethanaproject/danmu` allows all of `sssamui.github.io` on iPhone (in Safari on the Mac it's only the danmu pages).
+- **YouTube players inside focus sites play** (for example videos on the danmu site): the YouTube player (`youtube-nocookie.com`) and video servers are always allowed during focus. They only show videos inside other pages, so YouTube itself stays blocked.
 - The blocked-app screen is Apple's layout: a small still picture of Pork and fixed text, no animation.
 - The Lock Screen shows Pork scratching the door as soon as the break is over (it can't switch from pacing to scratching after 2 minutes by itself; the app and the blocked-app screen do).
 - If you start a break from the blocked-app screen while the app is closed, the Lock Screen clock catches up the next time you open the app or tap a button on the Lock Screen. A notification tells you the break started.
@@ -56,8 +59,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v1.0.0.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v1.0.0**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v1.0.1.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v1.0.1**.
 
 ### 2. Open it in Xcode
 
@@ -122,7 +125,7 @@ Open **PuppyPomodoroLite.xcodeproj** instead of PuppyPomodoro.xcodeproj and do t
 
 - Focus minutes, break minutes, minutes of extra focus per bonus treat, scratching sound on/off
 - Blocking (Screen Time) on/off, focus apps
-- Focus sites, one per line (`mit.edu` also covers `ocw.mit.edu`)
+- Focus sites, one per line (`mit.edu` also covers `ocw.mit.edu`). If you installed 1.0.0 and saved your settings, add `sssamui.github.io/morethanaproject/danmu` here yourself (new defaults only apply to a fresh install).
 - Pork says hi: on/off, album, how long, how long Pork leaves you alone after *Yes, continue*, videos with or without sound, **Try it now**
 - Empty treat jar
 

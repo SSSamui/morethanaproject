@@ -340,6 +340,7 @@
     }
     if (player) return;   // still creating
     player = new YT.Player('yt-player', {
+      host: 'https://www.youtube-nocookie.com',   // lets focus timers allow the player without all of YouTube
       videoId,
       playerVars: { playsinline: 1, rel: 0, fs: 0, modestbranding: 1, start: startAt, origin: location.origin },
       events: {

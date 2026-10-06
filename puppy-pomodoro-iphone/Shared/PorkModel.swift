@@ -39,7 +39,8 @@ struct PorkSettings: Codable, Equatable {
         "claude.ai",
         "gemini.google.com", "accounts.google.com",
         "books.google.com", "openlibrary.org", "archive.org", "gutenberg.org",
-        "libbyapp.com", "overdrive.com", "learning.oreilly.com"
+        "libbyapp.com", "overdrive.com", "learning.oreilly.com",
+        "sssamui.github.io/morethanaproject/danmu"
     ]
 
     var focusMin = 25
