@@ -328,19 +328,22 @@ async function schedule(s) {
   if (!(await api.alarms.get('beat'))) api.alarms.create('beat', { periodInMinutes: 1 });
 }
 
+// Badge time: minutes, or whole hours from 1 hour on (the badge has room for ~4 characters).
+const short = mins => (mins < 60 ? mins + 'm' : Math.floor(mins / 60) + 'h');
+
 async function updateBadge(s) {
   const now = Date.now();
   const left = leftMs(s, now);
   let text = '';
   let color = '#3a8d5c';
   if (s.phase === 'focus') {
-    text = left > 0 ? Math.ceil(left / MIN) + 'm' : '+' + Math.max(1, Math.ceil(-left / MIN)) + 'm';
+    text = left > 0 ? short(Math.ceil(left / MIN)) : '+' + short(Math.max(1, Math.ceil(-left / MIN)));
     color = left > 0 ? '#3a8d5c' : '#c58a00';
   } else if (s.phase === 'break') {
     text = Math.max(1, Math.ceil(left / MIN)) + 'm';
     color = '#3b7dd8';
   } else if (s.phase === 'overtime') {
-    text = '-' + Math.max(1, Math.ceil((now - s.overtimeFrom) / MIN)) + 'm';
+    text = '-' + short(Math.max(1, Math.ceil((now - s.overtimeFrom) / MIN)));
     color = '#d9433b';
   }
   if (s.paused) {
@@ -395,7 +398,7 @@ function cleanSettings(cur, inc) {
     return Number.isFinite(n) ? Math.min(hi, Math.max(lo, Math.round(n))) : d;
   };
   const out = { ...cur, ...inc };
-  out.focusMin = num(out.focusMin, 1, 180, cur.focusMin);
+  out.focusMin = num(out.focusMin, 1, 720, cur.focusMin);
   out.breakMin = num(out.breakMin, 1, 60, cur.breakMin);
   out.bonusEveryMin = num(out.bonusEveryMin, 1, 60, cur.bonusEveryMin);
   out.autoRestartMin = num(out.autoRestartMin, 0, 600, cur.autoRestartMin);

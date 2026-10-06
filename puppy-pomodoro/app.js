@@ -24,7 +24,7 @@ let lastSync = 0;
 
 if (params.get('blocked')) {
   $('blocked').hidden = false;
-  $('blocked').textContent = `🐶 ${params.get('blocked')} isn't a focus site. Reach your focus goal first — after that, opening it starts your break.`;
+  $('blocked').textContent = `🐶 ${params.get('blocked')} isn't a focus site. Pork is napping, keep focusing!`;
 }
 
 function send(cmd, extra = {}) {
@@ -119,8 +119,7 @@ function render() {
         const got = paid ? (s.treats || []).slice(-paid).map(t => t.t) : [];
         label = 'Extra focus' + paused;
         time = '+' + fmt(-left);
-        sub = (got.length ? `Pork got ${got.slice(-8).join('')}${got.length > 8 ? ' ×' + got.length : ''} this session. ` : '') +
-          'Open another site to take your break.';
+        sub = got.length ? `Pork got ${got.slice(-8).join('')}${got.length > 8 ? ' ×' + got.length : ''} this session 🐶` : '';
       }
       break;
     }

@@ -193,7 +193,7 @@
     } else if (visible && newTreat && s.phase === 'focus') {
       toast(r.bonus
         ? `🎁 Bonus treat! Pork got ${r.items.join('')} for your extra focus.`
-        : `🎉 Focus goal reached! Pork got ${r.items.join('')} Keep going for bonus treats, or open another site to start your break.`);
+        : `🎉 Focus goal reached! Pork got ${r.items.join('')} Keep going for bonus treats!`);
     }
     const a = s.lastAuto;
     if (a && a.at !== prev?.lastAuto?.at && Date.now() - a.at < 5000 && document.visibilityState === 'visible') {
