@@ -14,15 +14,6 @@
     </header>
 
     <p id="blocked" class="blocked" hidden></p>
-    <div id="perm" class="perm" hidden>
-      <div id="permSites" hidden>
-        <b>🐾 Let Pork see your websites</b> so he can block distractions.
-        <button id="grantSites" class="primary">Allow on every website</button>
-        <span class="muted">Safari asks you to confirm. Choose <b>Always Allow on Every Website</b>.</span>
-      </div>
-      <div id="permPrivate" hidden>
-        <b>🕶️ Private windows:</b> Safari only lets you turn this on yourself: Safari menu → <b>Settings…</b> → <b>Extensions</b> → <b>Puppy Pomodoro</b> → check <b>Allow in Private Browsing</b>.
-      </div>
     </div>
 
     <section class="clock">
@@ -128,6 +119,7 @@
       <label class="check"><input type="checkbox" id="sound"> Scratching sound</label>
       <label class="check"><input type="checkbox" id="autoStartOnOpen"> Start focus by itself when Safari opens or the Mac wakes up</label>
       <label class="check"><input type="checkbox" id="keepTab"> Keep Pork's page open as a tab in Safari</label>
+      <p class="howto">To let Pork work on every website and in Private windows: Safari menu → <b>Settings…</b> → <b>Extensions</b> → <b>Puppy Pomodoro</b> → check <b>Allow in Private Browsing</b>, and under <b>Edit Websites…</b> set <b>Other Websites</b> to <b>Allow</b>.</p>
       <label class="check">After pausing or stopping, start again by itself after <input id="autoRestartMin" type="number" min="0" max="600" value="30"> min <span class="muted">(0 = never)</span></label>
       <label class="sitesLabel" for="sites">Focus sites (one per line). During focus every other site is a distraction.
         <span class="hint">mit.edu also covers ocw.mit.edu · youtube.com/@mitocw allows that channel and its videos</span></label>

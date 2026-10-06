@@ -77,7 +77,7 @@ body.tab .treatChip { max-width: 180px; }
 .autoNote:empty { display: none; }
 .nightNote { font-size: 12px; font-weight: 600; color: #5b5bd6; }
 .nightNote:empty { display: none; }
-.check { flex-wrap: wrap; }
+.check > input[type="checkbox"] { flex: none; }
 input[type="time"] { padding: 2px 4px; border-radius: 6px; border: 1px solid var(--line);
   background: var(--card); color: var(--text); font: inherit; }
 [data-phase="focus"] .label { color: var(--focus); }
@@ -166,11 +166,7 @@ button.release { background: var(--over); color: #fff; font-size: 15px; padding:
 .nightTimes { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
 .night .row { justify-content: flex-start; }
 
-/* ---------- permission helper ---------- */
-.perm { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--jar); font-size: 12px; line-height: 1.45; }
-#permSites:not([hidden]) + #permPrivate:not([hidden]) { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
-.perm [hidden] { display: none; }
-.perm button { display: block; margin: 6px 0 4px; }
+.howto { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 6px 0; }
 
 /* ---------- treat jar ---------- */
 .jar { margin-top: 12px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }

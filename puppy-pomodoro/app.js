@@ -300,23 +300,6 @@ $('nightBox').ontoggle = () => {
   $('nightEnd').value = state.settings.nightEnd;
 };
 
-// Safari permissions: websites can be asked for; private windows only in Safari Settings.
-const ALL_SITES = { origins: ['<all_urls>'] };
-async function checkPermissions() {
-  let sites = true;
-  let priv = true;
-  try { sites = await api.permissions.contains(ALL_SITES); } catch {}
-  try { if (api.extension?.isAllowedIncognitoAccess) priv = await api.extension.isAllowedIncognitoAccess(); } catch {}
-  $('permSites').hidden = sites;
-  $('permPrivate').hidden = priv;
-  $('perm').hidden = sites && priv;
-}
-$('grantSites').onclick = async () => {
-  try { await api.permissions.request(ALL_SITES); } catch {}
-  checkPermissions();
-};
-checkPermissions();
-
 $('clearTreats').onclick = () => {
   if (confirm('Empty the treat jar?')) send('clearTreats');
 };
