@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<!-- Pork's room for the iPhone app. Built by tools/build_room.py from
+     tools/room-template.html and tools/pork.js. Don't edit App/room.html directly. -->
+<style>
+:root {
+  --text: #2d2620; --muted: #8a7f74; --line: #e7ddd0; --over: #d9433b;
+  --wall: #f6e7cf; --floor: #c99a6b; --frame: #8f6a47;
+  --doorFrame: #fbfbf9; --doorEdge: #cfcac2;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --text: #f2ebe2; --muted: #a59a8d; --line: #3a342e; --wall: #4a3f35; --floor: #6e5137; }
+}
+html, body { margin: 0; padding: 0; background: transparent; overflow: hidden;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.room { width: 100%; height: auto; display: block; border-radius: 16px; border: 1px solid var(--line); box-sizing: border-box; }
+.wall { fill: var(--wall); }
+.baseboard { fill: var(--frame); opacity: .5; }
+.floor { fill: var(--floor); }
+.frame { fill: var(--frame); }
+.frameLine { stroke: var(--frame); stroke-width: 3; }
+.doorFrame { fill: var(--doorFrame); stroke: var(--doorEdge); stroke-width: 1; }
+.door { transform-box: fill-box; transform-origin: left center; transition: transform .7s ease-in-out; }
+.doorPanel { fill: var(--doorFrame); stroke: var(--doorEdge); stroke-width: 1; }
+.glass { fill: #bfe3ff; opacity: .55; }
+.muntin { stroke: var(--doorFrame); stroke-width: 3; }
+.handle { fill: #9ea3ab; }
+.deck { fill: #c9c4bb; }
+.deckLine { stroke: #b3ada3; stroke-width: 1; }
+.mat { fill: #6b5340; }
+.scratches ellipse { fill: #8a7f74; opacity: .35; }
+.scratches { opacity: 0; transition: opacity 2s; }
+.bed { fill: #7a5ea8; }
+.bedInner { fill: #a58bd0; }
+.bubble { opacity: 0; transition: opacity .3s; }
+.bubble rect, .bubble path { fill: #fff; stroke: #d9cbb8; }
+.bubble text { font: 700 12px -apple-system, sans-serif; fill: var(--over); }
+.zzz { opacity: 0; fill: var(--muted); font: 700 12px -apple-system, sans-serif; }
+.bone { opacity: 0; transition: opacity .4s; }
+[data-goal] .bone { opacity: 1; }
+
+.pupPos { transition: transform 1s ease-in-out, opacity .6s; transform: translate(26px, 108px); }
+@keyframes float { from { transform: translateY(4px); opacity: .2; } to { transform: translateY(-6px); opacity: 1; } }
+@keyframes pace { 0%, 100% { transform: translate(110px, 112px); } 50% { transform: translate(196px, 112px); } }
+
+[data-pose="sleep"] .zzz { opacity: 1; }
+[data-pose="sleep"] .zzz text { animation: float 1.6s ease-in-out infinite alternate; }
+[data-pose="sleep"] .zzz text:nth-child(2) { animation-delay: .3s; }
+[data-pose="sleep"] .zzz text:nth-child(3) { animation-delay: .6s; }
+[data-pose="wait"] .pupPos { transform: translate(166px, 117px); }
+[data-pose="pace"] .pupPos { animation: pace 3.2s ease-in-out infinite; }
+[data-pose="pace"] .bubble, [data-pose="door"] .bubble { opacity: 1; }
+[data-pose="door"] .pupPos { transform: translate(214px, 114px); }
+[data-pose="door"] .scratches { opacity: 1; }
+[data-pose="out"] .door { transform: scaleX(.1); }
+[data-pose="out"] .pupPos { transform: translate(276px, 112px) scale(.5); opacity: 0;
+  transition: transform 1.2s .5s ease-in, opacity .5s 1.3s; }
+
+/* still pictures for widgets and the Lock Screen (tools/render_art.mjs) */
+[data-still] *, [data-still] *::before { animation-play-state: paused !important; transition: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; }
+}
+</style>
+<style id="porkCss"></style>
+</head>
+<body>
+<div id="app" data-pose="sleep">
+<svg class="room" id="room" viewBox="0 0 360 200" role="img" aria-label="Pork's room">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9fd3ff"/>
+      <stop offset="1" stop-color="#d9f0ff"/>
+    </linearGradient>
+  </defs>
+  <rect class="wall" x="0" y="0" width="360" height="160"/>
+  <rect class="baseboard" x="0" y="154" width="360" height="6"/>
+  <rect class="floor" x="0" y="160" width="360" height="40"/>
+  <rect x="38" y="30" width="70" height="56" rx="4" class="frame"/>
+  <rect x="43" y="35" width="60" height="46" fill="url(#sky)"/>
+  <line x1="73" y1="35" x2="73" y2="81" class="frameLine"/>
+  <line x1="43" y1="58" x2="103" y2="58" class="frameLine"/>
+  <rect x="264" y="48" width="72" height="112" class="doorFrame"/>
+  <rect x="270" y="54" width="60" height="106" fill="url(#sky)"/>
+  <rect x="270" y="112" width="60" height="22" fill="#6cbf5a"/>
+  <rect x="270" y="134" width="60" height="26" class="deck"/>
+  <path d="M270 142 h60 M270 150 h60" class="deckLine"/>
+  <g id="door" class="door">
+    <rect x="270" y="54" width="60" height="106" class="doorPanel"/>
+    <rect x="276" y="60" width="48" height="88" class="glass"/>
+    <path d="M300 60 v88 M276 89 h48 M276 118 h48" class="muntin"/>
+    <rect x="318" y="100" width="3" height="14" rx="1.5" class="handle"/>
+    <g class="scratches">
+      <ellipse cx="284" cy="134" rx="3" ry="2.4"/><ellipse cx="291" cy="130" rx="3" ry="2.4"/>
+      <ellipse cx="286" cy="124" rx="2.6" ry="2"/><ellipse cx="293" cy="138" rx="2.6" ry="2"/>
+    </g>
+  </g>
+  <rect x="226" y="160" width="58" height="8" rx="2" class="mat"/>
+  <ellipse cx="80" cy="168" rx="46" ry="11" class="bed"/>
+  <ellipse cx="80" cy="164" rx="36" ry="7" class="bedInner"/>
+  <text id="bone" class="bone" x="132" y="176" font-size="16">🦴</text>
+  <g id="bubble" class="bubble">
+    <rect x="140" y="12" width="124" height="34" rx="10"/>
+    <path d="M236 45 l10 12 l2 -12z"/>
+    <text id="bubbleText" x="202" y="34" text-anchor="middle">Woof! Let me out!</text>
+  </g>
+  <g id="zzz" class="zzz">
+    <text x="120" y="120">z</text>
+    <text x="130" y="108">z</text>
+    <text x="142" y="94">Z</text>
+  </g>
+  <g id="pupPos" class="pupPos"></g>
+</svg>
+</div>
+<script>
+// Pork the dog — one drawing shared by the popup and the on-page window.
+// Put PORK_SVG inside an <svg>, PORK_CSS in a <style>, and set data-pose on
+// an ancestor: sleep | wait | pace | door | out.
+// Pork faces right; his feet stand on y = 60.
+
+var PORK_SVG = `
+<g class="flip"><g class="pork">
+  <g class="tail">
+    <g class="tailEdge"><circle cx="15" cy="29" r="8"/><circle cx="9" cy="21" r="8.5"/><circle cx="11" cy="12" r="8"/><circle cx="19" cy="7" r="6.5"/><circle cx="26" cy="9" r="4.5"/></g>
+    <g class="tailFill"><circle cx="15" cy="29" r="8"/><circle cx="9" cy="21" r="8.5"/><circle cx="11" cy="12" r="8"/><circle cx="19" cy="7" r="6.5"/><circle cx="26" cy="9" r="4.5"/></g>
+  </g>
+  <g class="legs back">
+    <g class="leg legB1"><rect x="20" y="44" width="10" height="17" rx="5"/></g>
+    <g class="leg legB2"><rect x="30" y="44" width="10" height="17" rx="5"/></g>
+  </g>
+  <ellipse class="haunch" cx="28" cy="50" rx="13" ry="11"/>
+  <ellipse class="body" cx="44" cy="40" rx="30" ry="17"/>
+  <path class="fluff" d="M18 46 q4 6 8 1 q4 6 8 1 q4 6 8 1 q4 6 8 1 q4 6 8 1 q4 5 8 0"/>
+  <rect class="harness" x="38" y="23.5" width="24" height="19" rx="6"/>
+  <rect class="harness strap" x="59" y="26" width="7" height="25" rx="3.5"/>
+  <circle class="ring" cx="50" cy="27" r="2"/>
+  <g class="legs front">
+    <g class="leg legF1"><rect x="56" y="44" width="10" height="17" rx="5"/></g>
+    <g class="leg legF2"><rect x="65" y="44" width="10" height="17" rx="5"/></g>
+  </g>
+  <g class="head">
+    <circle class="fur" cx="80" cy="22" r="16"/>
+    <circle class="fur" cx="74" cy="9" r="6"/><circle class="fur" cx="82" cy="7" r="6"/><circle class="fur" cx="89" cy="11" r="5"/>
+    <circle class="eyeRim" cx="88" cy="19" r="4.6"/>
+    <circle class="eye eyeOpen" cx="88" cy="19" r="2.8"/>
+    <circle class="shine eyeOpen" cx="89" cy="18" r="0.9"/>
+    <path class="eyeShut" d="M85 20 q3 2.6 6 0"/>
+    <path class="brow" d="M82 13 q5 -3 10 1"/>
+    <ellipse class="muzzle" cx="95" cy="28" rx="10.5" ry="8"/>
+    <path class="beard" d="M90 33 l-1 6 M94 34 l0 6 M98 34 l1 5 M101 32 l3 4"/>
+    <ellipse class="nose" cx="104" cy="25" rx="4" ry="3.3"/>
+    <ellipse class="tongue" cx="97" cy="36.5" rx="2.6" ry="3.8"/>
+    <ellipse class="ear" cx="71" cy="27" rx="7.5" ry="14" transform="rotate(12 71 27)"/>
+    <path class="earLine" d="M69 18 q-2 9 1 19"/>
+  </g>
+</g></g>`;
+
+var PORK_CSS = `
+.pork .tailEdge circle { fill: #fbfbf8; stroke: #cfcfc9; stroke-width: 2.4; }
+.pork .tailFill circle { fill: #fbfbf8; }
+.pork .fur, .pork .body, .pork .haunch, .pork .leg rect {
+  fill: #fbfbf8; stroke: #cfcfc9; stroke-width: 1.2; }
+.pork .head .fur { stroke: none; }
+.pork .head > .fur:first-child { stroke: #cfcfc9; stroke-width: 1.2; }
+.pork .fluff { fill: none; stroke: #dcdcd6; stroke-width: 1.2; }
+.pork .harness { fill: #22396b; }
+.pork .ring { fill: #c9ccd6; }
+.pork .ear { fill: #9c9c98; }
+.pork .earLine { stroke: #c4c4bf; stroke-width: 1.4; fill: none; }
+.pork .eyeRim { fill: #c9c9c3; }
+.pork .eye { fill: #3a2418; }
+.pork .shine { fill: #fff; }
+.pork .eyeShut { stroke: #3a2418; stroke-width: 1.6; fill: none; stroke-linecap: round; display: none; }
+.pork .brow { stroke: #e6e6e0; stroke-width: 2.4; fill: none; stroke-linecap: round; }
+.pork .muzzle { fill: #f3f3ef; }
+.pork .beard { stroke: #9a9a95; stroke-width: 1.2; stroke-linecap: round; }
+.pork .nose { fill: #1d1d1d; }
+.pork .tongue { fill: #ef7f92; display: none; }
+.pork .haunch { display: none; }
+
+.flip { transform-box: view-box; transform-origin: 55px 0; }
+.pork { transform-box: view-box; transform-origin: 30px 60px; transition: transform .5s; }
+.pork .head { transform-box: view-box; transform-origin: 74px 30px; transition: transform .5s; }
+.pork .tail { transform-box: view-box; transform-origin: 18px 34px; animation: pk-wag .5s ease-in-out infinite alternate; }
+.pork .leg { transform-box: fill-box; transform-origin: 50% 12%; }
+
+@keyframes pk-wag { from { transform: rotate(-10deg); } to { transform: rotate(12deg); } }
+@keyframes pk-walk { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+@keyframes pk-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
+@keyframes pk-scratch { from { transform: rotate(-50deg); } to { transform: rotate(-100deg); } }
+@keyframes pk-flip { 0%, 49.9% { transform: scaleX(1); } 50%, 100% { transform: scaleX(-1); } }
+@keyframes pk-look { 0%, 70%, 100% { transform: rotate(-6deg); } 80%, 90% { transform: rotate(4deg); } }
+
+/* napping on the bed */
+[data-pose="sleep"] .pork { transform: translateY(6px) scaleY(.9); }
+[data-pose="sleep"] .pork .legs, [data-pose="sleep"] .pork .strap { display: none; }
+[data-pose="sleep"] .pork .eyeOpen { display: none; }
+[data-pose="sleep"] .pork .eyeShut { display: inline; }
+[data-pose="sleep"] .pork .tail { animation-duration: 2.4s; }
+
+/* sitting in front of the door, staring outside */
+[data-pose="wait"] .pork { transform: rotate(-18deg); }
+[data-pose="wait"] .pork .back { display: none; }
+[data-pose="wait"] .pork .haunch { display: inline; }
+[data-pose="wait"] .pork .front .leg { transform: rotate(18deg); }
+[data-pose="wait"] .pork .head { animation: pk-look 4s ease-in-out infinite; }
+[data-pose="wait"] .pork .tail { animation-duration: 1.4s; }
+
+/* walking back and forth */
+[data-pose="pace"] .flip { animation: pk-flip 3.2s infinite; }
+[data-pose="pace"] .pork, [data-pose="out"] .pork { animation: pk-bob .35s ease-in-out infinite; }
+[data-pose="pace"] .pork .leg, [data-pose="out"] .pork .leg { animation: pk-walk .35s ease-in-out infinite alternate; }
+[data-pose="pace"] .pork .legB2, [data-pose="pace"] .pork .legF1,
+[data-pose="out"] .pork .legB2, [data-pose="out"] .pork .legF1 { animation-direction: alternate-reverse; }
+[data-pose="pace"] .pork .tongue, [data-pose="out"] .pork .tongue { display: inline; }
+[data-pose="pace"] .pork .tail, [data-pose="out"] .pork .tail { animation-duration: .2s; }
+
+/* up on the back legs, scratching the door */
+[data-pose="door"] .pork { transform: rotate(-42deg); }
+[data-pose="door"] .pork .head { transform: rotate(30deg); }
+[data-pose="door"] .pork .front .leg { animation: pk-scratch .26s ease-in-out infinite alternate; }
+[data-pose="door"] .pork .legF2 { animation-direction: alternate-reverse; }
+[data-pose="door"] .pork .tail { animation-duration: .16s; }
+`;
+
+document.getElementById('pupPos').innerHTML = PORK_SVG;
+document.getElementById('porkCss').textContent = PORK_CSS;
+
+// Called from Swift: setPork('sleep' | 'wait' | 'pace' | 'door' | 'out', goalReached)
+function setPork(pose, goal) {
+  var app = document.getElementById('app');
+  if (app.dataset.pose !== pose) app.dataset.pose = pose;
+  if (goal) app.dataset.goal = ''; else delete app.dataset.goal;
+  document.getElementById('bubbleText').textContent =
+    pose === 'pace' ? 'Can we go out? 🥺' : 'Woof! Let me out!';
+}
+</script>
+</body>
+</html>

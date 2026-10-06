@@ -1,0 +1,912 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		685402435747F7EBE2EFE101 = {
+			isa = PBXBuildFile;
+			fileRef = 8EC1F4F5EE2B98276BA154B8;
+			settings = {
+				ATTRIBUTES = (
+					RemoveHeadersOnCopy,
+				);
+			};
+		};
+		A60A89E2E5D832ABE287C542 = {
+			isa = PBXBuildFile;
+			fileRef = 1830F37016B7E1E49358329E;
+			settings = {
+				ATTRIBUTES = (
+					RemoveHeadersOnCopy,
+				);
+			};
+		};
+		BD72F94B4109F2974C0D5F53 = {
+			isa = PBXBuildFile;
+			fileRef = 1360FAC24808CA50621E7ACC;
+			settings = {
+				ATTRIBUTES = (
+					RemoveHeadersOnCopy,
+				);
+			};
+		};
+		D26EABB4EAC781710328DC19 = {
+			isa = PBXBuildFile;
+			fileRef = 832BF2639A5039C1E6B2EE38;
+			settings = {
+				ATTRIBUTES = (
+					RemoveHeadersOnCopy,
+				);
+			};
+		};
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1BA7C077ECE1FC99E4D6D0D6 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B2B20B4544BDDB28FD27EE13;
+			proxyType = 1;
+			remoteGlobalIDString = 36FDA07AAC72ED74D75AF578;
+			remoteInfo = PorkWidget;
+		};
+		1F1CA0E03D374E2620752073 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B2B20B4544BDDB28FD27EE13;
+			proxyType = 1;
+			remoteGlobalIDString = F5B76D56CCD2D91C3FBE956E;
+			remoteInfo = PorkMonitor;
+		};
+		5028257FBE7168230987B1D1 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B2B20B4544BDDB28FD27EE13;
+			proxyType = 1;
+			remoteGlobalIDString = 720838E38769DD2B764DEC13;
+			remoteInfo = PorkShieldAction;
+		};
+		FA82052A6A6E79B9F1C11754 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B2B20B4544BDDB28FD27EE13;
+			proxyType = 1;
+			remoteGlobalIDString = 17C7B9D959814FE183313B19;
+			remoteInfo = PorkShieldConfig;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CC2F7996A0D2EBC9EC688E40 = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BD72F94B4109F2974C0D5F53,
+				685402435747F7EBE2EFE101,
+				A60A89E2E5D832ABE287C542,
+				D26EABB4EAC781710328DC19,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		1360FAC24808CA50621E7ACC = {
+			isa = PBXFileReference;
+			explicitFileType = "wrapper.app-extension";
+			includeInIndex = 0;
+			path = PorkWidget.appex;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		1830F37016B7E1E49358329E = {
+			isa = PBXFileReference;
+			explicitFileType = "wrapper.app-extension";
+			includeInIndex = 0;
+			path = PorkShieldAction.appex;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		832BF2639A5039C1E6B2EE38 = {
+			isa = PBXFileReference;
+			explicitFileType = "wrapper.app-extension";
+			includeInIndex = 0;
+			path = PorkMonitor.appex;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		89081A03F80EFACFB8BF7E57 = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.application;
+			includeInIndex = 0;
+			path = PuppyPomodoro.app;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		8EC1F4F5EE2B98276BA154B8 = {
+			isa = PBXFileReference;
+			explicitFileType = "wrapper.app-extension";
+			includeInIndex = 0;
+			path = PorkShieldConfig.appex;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		2EB716BE9C953C3096BFFF92 = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = ShieldConfig;
+			sourceTree = "<group>";
+		};
+		319C939B2407DFD1ED397437 = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = LiveShared;
+			sourceTree = "<group>";
+		};
+		53E01F8CC9680F03CA38DB2F = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = ShieldAction;
+			sourceTree = "<group>";
+		};
+		B98E79DB409BE89E35A4EE3F = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C15381C41766B5D671EFD8CE = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		E52C3F056D492C170FAACFBF = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = Widget;
+			sourceTree = "<group>";
+		};
+		FCA1335569FBD5E7E97868F1 = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = Monitor;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		379DFAD8F94B2098D7B62C6C = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D311C080DC7F5DCB41D3193 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8142D88C81928475A15B3A9A = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9AE67C5482114805980E8B32 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B4A2148AD05AA259CF481FA7 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		830E7C581BF502663E6238D4 = {
+			isa = PBXGroup;
+			children = (
+				B98E79DB409BE89E35A4EE3F,
+				C15381C41766B5D671EFD8CE,
+				319C939B2407DFD1ED397437,
+				E52C3F056D492C170FAACFBF,
+				2EB716BE9C953C3096BFFF92,
+				53E01F8CC9680F03CA38DB2F,
+				FCA1335569FBD5E7E97868F1,
+				9290A199786B91CA4D4551F4,
+			);
+			sourceTree = "<group>";
+		};
+		9290A199786B91CA4D4551F4 = {
+			isa = PBXGroup;
+			children = (
+				89081A03F80EFACFB8BF7E57,
+				1360FAC24808CA50621E7ACC,
+				8EC1F4F5EE2B98276BA154B8,
+				1830F37016B7E1E49358329E,
+				832BF2639A5039C1E6B2EE38,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		046888B585AC004984C4534A = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3A2598B89B4D6B30B27FA791;
+			buildPhases = (
+				31BAFD52DE7A00A2647CCE87,
+				9AE67C5482114805980E8B32,
+				3C589BF18C9FB28EAF4D0C8D,
+				CC2F7996A0D2EBC9EC688E40,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4CF929A377E97F845F171B0C,
+				091881D04D48671B91E27B1E,
+				CDC374633AEEDFE357D85B9E,
+				9BBFF7FB39258285DEC6B24E,
+			);
+			fileSystemSynchronizedGroups = (
+				B98E79DB409BE89E35A4EE3F,
+				C15381C41766B5D671EFD8CE,
+				319C939B2407DFD1ED397437,
+			);
+			name = PuppyPomodoro;
+			packageProductDependencies = (
+			);
+			productName = PuppyPomodoro;
+			productReference = 89081A03F80EFACFB8BF7E57;
+			productType = "com.apple.product-type.application";
+		};
+		17C7B9D959814FE183313B19 = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D2B469976160FBD1FA20043D;
+			buildPhases = (
+				1D44B532AE69D7EF81F08907,
+				7D311C080DC7F5DCB41D3193,
+				953E816DA6D3CC9D61602434,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				2EB716BE9C953C3096BFFF92,
+				C15381C41766B5D671EFD8CE,
+			);
+			name = PorkShieldConfig;
+			packageProductDependencies = (
+			);
+			productName = PorkShieldConfig;
+			productReference = 8EC1F4F5EE2B98276BA154B8;
+			productType = "com.apple.product-type.app-extension";
+		};
+		36FDA07AAC72ED74D75AF578 = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE23274CD568679EC1363596;
+			buildPhases = (
+				BB79FAF578062F2D038C7B22,
+				B4A2148AD05AA259CF481FA7,
+				95E1476E3F428371E5DE205E,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E52C3F056D492C170FAACFBF,
+				C15381C41766B5D671EFD8CE,
+				319C939B2407DFD1ED397437,
+			);
+			name = PorkWidget;
+			packageProductDependencies = (
+			);
+			productName = PorkWidget;
+			productReference = 1360FAC24808CA50621E7ACC;
+			productType = "com.apple.product-type.app-extension";
+		};
+		720838E38769DD2B764DEC13 = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 358522B5EA6D7DB598A51F4B;
+			buildPhases = (
+				FC3C110A67C166616A16BD45,
+				8142D88C81928475A15B3A9A,
+				65CF18709CED488199AE07D6,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				53E01F8CC9680F03CA38DB2F,
+				C15381C41766B5D671EFD8CE,
+			);
+			name = PorkShieldAction;
+			packageProductDependencies = (
+			);
+			productName = PorkShieldAction;
+			productReference = 1830F37016B7E1E49358329E;
+			productType = "com.apple.product-type.app-extension";
+		};
+		F5B76D56CCD2D91C3FBE956E = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A0F7767DC2040E57E58D0AE1;
+			buildPhases = (
+				BB4D63E0527DBB1E6BC18102,
+				379DFAD8F94B2098D7B62C6C,
+				A9DC0660A4B52E3CC2CFEB33,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				FCA1335569FBD5E7E97868F1,
+				C15381C41766B5D671EFD8CE,
+			);
+			name = PorkMonitor;
+			packageProductDependencies = (
+			);
+			productName = PorkMonitor;
+			productReference = 832BF2639A5039C1E6B2EE38;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B2B20B4544BDDB28FD27EE13 = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					046888B585AC004984C4534A = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					36FDA07AAC72ED74D75AF578 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					17C7B9D959814FE183313B19 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					720838E38769DD2B764DEC13 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					F5B76D56CCD2D91C3FBE956E = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = F39DD13C220C60C221A5424D;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 830E7C581BF502663E6238D4;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 9290A199786B91CA4D4551F4;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				046888B585AC004984C4534A,
+				36FDA07AAC72ED74D75AF578,
+				17C7B9D959814FE183313B19,
+				720838E38769DD2B764DEC13,
+				F5B76D56CCD2D91C3FBE956E,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3C589BF18C9FB28EAF4D0C8D = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		65CF18709CED488199AE07D6 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		953E816DA6D3CC9D61602434 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95E1476E3F428371E5DE205E = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9DC0660A4B52E3CC2CFEB33 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1D44B532AE69D7EF81F08907 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		31BAFD52DE7A00A2647CCE87 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB4D63E0527DBB1E6BC18102 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB79FAF578062F2D038C7B22 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FC3C110A67C166616A16BD45 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		091881D04D48671B91E27B1E = {
+			isa = PBXTargetDependency;
+			target = 17C7B9D959814FE183313B19;
+			targetProxy = FA82052A6A6E79B9F1C11754;
+		};
+		4CF929A377E97F845F171B0C = {
+			isa = PBXTargetDependency;
+			target = 36FDA07AAC72ED74D75AF578;
+			targetProxy = 1BA7C077ECE1FC99E4D6D0D6;
+		};
+		9BBFF7FB39258285DEC6B24E = {
+			isa = PBXTargetDependency;
+			target = F5B76D56CCD2D91C3FBE956E;
+			targetProxy = 1F1CA0E03D374E2620752073;
+		};
+		CDC374633AEEDFE357D85B9E = {
+			isa = PBXTargetDependency;
+			target = 720838E38769DD2B764DEC13;
+			targetProxy = 5028257FBE7168230987B1D1;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		02DAD26FA551CE8A7A177626 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Puppy Pomodoro";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+			};
+			name = Release;
+		};
+		23BBCF9BE674A1D8BC62387C = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/GroupOnly.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Widget-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's clock";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		24867FC89913C669EE77E650 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/GroupOnly.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Widget-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's clock";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		338DCB203B9388532A25C9FF = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ScreenTimeExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Monitor-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's break watcher";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).monitor";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		424338E6026DE5492D8D3E77 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ScreenTimeExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/ShieldAction-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app buttons";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldaction";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		4894A3833C220AA1B57879B8 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ScreenTimeExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Monitor-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's break watcher";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).monitor";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		7D9C69E2AE5FD30224BC3F5B = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Puppy Pomodoro";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+			};
+			name = Debug;
+		};
+		99447A521EAB79B127668DA3 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ScreenTimeExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/ShieldAction-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app buttons";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldaction";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		C6B2A0B9112F409D5D472E88 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ScreenTimeExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/ShieldConfig-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app screen";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldconfig";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		DF5F4BDC6E43BAD28576020B = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PORK_ID_PREFIX = com.sssamui.puppypomodoro;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		DF784B3D6A423594AC072CAF = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PORK_ID_PREFIX = com.sssamui.puppypomodoro;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		E176760247D0C5A42C513BA6 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ScreenTimeExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/ShieldConfig-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app screen";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldconfig";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		358522B5EA6D7DB598A51F4B = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				99447A521EAB79B127668DA3,
+				424338E6026DE5492D8D3E77,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3A2598B89B4D6B30B27FA791 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D9C69E2AE5FD30224BC3F5B,
+				02DAD26FA551CE8A7A177626,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A0F7767DC2040E57E58D0AE1 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4894A3833C220AA1B57879B8,
+				338DCB203B9388532A25C9FF,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CE23274CD568679EC1363596 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				23BBCF9BE674A1D8BC62387C,
+				24867FC89913C669EE77E650,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D2B469976160FBD1FA20043D = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E176760247D0C5A42C513BA6,
+				C6B2A0B9112F409D5D472E88,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F39DD13C220C60C221A5424D = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DF784B3D6A423594AC072CAF,
+				DF5F4BDC6E43BAD28576020B,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B2B20B4544BDDB28FD27EE13;
+}
