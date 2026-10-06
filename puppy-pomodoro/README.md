@@ -35,7 +35,7 @@ Safari extensions have to be wrapped in a small Mac app. You need **Xcode** (fre
    - **Allow on every website**: click the button on Pork's page and choose **Always Allow on Every Website**.
    - **Private windows**: Safari Settings → **Extensions** → **Puppy Pomodoro** → check **Allow in Private Browsing**.
 
-   Click **Always Allow on Every Website** for Puppy Pomodoro. This lets it see which site is open, close distraction tabs and show the puppy window on pages. Without it, the clock still works but it can't do those.
+   Website access lets it see which site is open, close distraction tabs and show Pork's window on pages. Without it, the clock still works but it can't do those.
 6. Click the paw icon in the toolbar. Use **⤢** to open the puppy in its own tab.
 
 For iPhone/iPad as well, leave out `--macos-only`.
