@@ -8,7 +8,8 @@ To download a single version, click its zip below, then **Download raw file** (t
 
 | Version | What changed | Download |
 |---|---|---|
-| **2.4.1** (latest) | Google (search, Gmail, Drive, Docs, Calendar, Tasks) and Notion added as focus sites. | [puppy-pomodoro-v2.4.1.zip](puppy-pomodoro-v2.4.1.zip) |
+| **2.5.0** (latest) | Night mode has its own box in the popup, always visible, and saves right away. Pork's page always stays open as a pinned tab (reopens if closed). Pork's page asks for website access with one button and shows how to allow private windows. A focus under 25 min or a break over 5 min only counts for one session; the next session goes back to ≥25 min focus and ≤5 min break. | [puppy-pomodoro-v2.5.0.zip](puppy-pomodoro-v2.5.0.zip) |
+| 2.4.1 | Google (search, Gmail, Drive, Docs, Calendar, Tasks) and Notion added as focus sites. | [puppy-pomodoro-v2.4.1.zip](puppy-pomodoro-v2.4.1.zip) |
 | 2.4.0 | Night mode: from 12:00 AM to 6:00 AM only focus sites can open, whatever the clock is doing. Non-focus tabs close at 12:00 AM. Hours can be changed in Settings. Also fixes Start overwriting settings changed elsewhere. | [puppy-pomodoro-v2.4.0.zip](puppy-pomodoro-v2.4.0.zip) |
 | 2.3.2 | The danmu website (sssamui.github.io/morethanaproject/danmu) is a focus site, so its YouTube videos with danmu play during focus. | [puppy-pomodoro-v2.3.2.zip](puppy-pomodoro-v2.3.2.zip) |
 | 2.3.1 | No more reminders to take a break: focus can go on as long as you like. Focus goals up to 720 minutes. The toolbar badge shows hours for long sessions (`+3h`). | [puppy-pomodoro-v2.3.1.zip](puppy-pomodoro-v2.3.1.zip) |
