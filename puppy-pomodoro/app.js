@@ -9,6 +9,8 @@ const params = new URLSearchParams(location.search);
 const isTab = params.has('tab');
 if (isTab) document.body.classList.add('tab');
 if (params.has('mini')) document.body.classList.add('mini');
+const waitTo = params.has('wait') ? params.get('to') : null;
+if (waitTo) document.body.classList.add('wait');
 
 const app = $('app');
 const MIN = 60000;
@@ -20,7 +22,7 @@ porkStyle.textContent = PORK_CSS;
 document.head.appendChild(porkStyle);
 let state = null;
 let releasingUntil = 0;
-let seenTreats = null;
+let seenTotal = null;
 let lastSync = 0;
 
 if (params.get('blocked')) {
@@ -72,6 +74,7 @@ function setState(s) {
     $('blocked').textContent = `🌙 Night mode: only focus sites can open now. ${params.get('blocked')} is blocked.`;
   }
   renderTreats();
+  renderTasks();
   render();
 }
 
@@ -134,7 +137,7 @@ function render() {
   let label, time, sub = '';
   switch (s.phase) {
     case 'focus': {
-      const paused = s.paused ? ' · paused' : '';
+      const paused = s.autoPaused ? ' · paused (not using Safari)' : s.paused ? ' · paused' : '';
       if (!goal) {
         label = 'Focus' + paused;
         time = fmt(left);
@@ -194,6 +197,7 @@ function render() {
   if (now < releasingUntil) pose = 'out';
   else if (s.phase === 'break') pose = 'wait';
   else if (s.phase === 'overtime') pose = now - s.overtimeFrom < PACE_MS ? 'pace' : 'door';
+  if (waitTo) pose = 'wait';
   app.dataset.pose = pose;
   $('bubbleText').textContent = pose === 'pace' ? 'Can we go out? 🥺' : 'Woof! Let me out!';
 
@@ -201,28 +205,55 @@ function render() {
   scratchSound(pose === 'door' && s.settings.sound);
 }
 
+// Treat jar: the newest treat and how many Pork has.
 function renderTreats() {
-  const list = state.treats || [];
-  const box = $('treats');
-  const known = seenTreats;
-  box.textContent = '';
-  if (!list.length) {
-    const el = document.createElement('span');
-    el.className = 'empty';
-    el.textContent = `Focus ${state.settings.focusMin} min to give Pork a treat. Every ${state.settings.bonusEveryMin} min of extra focus = a bonus treat!`;
-    box.appendChild(el);
+  const total = state.treatTotal ?? (state.treats || []).length;
+  const last = (state.treats || []).slice(-1)[0];
+  $('lastTreat').textContent = total && last ? last.t : '';
+  $('treatCount').textContent = total
+    ? `Pork has ${total} treat${total > 1 ? 's' : ''}`
+    : `No treats yet. Focus ${state.settings.focusMin} min to give Pork one!`;
+  if (seenTotal !== null && total > seenTotal) {
+    $('lastTreat').classList.remove('new');
+    void $('lastTreat').offsetWidth;
+    $('lastTreat').classList.add('new');
   }
-  for (const t of list) {
-    const el = document.createElement('span');
-    el.textContent = t.t;
-    el.title = new Date(t.at).toLocaleString() + (t.bonus ? ' · bonus for extra focus' : ' · focus goal');
-    if (known !== null && !known.has(t.at)) el.className = 'new';
-    box.appendChild(el);
-  }
-  seenTreats = new Set(list.map(t => t.at));
-  $('treatCount').textContent = list.length ? `${list.length} treat${list.length > 1 ? 's' : ''}` : 'no treats yet';
-  box.scrollTop = box.scrollHeight;
+  seenTotal = total;
 }
+
+// To-do list (also shown on web pages when the break is over).
+function renderTasks() {
+  const list = $('taskList');
+  const tasks = state.tasks || [];
+  const key = JSON.stringify(tasks);
+  if (list.dataset.key === key) return;
+  list.dataset.key = key;
+  list.textContent = '';
+  for (const t of tasks) {
+    const li = document.createElement('li');
+    li.className = t.done ? 'done' : '';
+    const label = document.createElement('label');
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = t.done;
+    box.onchange = () => send('toggleTask', { id: t.id });
+    const del = document.createElement('button');
+    del.className = 'ghost small del';
+    del.textContent = '×';
+    del.title = 'Remove';
+    del.onclick = () => send('removeTask', { id: t.id });
+    label.append(box, document.createTextNode(t.text));
+    li.append(label, del);
+    list.appendChild(li);
+  }
+}
+$('taskForm').onsubmit = e => {
+  e.preventDefault();
+  const text = $('taskInput').value.trim();
+  if (!text) return;
+  $('taskInput').value = '';
+  send('addTask', { text });
+};
 
 // ---------- scratching sound (soft noise bursts) ----------
 
@@ -303,8 +334,21 @@ $('nightBox').ontoggle = () => {
   $('nightEnd').value = state.settings.nightEnd;
 };
 
+// Empty the jar: click twice (Safari's popup can't show confirm dialogs).
+let clearArmed = null;
 $('clearTreats').onclick = () => {
-  if (confirm('Empty the treat jar?')) send('clearTreats');
+  if (clearArmed) {
+    clearTimeout(clearArmed);
+    clearArmed = null;
+    $('clearTreats').textContent = 'Empty jar';
+    send('clearTreats');
+    return;
+  }
+  $('clearTreats').textContent = 'Click again to empty';
+  clearArmed = setTimeout(() => {
+    clearArmed = null;
+    $('clearTreats').textContent = 'Empty jar';
+  }, 3000);
 };
 $('focusMin').oninput = render;
 // ---------- 📌 Float: a small Pork clock on top of every window ----------
@@ -437,7 +481,7 @@ if (isTab) {
   $('floatBtn').onclick = async () => {
     const base = api.runtime.getURL('app.html');
     const tabs = await api.tabs.query({}).catch(() => []);
-    const tab = tabs.find(t => (t.url || '').startsWith(base) && t.url.includes('tab=1'));
+    const tab = tabs.find(t => (t.url || '').startsWith(base) && t.url.includes('tab=1') && !/[?&](wait|blocked|mini)=/.test(t.url));
     if (tab) {
       await api.tabs.update(tab.id, { active: true }).catch(() => {});
       await api.windows?.update(tab.windowId, { focused: true }).catch(() => {});
@@ -459,5 +503,122 @@ api.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes[KEY]?.newValue) setState(changes[KEY].newValue);
 });
 
-send('sync');
+// ---------- Pork's waiting page (paused or stopped, opening a distraction) ----------
+
+const WAIT_MS = 60 * 1000;
+if (waitTo) {
+  let host = waitTo;
+  try { host = new URL(waitTo).hostname.replace(/^www\./, ''); } catch {}
+  document.querySelectorAll('.waitHost').forEach(el => (el.textContent = host));
+  document.title = '🐶 Wait a minute with Pork';
+  $('waitView').hidden = false;
+  showPorkMedia();
+  // Count down only while you're looking at this page.
+  let left = WAIT_MS;
+  let last = Date.now();
+  const timer = setInterval(() => {
+    const now = Date.now();
+    if (document.visibilityState === 'visible') left -= now - last;
+    last = now;
+    const secs = Math.max(0, Math.ceil(left / 1000));
+    $('waitCount').textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+    if (left <= 0) {
+      clearInterval(timer);
+      $('waitCount').hidden = true;
+      $('waitMsg').hidden = true;
+      $('waitAsk').hidden = false;
+    }
+  }, 250);
+  $('waitGo').onclick = async () => {
+    await api.runtime.sendMessage({ cmd: 'pass', url: waitTo });
+    location.href = waitTo;
+  };
+  $('waitBack').onclick = async () => {
+    await api.runtime.sendMessage({ cmd: 'backToWork' });
+    const me = await api.tabs.getCurrent().catch(() => null);
+    const others = me ? (await api.tabs.query({ windowId: me.windowId })).filter(t => t.id !== me.id) : [];
+    if (me && others.length) api.tabs.remove(me.id);
+    else location.href = api.runtime.getURL('app.html?tab=1');
+  };
+}
+
+// Pork's own photos and videos (added under Settings on Pork's tab), or the cartoon.
+async function showPorkMedia() {
+  const media = (await api.storage.local.get('ppMedia')).ppMedia || [];
+  if (!media.length) return; // the cartoon room stays
+  const box = $('waitMedia');
+  box.hidden = false;
+  document.body.classList.add('hasMedia');
+  let i = 0;
+  const next = () => {
+    const m = media[i++ % media.length];
+    box.textContent = '';
+    if (m.type === 'video') {
+      const v = document.createElement('video');
+      Object.assign(v, { src: m.data, muted: true, autoplay: true, playsInline: true });
+      v.onended = next;
+      box.appendChild(v);
+      v.play().catch(() => {});
+    } else {
+      const img = document.createElement('img');
+      img.src = m.data;
+      box.appendChild(img);
+      setTimeout(next, 5000);
+    }
+  };
+  next();
+}
+
+// Adding photos/videos (on Pork's tab: a file picker would close the popup).
+async function showMediaInfo() {
+  const media = (await api.storage.local.get('ppMedia')).ppMedia || [];
+  $('mediaInfo').textContent = media.length
+    ? `${media.filter(m => m.type === 'image').length} photo(s), ${media.filter(m => m.type === 'video').length} video(s)`
+    : 'None yet: Pork\'s cartoon is shown instead.';
+}
+$('mediaFile').onchange = async () => {
+  const files = [...$('mediaFile').files];
+  const media = (await api.storage.local.get('ppMedia')).ppMedia || [];
+  for (const f of files) {
+    if (f.size > 40 * 1024 * 1024) continue; // keep it reasonable
+    const data = await new Promise(res => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.readAsDataURL(f);
+    });
+    media.push({ type: f.type.startsWith('video') ? 'video' : 'image', data });
+  }
+  await api.storage.local.set({ ppMedia: media });
+  $('mediaFile').value = '';
+  showMediaInfo();
+};
+$('mediaClear').onclick = async () => {
+  await api.storage.local.remove('ppMedia');
+  showMediaInfo();
+};
+showMediaInfo();
+
+// ---------- using Safari counts; being away pauses focus ----------
+
+if (isTab) {
+  let blurTimer = null;
+  window.addEventListener('blur', () => {
+    const since = Date.now();
+    clearTimeout(blurTimer);
+    blurTimer = setTimeout(() => {
+      if (!document.hasFocus() && document.visibilityState === 'visible') {
+        api.runtime.sendMessage({ cmd: 'away', since }).catch(() => {});
+      }
+    }, 15000);
+  });
+  window.addEventListener('focus', () => {
+    clearTimeout(blurTimer);
+    api.runtime.sendMessage({ cmd: 'back' }).catch(() => {});
+  });
+}
+
+send('sync').then(() => {
+  // The popup is open (or Pork's tab is in front): Safari is being used.
+  if (!isTab || document.hasFocus()) send('back');
+});
 setInterval(render, 250);

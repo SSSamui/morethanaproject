@@ -20,6 +20,21 @@
     </div>
 
     <p id="blocked" class="blocked" hidden></p>
+
+    <!-- Paused or stopped and opening a distraction: wait a minute with Pork first. -->
+    <section id="waitView" class="waitView" hidden>
+      <h2>🐶 Stay with Pork for a minute</h2>
+      <div id="waitMedia" class="waitMedia" hidden></div>
+      <div id="waitCount" class="waitCount">1:00</div>
+      <p id="waitMsg" class="waitMsg">Take a breath. Is <b class="waitHost"></b> really what you want right now?</p>
+      <div id="waitAsk" class="waitAsk" hidden>
+        <p>Still want to go to <b class="waitHost"></b>?</p>
+        <div class="row">
+          <button id="waitBack" class="primary">🐾 No, back to work</button>
+          <button id="waitGo" class="ghost">Yes, go there (10 min)</button>
+        </div>
+      </div>
+    </section>
     </div>
 
     <section class="clock">
@@ -104,12 +119,27 @@
       </div>
     </section>
 
+    <section class="todo" id="todo">
+      <div class="todoHead">
+        <span id="todoTitle">📝 To do</span>
+        <a href="https://tasks.google.com/" target="_blank" rel="noopener" class="muted small">Google Tasks ↗</a>
+      </div>
+      <ul id="taskList" class="taskList"></ul>
+      <form id="taskForm" class="taskForm">
+        <input id="taskInput" type="text" placeholder="Add a task…" maxlength="200" autocomplete="off">
+        <button type="submit" class="primary">Add</button>
+      </form>
+    </section>
+
     <section class="jar">
       <div class="jarHead">
         <span>🫙 Pork's treats</span>
-        <span id="treatCount" class="muted">no treats yet</span>
+        <button id="clearTreats" class="ghost small">Empty jar</button>
       </div>
-      <div id="treats" class="treats"></div>
+      <div class="jarBody">
+        <span id="lastTreat" class="lastTreat"></span>
+        <span id="treatCount" class="treatCount">No treats yet. Focus to give Pork one!</span>
+      </div>
     </section>
 
     <details class="night" id="nightBox">
@@ -133,8 +163,13 @@
       <textarea id="sites" rows="9" spellcheck="false"></textarea>
       <div class="row">
         <button id="saveSettings" class="primary">Save</button>
-        <button id="clearTreats" class="ghost">Empty treat jar</button>
         <span id="saved" class="muted"></span>
+      </div>
+      <label class="sitesLabel">Pork's photos &amp; videos — shown while you wait before opening a distraction</label>
+      <p class="howto mediaPopupHint">Open Pork's tab (⤢ at the top) to add photos and videos.</p>
+      <div class="mediaTab">
+        <input type="file" id="mediaFile" accept="image/*,video/*" multiple>
+        <div class="row"><span id="mediaInfo" class="muted"></span><button id="mediaClear" class="ghost small">Remove all</button></div>
       </div>
     </details>
   </main>

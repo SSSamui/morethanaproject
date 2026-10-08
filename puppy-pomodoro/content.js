@@ -103,6 +103,11 @@
       .mini .t.goal { color: #c58a00; }
       .mini .t.brk { color: #3b7dd8; }
       .mini .tr { font-weight: 600; font-size: 12px; color: #8a7f74; }
+      .tasks { text-align: left; margin: 6px 0 2px; font-size: 13px; }
+      .tasks:empty { display: none; }
+      .tasks .h { font-weight: 700; font-size: 12px; color: #6b6158; margin-bottom: 3px; }
+      .tasks label { display: flex; gap: 6px; align-items: flex-start; padding: 2px 0; cursor: pointer; }
+      .tasks input { margin: 2px 0 0; flex: none; }
       .toast { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); pointer-events: auto;
         background: #2d2620; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px;
         box-shadow: 0 8px 24px rgba(0,0,0,.3); max-width: 90vw; display: none; }
@@ -132,6 +137,7 @@
       </svg>
       <div class="time">−00:00</div>
       <div class="msg"></div>
+      <div class="tasks"></div>
       <button class="go">🐾 End the fun — let Pork out</button>
     </div>
     <div class="mini" title="Puppy Pomodoro (click to move to the other side)">
@@ -158,6 +164,33 @@
   mini.addEventListener('click', () => mini.classList.toggle('left'));
 
   root.querySelector('.go').addEventListener('click', () => send({ cmd: 'release' }));
+  const tasksEl = root.querySelector('.tasks');
+  tasksEl.addEventListener('change', e => {
+    if (e.target.dataset.id) send({ cmd: 'toggleTask', id: e.target.dataset.id });
+  });
+
+  // The to-do list in the "break is over" window: what to do next.
+  let tasksKey = '';
+  function renderTasks(s) {
+    const open = (s.tasks || []).filter(t => !t.done).slice(0, 5);
+    const key = JSON.stringify(open);
+    if (key === tasksKey) return;
+    tasksKey = key;
+    tasksEl.textContent = '';
+    if (!open.length) return;
+    const h = document.createElement('div');
+    h.className = 'h';
+    h.textContent = '📝 Next up:';
+    tasksEl.appendChild(h);
+    for (const t of open) {
+      const label = document.createElement('label');
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.dataset.id = t.id;
+      label.append(box, document.createTextNode(t.text));
+      tasksEl.appendChild(label);
+    }
+  }
   root.querySelector('.move').addEventListener('click', () => card.classList.toggle('left'));
 
   function mount() {
@@ -199,6 +232,7 @@
           ? 'Pork is pacing, he wants to go out! This time gets added to your next focus.'
           : 'Pork is scratching the door! This time gets added to your next focus.';
       }
+      renderTasks(s);
       if (!card.classList.contains('on')) card.classList.add('on');
       if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     } else {
@@ -261,9 +295,30 @@
     if (area === 'local' && changes[KEY]?.newValue) setState(changes[KEY].newValue);
   });
 
+  // ---------- is Safari being used? ----------
+  // Leaving Safari for another app (window stays visible but loses focus)
+  // pauses the focus clock as of that moment; coming back resumes it.
+  let blurTimer = null;
+  window.addEventListener('blur', () => {
+    const since = Date.now();
+    clearTimeout(blurTimer);
+    blurTimer = setTimeout(() => {
+      const inFrame = document.activeElement && document.activeElement.tagName === 'IFRAME';
+      if (!document.hasFocus() && !inFrame && document.visibilityState === 'visible') {
+        send({ cmd: 'away', since });
+      }
+    }, 15000);
+  });
+  window.addEventListener('focus', () => {
+    clearTimeout(blurTimer);
+    send({ cmd: 'back' });
+  });
+
   report(true);
+  let ticks = 0;
   setInterval(() => {
-    report(false);
+    // Re-check the page every minute too (e.g. when night mode begins).
+    report(++ticks % 60 === 0);
     render();
   }, 1000);
 })();

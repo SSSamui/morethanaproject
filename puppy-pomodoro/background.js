@@ -55,7 +55,11 @@ const DEFAULTS = {
   sessions: 0,          // focus sessions that reached the goal
   paid: 0,              // treats already given in this focus session
   nextTreat: null,      // the treat Pork gets next (shown next to the time)
-  treats: [],           // [{ t, at, bonus }]
+  treats: [],           // the last few treats [{ t, at, bonus }]
+  treatTotal: null,     // how many treats Pork has (null = count the list once)
+  autoPaused: false,    // paused because Safari isn't being used (resumes by itself)
+  passes: {},           // { host: until } sites you chose to open anyway while paused/stopped
+  tasks: [],            // to-do list [{ id, text, done }]
   lastReward: null,     // { at, items, bonus } — shown as a toast
   stoppedAt: null,      // when the clock was stopped (idle)
   pausedAt: null,       // when the clock was paused
@@ -96,6 +100,7 @@ async function load() {
     s.dirty = true;
   }
   if (!s.nextTreat) s.nextTreat = pickTreat();
+  if (s.treatTotal == null) s.treatTotal = s.treats.length;
   return s;
 }
 
@@ -171,7 +176,7 @@ function autoAt(s) {
   const n = s.settings.autoRestartMin;
   if (!n) return null;
   if (s.phase === 'idle' && s.stoppedAt) return s.stoppedAt + n * MIN;
-  if (s.paused && s.pausedAt) return s.pausedAt + n * MIN;
+  if (s.paused && s.pausedAt && !s.autoPaused) return s.pausedAt + n * MIN;
   return null;
 }
 
@@ -190,7 +195,25 @@ function resume(s, now) {
     s.remaining = null;
     s.paused = false;
     s.pausedAt = null;
+    s.autoPaused = false;
   }
+}
+
+// ---------- only count focus time while Safari is in use ----------
+
+// Safari lost focus (another app, or the Mac went to sleep): pause the focus
+// clock as of `since`. It resumes by itself when Safari is used again.
+function awayPause(s, since) {
+  if (s.phase !== 'focus' || s.paused) return false;
+  pause(s, Math.min(since, Date.now()));
+  s.autoPaused = true;
+  return true;
+}
+
+function backResume(s, now) {
+  if (!s.autoPaused) return false;
+  resume(s, now);
+  return true;
 }
 
 // Start focus (if stopped) or resume (if paused) without a click.
@@ -244,7 +267,7 @@ async function tick(s, now) {
 function startFocus(s, now, carryMs) {
   Object.assign(s, {
     phase: 'focus', paused: false, remaining: null, overtimeFrom: null,
-    stoppedAt: null, pausedAt: null, paid: 0,
+    stoppedAt: null, pausedAt: null, paid: 0, autoPaused: false,
     carryMs, targetMs: s.settings.focusMin * MIN + carryMs
   });
   s.endsAt = now + s.targetMs;
@@ -252,7 +275,7 @@ function startFocus(s, now, carryMs) {
 
 function startBreak(s, now) {
   Object.assign(s, {
-    phase: 'break', paused: false, remaining: null, carryMs: 0, pausedAt: null,
+    phase: 'break', paused: false, remaining: null, carryMs: 0, pausedAt: null, autoPaused: false,
     targetMs: s.settings.breakMin * MIN
   });
   s.endsAt = now + s.targetMs;
@@ -261,7 +284,7 @@ function startBreak(s, now) {
 function toIdle(s, now) {
   Object.assign(s, {
     phase: 'idle', paused: false, endsAt: null, remaining: null,
-    overtimeFrom: null, targetMs: 0, carryMs: 0, stoppedAt: now, pausedAt: null
+    overtimeFrom: null, targetMs: 0, carryMs: 0, stoppedAt: now, pausedAt: null, autoPaused: false
   });
 }
 
@@ -284,7 +307,8 @@ function payTreats(s, now) {
     s.nextTreat = pickTreat();
   }
   if (!items.length) return;
-  s.treats = [...s.treats, ...items];
+  s.treats = [...s.treats, ...items].slice(-20);
+  s.treatTotal = (s.treatTotal || 0) + items.length;
   s.lastReward = { at: now, items: items.map(x => x.t), bonus: items[0].bonus };
 }
 
@@ -354,7 +378,8 @@ async function closeDistractions(sites) {
 }
 
 // A tab is showing `url`. Before the focus goal, distractions are sent back
-// to the puppy; after the goal, opening one starts the break.
+// to the puppy; after the goal, opening one starts the break. While paused
+// or stopped, Pork's waiting page comes first.
 async function visit(s, now, tabId, url, channel) {
   if (classify(url, channel, s.settings.focusSites) !== 'distraction') return false;
   let host = '';
@@ -365,6 +390,16 @@ async function visit(s, now, tabId, url, channel) {
   // Night mode: only focus sites, whatever the clock is doing.
   if (isNight(s, now)) {
     block('&night=1');
+    return false;
+  }
+  // Paused or stopped: Pork asks you to wait a minute first (unless you
+  // already chose to go there in the last few minutes).
+  const manualPause = s.phase === 'focus' && s.paused && !s.autoPaused;
+  if (s.phase === 'idle' || manualPause) {
+    if ((s.passes[host] || 0) > now) return false;
+    api.tabs.update(tabId, {
+      url: appUrl('?tab=1&wait=1&to=' + encodeURIComponent(url))
+    }).catch(() => {});
     return false;
   }
   if (s.phase !== 'focus' || s.paused) return false;
@@ -382,7 +417,8 @@ api.tabs.onUpdated.addListener((tabId, change) => {
   serial(async () => {
     const s = await load();
     const now = Date.now();
-    const changed = await tick(s, now);
+    let changed = await tick(s, now);
+    changed = backResume(s, now) || changed; // using Safari again
     if ((await visit(s, now, tabId, change.url, null)) || changed) await save(s);
   });
 });
@@ -452,8 +488,27 @@ async function heartbeat() {
   const now = Date.now();
   const last = (await api.storage.local.get('ppBeat')).ppBeat || now;
   await api.storage.local.set({ ppBeat: now });
-  return sync(now - last > SLEEP_GAP ? 'wake' : null);
+  if (now - last > SLEEP_GAP) {
+    // The Mac was asleep: that time doesn't count as focus.
+    const s = await load();
+    if (awayPause(s, last + MIN)) await save(s);
+    return sync('wake');
+  }
+  return sync(null);
 }
+
+// Safari lost or got back the focus (switching to another app and back).
+api.windows?.onFocusChanged?.addListener(winId => serial(async () => {
+  const s = await load();
+  const now = Date.now();
+  await tick(s, now);
+  const away = winId === api.windows.WINDOW_ID_NONE;
+  if (away ? awayPause(s, now) : backResume(s, now)) await save(s);
+}));
+api.tabs.onActivated?.addListener(() => serial(async () => {
+  const s = await load();
+  if (backResume(s, Date.now())) await save(s);
+}));
 
 api.alarms.onAlarm.addListener(a => serial(() => (a.name === 'beat' ? heartbeat() : sync())));
 // Safari opened.
@@ -477,7 +532,11 @@ async function ensurePorkTab(s, show = false) {
   const tabs = await api.tabs.query({}).catch(() => []);
   if (!tabs.length) return; // no Safari window open
   const base = appUrl();
-  const mine = tabs.find(t => (t.url || t.pendingUrl || '').startsWith(base));
+  // Pork's own tab (not a blocked/waiting page that happens to show Pork too).
+  const mine = tabs.find(t => {
+    const u = t.url || t.pendingUrl || '';
+    return u.startsWith(base) && !/[?&](wait|blocked|mini)=/.test(u);
+  });
   if (mine) {
     if (show) await api.tabs.update(mine.id, { active: true }).catch(() => {});
     return;
@@ -551,11 +610,45 @@ async function command(msg, sender) {
       payTreats(s, now);
       toIdle(s, now);
       break;
-    case 'takeBreak':
-      if (earned(s, now)) {
+    case 'takeBreak': // any time; treats only if the goal was reached
+      if (s.phase === 'focus') {
         payTreats(s, now);
         startBreak(s, now);
       }
+      break;
+    case 'away': // a page saw Safari lose focus at msg.since
+      if (!awayPause(s, msg.since || now)) return s;
+      break;
+    case 'back':
+      if (!backResume(s, now)) return s;
+      break;
+    case 'pass': { // "go anyway" from Pork's waiting page: allow this site for 10 minutes
+      let host = '';
+      try { host = new URL(msg.url).hostname.replace(/^www\./, ''); } catch {}
+      if (host) s.passes = { ...Object.fromEntries(Object.entries(s.passes).filter(([, t]) => t > now)), [host]: now + 10 * MIN };
+      break;
+    }
+    case 'backToWork':
+      if (s.phase === 'idle') {
+        backToNormal(s);
+        startFocus(s, now, 0);
+      } else if (s.paused) {
+        resume(s, now);
+      }
+      break;
+    case 'addTask': {
+      const text = String(msg.text || '').trim().slice(0, 200);
+      if (text) s.tasks = [...s.tasks, { id: now + '-' + Math.random().toString(36).slice(2, 6), text, done: false }];
+      break;
+    }
+    case 'toggleTask':
+      s.tasks = s.tasks.map(t => (t.id === msg.id ? { ...t, done: !t.done } : t));
+      break;
+    case 'removeTask':
+      s.tasks = s.tasks.filter(t => t.id !== msg.id);
+      break;
+    case 'clearDoneTasks':
+      s.tasks = s.tasks.filter(t => !t.done);
       break;
     case 'release': // let the puppy out and go back to focus
       if (s.phase === 'break' || s.phase === 'overtime') {
@@ -565,15 +658,18 @@ async function command(msg, sender) {
         await closeDistractions(s.settings.focusSites);
       }
       break;
-    case 'visit':
+    case 'visit': {
+      const resumed = backResume(s, now); // a page in use means Safari is in use
       const visited = sender?.tab?.id != null && (await visit(s, now, sender.tab.id, msg.url, msg.channel));
-      if (!visited && !changed) return s;
+      if (!visited && !changed && !resumed) return s;
       break;
+    }
     case 'settings':
       s.settings = cleanSettings(s.settings, msg.settings || {});
       break;
     case 'clearTreats':
       s.treats = [];
+      s.treatTotal = 0;
       break;
     case 'sync':
       break;

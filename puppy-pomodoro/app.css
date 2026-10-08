@@ -164,7 +164,7 @@ button.release { background: var(--over); color: #fff; font-size: 15px; padding:
 [data-phase="focus"]:not([data-paused]) #pause,
 [data-phase="break"]:not([data-paused]) #pause,
 [data-paused] #resume,
-[data-phase="focus"][data-goal] #takeBreak,
+[data-phase="focus"] #takeBreak,
 [data-phase="break"] #endBreak,
 [data-phase="overtime"] #release,
 .app:not([data-phase="idle"]) #stop { display: inline-block; }
@@ -184,11 +184,52 @@ button.release { background: var(--over); color: #fff; font-size: 15px; padding:
 .jar { margin-top: 12px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
 .jarHead { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 10px;
   font-weight: 600; background: var(--card); }
-.treats { min-height: 44px; max-height: 150px; overflow-y: auto; padding: 6px 8px;
-  background: var(--jar); display: flex; flex-wrap: wrap; gap: 2px; align-content: flex-start;
-  font-size: 24px; line-height: 1.2; }
-.treats .empty { font-size: 12px; color: var(--muted); align-self: center; }
-.treats .new { animation: grow .9s cubic-bezier(.3, 1.6, .5, 1) both; display: inline-block; }
+.jarBody { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--jar); min-height: 48px; }
+.lastTreat { font-size: 30px; line-height: 1; }
+.lastTreat:empty { display: none; }
+.lastTreat.new { animation: grow .9s cubic-bezier(.3, 1.6, .5, 1) both; display: inline-block; }
+.treatCount { font-weight: 600; font-size: 14px; }
+button.small { padding: 3px 8px; font-size: 12px; }
+
+/* ---------- to-do list ---------- */
+.todo { margin-top: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); padding: 8px 10px; }
+.todoHead { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; }
+.todoHead a { text-decoration: none; }
+.small { font-size: 12px; }
+.taskList { list-style: none; margin: 6px 0; padding: 0; }
+.taskList li { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 3px 0;
+  border-bottom: 1px solid var(--line); }
+.taskList li:last-child { border-bottom: 0; }
+.taskList label { display: flex; align-items: flex-start; gap: 6px; flex: 1; cursor: pointer; }
+.taskList input { margin-top: 3px; }
+.taskList li.done label { color: var(--muted); text-decoration: line-through; }
+.taskList .del { color: var(--muted); }
+.taskForm { display: flex; gap: 6px; }
+.taskForm input { flex: 1; min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--card); color: var(--text); font: inherit; }
+.taskForm button { padding: 6px 12px; }
+[data-phase="overtime"] .todo { border: 2px solid var(--over); }
+[data-phase="overtime"] #todoTitle::after { content: ' — break is over, next up:'; color: var(--over); }
+
+/* ---------- waiting page (paused/stopped, opening a distraction) ---------- */
+.waitView { text-align: center; }
+.waitView h2 { margin: 6px 0 10px; font-size: 20px; }
+.waitMedia { border-radius: 14px; overflow: hidden; background: #000; margin-bottom: 10px; }
+.waitMedia img, .waitMedia video { display: block; width: 100%; max-height: 60vh; object-fit: contain; }
+.waitCount { font-size: 56px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 8px; }
+.waitMsg { color: var(--muted); }
+.waitAsk p { font-size: 16px; }
+body.wait .app > :not(#waitView):not(.room):not(header) { display: none; }
+body.wait .app { display: flex; flex-direction: column; }
+body.wait .room { order: 2; }
+body.wait #waitView { order: 1; }
+body.wait.hasMedia .room { display: none; }
+body.wait #floatBtn { display: none; }
+
+/* photos/videos are added on Pork's tab (a file picker would close the popup) */
+body.tab .mediaPopupHint { display: none; }
+body:not(.tab) .mediaTab { display: none; }
+
 @keyframes grow { from { transform: scale(0) rotate(-40deg); } to { transform: scale(1); } }
 
 /* ---------- settings ---------- */

@@ -6,7 +6,10 @@ A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 - **Focus sites** (you can add more in Settings): anything ending in `mit.edu`, MIT's YouTube channels (`@mit`, `@mitocw`) and their videos, ChatGPT, Claude, Gemini, Google (search, Gmail, Drive, Docs, Calendar, Tasks and every other google.com page), Notion, Outlook and Word on the web (Microsoft 365, OneDrive, SharePoint), Kindle (read.amazon.com), the danmu site (sssamui.github.io/morethanaproject/danmu — its YouTube videos play inside the page, so they work during focus), and library/book sites (Google Books, Open Library, Internet Archive, Project Gutenberg, Libby/OverDrive, O'Reilly). The Outlook, Word and Kindle Mac apps are never blocked; the extension only works inside Safari.
 - **Treats**: next to the clock, Pork's next treat shows with **"Pork will get a treat after 12:34"**. He gets it right when you reach the focus goal (25 min), and a bonus treat for every 5 minutes of extra focus after that. Each one goes straight into the treat jar, with a message on the page.
 - **Focus goal reached**: there's no automatic break and no reminder to take one. Focus can go on as long as you like: the clock keeps going as **+00:01 … +3:01:00** and the next bonus treat counts down next to it. Focus goals can be up to 720 minutes.
-- **Break**: starts only when the goal is reached **and** you open a non-focus site (or click **Take a break**). Pork **sits by the glass door, waiting** for the whole break.
+- **Only Safari time counts**: when you switch to another app (for about 15 seconds or more) or the Mac goes to sleep, the focus clock pauses by itself ("paused (not using Safari)"). As soon as you use Safari again, it carries on by itself, no click needed. Breaks keep running.
+- **Break**: starts when the goal is reached **and** you open a non-focus site, or any time you click **Take a break** (treats only come from reaching the goal). Distraction sites open right away during the break (except in night mode). Pork **sits by the glass door, waiting** for the whole break.
+- **Paused or stopped, opening a distraction**: Pork's page comes first: "Stay with Pork for a minute", with a 1-minute countdown and Pork (your own photos/videos if you added some). Then it asks "Still want to go to youtube.com?" → **No, back to work** (focus starts or resumes) or **Yes, go there (10 min)**: that site is allowed for 10 minutes.
+- **To do**: a simple to-do list in the popup (add, tick off, remove; link to Google Tasks). When the break is over, Pork's window on every page shows "📝 Next up:" with your open tasks, and you can tick them off there.
 - **Break is over**: the clock goes negative (−00:01…). For the first 2 minutes Pork **paces back and forth** ("Can we go out? 🥺"); after that he **stands up and scratches the door** ("Woof! Let me out!"). A small window with Pork stays on top of every web page until you click **🐾 End the fun — let Pork out**. Non-focus tabs close and the next focus starts, with the extra break time added to the goal (25:00 focus + 1:36 late = 26:36).
 
 - **Night mode**: from 12:00 AM to 6:00 AM only focus sites can open, whatever the clock is doing (stopped, paused, break, or extra focus). At 12:00 AM every non-focus tab closes, and opening one shows Pork's page with "🌙 Night mode: only focus sites can open now". Opening a non-focus site doesn't start a break at night. The end time isn't shown anywhere unless you look for it: click **🌙 Night mode** near the bottom of the popup to see or change the hours, then press its **Save** button.
@@ -20,7 +23,7 @@ A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 
 The toolbar icon next to the address bar shows the time: green `24m` left, gold `+3m` extra focus (hours from 1 hour on: `+2h`), blue `4m` of break, red `-2m` over the break, `||` paused.
 
-Every treat goes into **Pork's treats** jar in the popup: 🦴 🍖 🧀 🥕 🍪 🍗 🥩.
+**Pork's treats** jar shows the newest treat and the total: "🍖 Pork has 37 treats". **Empty jar** needs two clicks.
 
 ## Install in Safari (Mac)
 
@@ -57,7 +60,7 @@ Open **Settings** at the bottom of the popup:
 - Keep Pork's page open as a tab (on by default)
 - Show a small Pork clock in the corner of web pages (on by default)
 - Focus sites, one per line. `mit.edu` also covers `ocw.mit.edu` etc. `youtube.com/@channel` allows that channel's pages and its videos. Remove `google.com` if you only want some Google services: keep e.g. `mail.google.com` and `drive.google.com`.
-- Empty treat jar
+- Pork's photos & videos (add them on Pork's tab): shown on the 1-minute waiting page
 
 ## Files
 
