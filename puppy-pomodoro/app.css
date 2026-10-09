@@ -191,6 +191,22 @@ button.release { background: var(--over); color: #fff; font-size: 15px; padding:
 .treatCount { font-weight: 600; font-size: 14px; }
 button.small { padding: 3px 8px; font-size: 12px; }
 
+/* ---------- time summary ---------- */
+.stats { margin-top: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); padding: 8px 10px; }
+.statsHead { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.statsRange { display: flex; gap: 2px; background: var(--btn); border-radius: 8px; padding: 2px; }
+.statsRange button { padding: 3px 9px; font-size: 12px; border-radius: 6px; background: transparent; color: var(--muted); }
+.statsRange button.on { background: var(--card); color: var(--text); }
+.statsTotals { font-size: 12px; color: var(--muted); margin: 4px 0 2px; }
+.statsTitle { font-size: 12px; font-weight: 700; margin: 8px 0 2px; }
+.topList { list-style: none; margin: 0; padding: 0; }
+.topList li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 12px; padding: 2px 0; }
+.topList .site { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topList .t { font-variant-numeric: tabular-nums; color: var(--muted); }
+.topList .bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--focus); }
+#topDistract .bar { background: var(--over); }
+.topList .none { color: var(--muted); font-size: 12px; }
+
 /* ---------- to-do list ---------- */
 .todo { margin-top: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); padding: 8px 10px; }
 .todoHead { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; }

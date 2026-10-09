@@ -503,6 +503,72 @@ api.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes[KEY]?.newValue) setState(changes[KEY].newValue);
 });
 
+// ---------- 📊 time summary: top study sites and distractions ----------
+
+let statsRange = 1;
+const dayKey = t => {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
+const dur = ms => {
+  const m = Math.round(ms / MIN);
+  if (m < 1) return '<1m';
+  const h = Math.floor(m / 60);
+  return h ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`;
+};
+
+async function renderStats() {
+  const t = (await api.storage.local.get('ppTime')).ppTime || {};
+  const sums = { focus: {}, distraction: {} };
+  for (let i = 0; i < statsRange; i++) {
+    const day = t[dayKey(Date.now() - i * 24 * 60 * MIN)];
+    if (!day) continue;
+    for (const kind of ['focus', 'distraction']) {
+      for (const [host, ms] of Object.entries(day[kind] || {})) sums[kind][host] = (sums[kind][host] || 0) + ms;
+    }
+  }
+  const total = kind => Object.values(sums[kind]).reduce((a, b) => a + b, 0);
+  $('statsTotals').textContent = `Study ${dur(total('focus'))} · Distractions ${dur(total('distraction'))}`;
+  for (const [kind, id] of [['focus', 'topFocus'], ['distraction', 'topDistract']]) {
+    const top = Object.entries(sums[kind]).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const list = $(id);
+    list.textContent = '';
+    if (!top.length) {
+      const li = document.createElement('li');
+      li.className = 'none';
+      li.textContent = 'Nothing yet';
+      list.appendChild(li);
+      continue;
+    }
+    const max = top[0][1];
+    for (const [host, ms] of top) {
+      const li = document.createElement('li');
+      const site = document.createElement('span');
+      site.className = 'site';
+      site.textContent = host;
+      const time = document.createElement('span');
+      time.className = 't';
+      time.textContent = dur(ms);
+      const bar = document.createElement('span');
+      bar.className = 'bar';
+      bar.style.width = Math.max(3, (ms / max) * 100) + '%';
+      li.append(site, time, bar);
+      list.appendChild(li);
+    }
+  }
+}
+document.querySelectorAll('.statsRange button').forEach(b => {
+  b.onclick = () => {
+    statsRange = Number(b.dataset.range);
+    document.querySelectorAll('.statsRange button').forEach(x => x.classList.toggle('on', x === b));
+    renderStats();
+  };
+});
+api.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.ppTime) renderStats();
+});
+renderStats();
+
 // ---------- Pork's waiting page (paused or stopped, opening a distraction) ----------
 
 const WAIT_MS = 60 * 1000;

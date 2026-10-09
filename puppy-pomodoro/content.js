@@ -314,6 +314,18 @@
     send({ cmd: 'back' });
   });
 
+  // Time on this site: counted only while this page is in front and Safari is in use.
+  let lastTrack = Date.now();
+  setInterval(() => {
+    const now = Date.now();
+    const ms = Math.min(now - lastTrack, 20000);
+    lastTrack = now;
+    if (document.visibilityState === 'visible' && document.hasFocus()) {
+      const channel = isYouTubeVideo() ? youTubeChannel(now) : undefined;
+      if (channel !== null) send({ cmd: 'track', url: location.href, channel: channel ?? null, ms });
+    }
+  }, 15000);
+
   report(true);
   let ticks = 0;
   setInterval(() => {

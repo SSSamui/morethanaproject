@@ -681,7 +681,42 @@ async function command(msg, sender) {
   return s;
 }
 
+// ---------- time spent on each site (always, even when stopped) ----------
+// Pages report every 15 s while they're in front and Safari is in use.
+// Kept per day in its own storage key: { 'YYYY-M-D': { focus: {host: ms}, distraction: {host: ms} } }
+
+const TIME_KEY = 'ppTime';
+const dayKey = t => {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
+
+async function addTime(msg) {
+  const ms = Math.max(0, Math.min(Number(msg.ms) || 0, 30000));
+  if (!ms) return;
+  const s = await load();
+  const kind = classify(msg.url, msg.channel ?? null, s.settings.focusSites);
+  if (kind !== 'focus' && kind !== 'distraction') return;
+  let host;
+  try { host = new URL(msg.url).hostname.replace(/^www\./, ''); } catch { return; }
+  const now = Date.now();
+  const t = (await api.storage.local.get(TIME_KEY))[TIME_KEY] || {};
+  const day = (t[dayKey(now)] ||= { focus: {}, distraction: {} });
+  day[kind][host] = (day[kind][host] || 0) + ms;
+  // Keep about a month.
+  const cutoff = now - 35 * 24 * 60 * MIN;
+  for (const k of Object.keys(t)) {
+    const [y, m, d] = k.split('-').map(Number);
+    if (new Date(y, m - 1, d).getTime() < cutoff) delete t[k];
+  }
+  await api.storage.local.set({ [TIME_KEY]: t });
+}
+
 api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg && msg.cmd === 'track') {
+    serial(() => addTime(msg)).then(() => sendResponse({}), () => sendResponse({}));
+    return true;
+  }
   serial(() => command(msg, sender)).then(sendResponse, err => sendResponse({ error: String(err) }));
   return true;
 });

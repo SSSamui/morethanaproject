@@ -23,6 +23,8 @@ A focus clock with Pork, a fluffy white dog with gray ears and a navy harness.
 
 The toolbar icon next to the address bar shows the time: green `24m` left, gold `+3m` extra focus (hours from 1 hour on: `+2h`), blue `4m` of break, red `-2m` over the break, `||` paused.
 
+**📊 Your time**: the popup shows where your time goes, for **Today** or the last **7 days**: the top 5 study sites and the top 5 distractions, with total study and distraction time. It counts always, even when the clock is stopped or paused, but only while a page is in front and Safari is the app you're using. Kept for about a month, only in Safari on your Mac.
+
 **Pork's treats** jar shows the newest treat and the total: "🍖 Pork has 37 treats". **Empty jar** needs two clicks.
 
 ## Install in Safari (Mac)
