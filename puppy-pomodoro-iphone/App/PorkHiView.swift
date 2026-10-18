@@ -25,6 +25,8 @@ struct PorkHiView: View {
 
                     StickyBoard(todos: todos)
 
+                    ScreenTimeCard()
+
                     usage
 
                     porkPhotos

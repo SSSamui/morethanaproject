@@ -24,6 +24,7 @@ struct ContentView: View {
                     }
                     .padding(14)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+                    ScreenTimeCard()
                     TreatJarView()
                     #if !LITE
                     if !ScreenTime.isOn {

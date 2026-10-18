@@ -25,6 +25,15 @@
 				);
 			};
 		};
+		B6BC21A1F12F73C4CAB9BA10 = {
+			isa = PBXBuildFile;
+			fileRef = 3F7832CD77C5933679BEA9BC;
+			settings = {
+				ATTRIBUTES = (
+					RemoveHeadersOnCopy,
+				);
+			};
+		};
 		BD72F94B4109F2974C0D5F53 = {
 			isa = PBXBuildFile;
 			fileRef = 1360FAC24808CA50621E7ACC;
@@ -67,6 +76,13 @@
 			remoteGlobalIDString = 720838E38769DD2B764DEC13;
 			remoteInfo = PorkShieldAction;
 		};
+		A1283EB318931FCA4A8E5A47 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B2B20B4544BDDB28FD27EE13;
+			proxyType = 1;
+			remoteGlobalIDString = 512BE6E2BB8AF8F83E8625CD;
+			remoteInfo = PorkReport;
+		};
 		FA82052A6A6E79B9F1C11754 = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B2B20B4544BDDB28FD27EE13;
@@ -87,6 +103,7 @@
 				685402435747F7EBE2EFE101,
 				A60A89E2E5D832ABE287C542,
 				D26EABB4EAC781710328DC19,
+				B6BC21A1F12F73C4CAB9BA10,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -106,6 +123,13 @@
 			explicitFileType = "wrapper.app-extension";
 			includeInIndex = 0;
 			path = PorkShieldAction.appex;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		3F7832CD77C5933679BEA9BC = {
+			isa = PBXFileReference;
+			explicitFileType = "wrapper.app-extension";
+			includeInIndex = 0;
+			path = PorkReport.appex;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		832BF2639A5039C1E6B2EE38 = {
@@ -159,6 +183,15 @@
 			path = ShieldAction;
 			sourceTree = "<group>";
 		};
+		5B79A0A12F72FA6F5547A040 = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = Report;
+			sourceTree = "<group>";
+		};
 		B98E79DB409BE89E35A4EE3F = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			explicitFileTypes = {
@@ -198,6 +231,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		06220FD17C24CF9A4B815C92 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		379DFAD8F94B2098D7B62C6C = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -246,6 +286,7 @@
 				2EB716BE9C953C3096BFFF92,
 				53E01F8CC9680F03CA38DB2F,
 				FCA1335569FBD5E7E97868F1,
+				5B79A0A12F72FA6F5547A040,
 				9290A199786B91CA4D4551F4,
 			);
 			sourceTree = "<group>";
@@ -258,6 +299,7 @@
 				8EC1F4F5EE2B98276BA154B8,
 				1830F37016B7E1E49358329E,
 				832BF2639A5039C1E6B2EE38,
+				3F7832CD77C5933679BEA9BC,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -281,6 +323,7 @@
 				091881D04D48671B91E27B1E,
 				CDC374633AEEDFE357D85B9E,
 				9BBFF7FB39258285DEC6B24E,
+				FD34FEFA332835D4B1809726,
 			);
 			fileSystemSynchronizedGroups = (
 				B98E79DB409BE89E35A4EE3F,
@@ -339,6 +382,28 @@
 			);
 			productName = PorkWidget;
 			productReference = 1360FAC24808CA50621E7ACC;
+			productType = "com.apple.product-type.app-extension";
+		};
+		512BE6E2BB8AF8F83E8625CD = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3CEDAA2B35DE93E33DACB843;
+			buildPhases = (
+				8D16C961E9CE040F28F1F2DD,
+				06220FD17C24CF9A4B815C92,
+				2352801F6A2B62D1C5A6C0DD,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5B79A0A12F72FA6F5547A040,
+			);
+			name = PorkReport;
+			packageProductDependencies = (
+			);
+			productName = PorkReport;
+			productReference = 3F7832CD77C5933679BEA9BC;
 			productType = "com.apple.product-type.app-extension";
 		};
 		720838E38769DD2B764DEC13 = {
@@ -412,6 +477,9 @@
 					F5B76D56CCD2D91C3FBE956E = {
 						CreatedOnToolsVersion = 16.0;
 					};
+					512BE6E2BB8AF8F83E8625CD = {
+						CreatedOnToolsVersion = 16.0;
+					};
 				};
 			};
 			buildConfigurationList = F39DD13C220C60C221A5424D;
@@ -433,11 +501,19 @@
 				17C7B9D959814FE183313B19,
 				720838E38769DD2B764DEC13,
 				F5B76D56CCD2D91C3FBE956E,
+				512BE6E2BB8AF8F83E8625CD,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		2352801F6A2B62D1C5A6C0DD = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		3C589BF18C9FB28EAF4D0C8D = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -490,6 +566,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8D16C961E9CE040F28F1F2DD = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BB4D63E0527DBB1E6BC18102 = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -534,6 +617,11 @@
 			target = 720838E38769DD2B764DEC13;
 			targetProxy = 5028257FBE7168230987B1D1;
 		};
+		FD34FEFA332835D4B1809726 = {
+			isa = PBXTargetDependency;
+			target = 512BE6E2BB8AF8F83E8625CD;
+			targetProxy = A1283EB318931FCA4A8E5A47;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -547,7 +635,7 @@
 				INFOPLIST_FILE = "Config/App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Puppy Pomodoro";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -567,6 +655,31 @@
 			};
 			name = Release;
 		};
+		0B964329097BDD20DB20E8B0 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ScreenTimeExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Report-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's screen time";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 2.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).report";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
 		23BBCF9BE674A1D8BC62387C = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -577,7 +690,7 @@
 				INFOPLIST_FILE = "Config/Widget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's clock";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -592,6 +705,31 @@
 			};
 			name = Debug;
 		};
+		23DE41840A2F0ADB3A0F9DB7 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ScreenTimeExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/Report-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Pork's screen time";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MARKETING_VERSION = 2.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).report";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
 		24867FC89913C669EE77E650 = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -602,7 +740,7 @@
 				INFOPLIST_FILE = "Config/Widget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's clock";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -627,7 +765,7 @@
 				INFOPLIST_FILE = "Config/Monitor-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's break watcher";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).monitor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -652,7 +790,7 @@
 				INFOPLIST_FILE = "Config/ShieldAction-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app buttons";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldaction";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -677,7 +815,7 @@
 				INFOPLIST_FILE = "Config/Monitor-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's break watcher";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).monitor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -702,7 +840,7 @@
 				INFOPLIST_FILE = "Config/App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Puppy Pomodoro";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -732,7 +870,7 @@
 				INFOPLIST_FILE = "Config/ShieldAction-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app buttons";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldaction";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -757,7 +895,7 @@
 				INFOPLIST_FILE = "Config/ShieldConfig-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app screen";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldconfig";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -834,7 +972,7 @@
 				INFOPLIST_FILE = "Config/ShieldConfig-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app screen";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldconfig";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -866,6 +1004,15 @@
 			buildConfigurations = (
 				7D9C69E2AE5FD30224BC3F5B,
 				02DAD26FA551CE8A7A177626,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3CEDAA2B35DE93E33DACB843 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0B964329097BDD20DB20E8B0,
+				23DE41840A2F0ADB3A0F9DB7,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

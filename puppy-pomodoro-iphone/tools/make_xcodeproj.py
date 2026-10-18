@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ID_PREFIX = "com.sssamui.puppypomodoro"
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 
 
 def oid(*parts):
@@ -56,6 +56,8 @@ EXTENSIONS = [
      ("ScreenTimeExtension.entitlements", None), ".shieldaction", True),
     ("PorkMonitor", ["Monitor", "Shared"], "Monitor-Info.plist",
      ("ScreenTimeExtension.entitlements", None), ".monitor", True),
+    ("PorkReport", ["Report"], "Report-Info.plist",
+     ("ScreenTimeExtension.entitlements", None), ".report", True),
 ]
 DISPLAY = {
     "PuppyPomodoro": "Puppy Pomodoro",
@@ -63,6 +65,7 @@ DISPLAY = {
     "PorkShieldConfig": "Pork's blocked-app screen",
     "PorkShieldAction": "Pork's blocked-app buttons",
     "PorkMonitor": "Pork's break watcher",
+    "PorkReport": "Pork's screen time",
 }
 
 

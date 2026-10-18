@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 2.0.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 2.1.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -33,6 +33,7 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
 ## New features and changes for the iPhone version
 
 - **To-dos as sticky notes** (new in 2.0.0, works with a free account): from Apple Reminders. The **school 2026 fall** list (homework and projects) shows for the next 7 days, one color per day, plus anything overdue. The **routine** list shows for today only. Tap ✓ on a note to mark it done in Reminders. List names can be changed in Settings. Shown on the main screen and in Pork's check-in.
+- **Yesterday's top distractions** (new in 2.1.0, full version only): every day the main screen and Pork's check-in show your 2 biggest distraction apps from yesterday as big sticky notes ("YouTube 2hr 35min", "foodigame 4hr"), plus yesterday's total screen time and time on distractions. Focus apps don't count. Apple only lets a Screen Time report extension (`Report/`) see these numbers, so it needs the paid account; the Lite version shows a note instead.
 - **Big calendar sticky note** (2.0.0): the Apple Calendar event on now (or starting within the hour) shows as a big sticky note at the top.
 - **Pork's check-ins** (2.0.0, replaces "Pork says hi"): when you open a distraction app, Pork waits. After **5 min** you get a Pork reminder with one of his photos; after **10 min** a reminder with your to-dos and how many times you opened distraction apps today. Tap it to open the check-in: event note, sticky notes, distraction count, Pork's photos, **Start focus with Pork**. If a Calendar event is on when you open a distraction app, the check-in opens right away. Opening a focus app cancels the reminders. Runs through Shortcuts automations (steps in the app: ⚙︎ → How to set up Shortcuts).
 - **12 am Outlook, 6 pm WeChat** (2.0.0): Shortcuts automations ask Pork whether to-dos are left (at 12 am: yesterday's, at 6 pm: today's). If yes, Pork sends the list and the automation opens Outlook / WeChat.
@@ -65,8 +66,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v2.0.0.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v2.0.0**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v2.1.0.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v2.1.0**.
 
 ### 2. Open it in Xcode
 
@@ -148,6 +149,7 @@ Open **PuppyPomodoroLite.xcodeproj** instead of PuppyPomodoro.xcodeproj and do t
 | `Widget/` | Home Screen / Lock Screen widgets and the Live Activity |
 | `ShieldConfig/` | Pork's blocked-app screen |
 | `ShieldAction/` | Its buttons (**Start my break**, **Let Pork out**) |
+| `Report/` | Screen Time report: yesterday's 2 biggest distractions and screen time (full version) |
 | `Monitor/` | Wakes up at the focus goal and when the break runs out to update the blocked-app screen |
 | `Config/` | Info.plist and entitlement files |
 | `tools/` | For making changes: `pork.js` (Pork's drawing, from the Safari version), `build_room.py` (makes `App/room.html`), `render_art.mjs` (makes Pork's pictures and the app icon), `make_scratch_sound.py`, `make_xcodeproj.py` (makes both Xcode projects) |
