@@ -1,6 +1,7 @@
-// "Pork says hi": before you use your phone, Pork's photos and videos from an
-// album in Photos play for a minute (or the time you chose). Then you decide
-// whether to continue.
+// Pork's check-in: the Calendar event on now (as a big sticky note), your
+// to-dos as sticky notes, how often you opened distraction apps today, and
+// Pork's photos. Opens from Pork's reminders, the Shortcuts automation, or
+// "Try the check-in" in Settings.
 
 import AVFoundation
 import Photos
@@ -10,119 +11,109 @@ struct PorkHiView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @StateObject private var show = AlbumShow()
-    @State private var started = Date()
-    @State private var asking = false
+    @ObservedObject private var todos = TodoStore.shared
     private let ticker = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
     var body: some View {
         let st = model.state.settings
-        ZStack {
-            Color.black.ignoresSafeArea()
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 18) {
+                    if let event = todos.event {
+                        BigEventNote(event: event)
+                    }
 
-            Group {
-                switch show.current {
-                case .photo(let image):
-                    Image(uiImage: image).resizable().scaledToFit()
-                        .id(show.counter)
-                        .transition(.opacity)
-                case .video(let player):
-                    PlayerView(player: player)
-                        .id(show.counter)
-                        .transition(.opacity)
-                case nil:
-                    ProgressView().tint(.white)
-                }
-            }
-            .ignoresSafeArea()
-            .animation(.easeInOut(duration: 0.6), value: show.counter)
-            .opacity(asking ? 0.35 : 1)
+                    StickyBoard(todos: todos)
 
-            VStack {
-                HStack {
-                    Text("Pork says hi 🐾").font(.headline)
-                    Spacer()
-                    if !asking {
-                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                            let left = max(0, TimeInterval(st.hiSeconds) - ctx.date.timeIntervalSince(started))
-                            Text(PorkClock.text(left + 0.999)).monospacedDigit().font(.headline)
+                    usage
+
+                    porkPhotos
+
+                    VStack(spacing: 10) {
+                        Button {
+                            dismiss()
+                            Nudges.focusOpened()
+                            model.send(.start(nil))
+                        } label: {
+                            Text("▶ Start focus with Pork").font(.headline).frame(maxWidth: .infinity)
                         }
+                        .buttonStyle(.borderedProminent).tint(.porkFocus).controlSize(.large)
+
+                        Button {
+                            dismiss()
+                            model.show("Good choice! Pork is proud of you 🐾")
+                        } label: {
+                            Text("OK, back to my to-dos").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered).controlSize(.large)
                     }
                 }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 18).padding(.vertical, 10)
-                .background(.black.opacity(0.35), in: Capsule())
-                .padding(.horizontal, 16)
-
-                Spacer()
-
-                if let message = show.message, !asking {
-                    Text(message)
-                        .font(.footnote).foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                        .padding(12)
-                        .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
-                        .padding(.horizontal, 16)
+                .padding(16)
+            }
+            .background(Color.porkWall.opacity(0.45).ignoresSafeArea())
+            .navigationTitle("Pork's check-in 🐾")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { dismiss() } label: { Image(systemName: "xmark.circle.fill") }
+                        .accessibilityLabel("Close")
                 }
-
-                if asking { question }
             }
-            .padding(.vertical, 12)
         }
-        .statusBarHidden()
-        .onAppear {
-            started = Date()
-            show.start(album: st.hiAlbum, muted: st.hiMuted)
-        }
+        .task { await todos.refresh() }
+        .onAppear { show.start(album: st.hiAlbum, muted: st.hiMuted) }
         .onDisappear { show.stop() }
-        .onReceive(ticker) { now in
-            show.tick(now)
-            if !asking, now.timeIntervalSince(started) >= TimeInterval(st.hiSeconds) {
-                withAnimation(.spring) { asking = true }
-            }
-        }
+        .onReceive(ticker) { show.tick($0) }
     }
 
-    private var question: some View {
-        VStack(spacing: 12) {
-            Image("PorkWait").resizable().scaledToFit().frame(height: 70)
-            Text("Do you want to keep using your phone?")
-                .font(.title3.bold())
-                .multilineTextAlignment(.center)
-            Button {
-                model.allowPhoneForAWhile()
-                dismiss()
-                model.show("Swipe right along the bottom edge to go back to your app ↩︎")
-            } label: {
-                Text("Yes, continue").frame(maxWidth: .infinity)
+    private var usage: some View {
+        let opens = Nudges.opensToday
+        return HStack(spacing: 12) {
+            Text("📱").font(.largeTitle)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Distraction apps today").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                Text(opens == 0 ? "Not opened yet" : "Opened \(opens) time\(opens == 1 ? "" : "s")")
+                    .font(.title3.bold())
             }
-            .buttonStyle(.borderedProminent).tint(.gray).controlSize(.large)
-
-            Button {
-                dismiss()
-                model.send(.start(nil))
-            } label: {
-                Text("▶ Start focus with Pork").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent).tint(.porkFocus).controlSize(.large)
-
-            Button {
-                dismiss()
-                model.show("Good choice! Pork is proud of you 🐾")
-            } label: {
-                Text("No, I'll put my phone down").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered).controlSize(.large)
-
-            Button("Keep watching Pork") {
-                withAnimation { asking = false }
-                started = Date()
-            }
-            .font(.footnote)
+            Spacer()
         }
-        .padding(20)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
-        .padding(.horizontal, 16)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .padding(14)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var porkPhotos: some View {
+        ZStack {
+            Color.black
+            switch show.current {
+            case .photo(let image):
+                Image(uiImage: image).resizable().scaledToFit()
+                    .id(show.counter)
+                    .transition(.opacity)
+            case .video(let player):
+                PlayerView(player: player)
+                    .id(show.counter)
+                    .transition(.opacity)
+            case nil:
+                ProgressView().tint(.white)
+            }
+            if let message = show.message {
+                VStack {
+                    Spacer()
+                    Text(message).font(.caption).foregroundStyle(.white)
+                        .padding(8).background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 8))
+                        .padding(8)
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.6), value: show.counter)
+        .frame(height: 260)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(alignment: .topLeading) {
+            Text("Pork says hi 🐾").font(.caption.bold()).foregroundStyle(.white)
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(.black.opacity(0.4), in: Capsule())
+                .padding(10)
+        }
     }
 }
 

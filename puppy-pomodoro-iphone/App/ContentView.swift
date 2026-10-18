@@ -1,18 +1,29 @@
-// The main screen: clock, Pork's room, buttons and the treat jar.
+// The main screen: the event on now, clock, Pork's room, buttons, to-dos
+// and the treat jar.
 
 import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showSettings = false
+    @ObservedObject private var todos = TodoStore.shared
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    if let event = todos.event {
+                        BigEventNote(event: event)
+                    }
                     TimelineView(.periodic(from: .now, by: 0.25)) { context in
                         PorkScreen(now: context.date)
                     }
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("📝 To do").font(.title3.bold())
+                        StickyBoard(todos: todos)
+                    }
+                    .padding(14)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
                     TreatJarView()
                     #if !LITE
                     if !ScreenTime.isOn {
@@ -29,6 +40,8 @@ struct ContentView: View {
                 .padding(16)
             }
             .background(Color(.systemGroupedBackground))
+            .refreshable { await todos.refresh() }
+            .task { await todos.refresh() }
             .navigationTitle("🐾 Puppy Pomodoro")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

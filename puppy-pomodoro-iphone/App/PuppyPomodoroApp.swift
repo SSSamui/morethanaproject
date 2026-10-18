@@ -18,7 +18,10 @@ struct PuppyPomodoroApp: App {
                 }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { model.becameActive() }
+            if phase == .active {
+                model.becameActive()
+                Task { await TodoStore.shared.refresh() }
+            }
         }
     }
 }
@@ -46,6 +49,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         case Alerts.takeBreakAction: s = PorkCommands.run(.takeBreak)
         case Alerts.letOutAction: s = PorkCommands.run(.release)
         default: s = PorkCommands.run(.sync)
+        }
+        // Tapping one of Pork's to-do reminders opens the check-in.
+        if response.actionIdentifier == UNNotificationDefaultActionIdentifier,
+           response.notification.request.content.userInfo["open"] as? String == "checkin" {
+            Task { @MainActor in AppModel.shared.showHi = true }
         }
         Task {
             await LiveActivities.update(s)

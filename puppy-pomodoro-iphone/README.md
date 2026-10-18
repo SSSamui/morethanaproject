@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 1.1.1** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 2.0.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -27,17 +27,21 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
 | Time on the toolbar icon (green `24m`, gold `+3m`, blue `4m`, red `-2m`, `\|\|`) | **Live Activity** on the Lock Screen and in the Dynamic Island: Pork + the clock in the same colors, with a button (Pause, Take a break, Back to focus, Let Pork out) |
 | Message on the page | Notifications |
 | — | **Home Screen and Lock Screen widgets** with Pork and the clock |
-| — | **Pork says hi**: when you open an app (not Phone, Messages or Mail) and the clock isn't running, Pork's photos and videos from an album play first, then you choose to continue |
+| — | **Pork's check-ins** (2.0.0): after 5 min on distraction apps a Pork reminder, after 10 min your to-dos; a Calendar event on now shows right away as a big sticky note |
+| — | **To-dos as sticky notes** from Apple Reminders (2.0.0) |
 
 ## New features and changes for the iPhone version
 
-- **Pork says hi** (new): photos and videos from an album in Photos (default name **Pork**) play for 60 seconds (Settings: 15 s to 10 min). Then: **Yes, continue** (Pork leaves you alone for 15 minutes, changeable), **▶ Start focus with Pork**, **No, I'll put my phone down**, or **Keep watching Pork**. It runs through a Shortcuts automation (steps below), because iPhone apps can't tell when you unlock the phone. If the album is empty, Pork's drawings play instead.
+- **To-dos as sticky notes** (new in 2.0.0, works with a free account): from Apple Reminders. The **school 2026 fall** list (homework and projects) shows for the next 7 days, one color per day, plus anything overdue. The **routine** list shows for today only. Tap ✓ on a note to mark it done in Reminders. List names can be changed in Settings. Shown on the main screen and in Pork's check-in.
+- **Big calendar sticky note** (2.0.0): the Apple Calendar event on now (or starting within the hour) shows as a big sticky note at the top.
+- **Pork's check-ins** (2.0.0, replaces "Pork says hi"): when you open a distraction app, Pork waits. After **5 min** you get a Pork reminder with one of his photos; after **10 min** a reminder with your to-dos and how many times you opened distraction apps today. Tap it to open the check-in: event note, sticky notes, distraction count, Pork's photos, **Start focus with Pork**. If a Calendar event is on when you open a distraction app, the check-in opens right away. Opening a focus app cancels the reminders. Runs through Shortcuts automations (steps in the app: ⚙︎ → How to set up Shortcuts).
+- **12 am Outlook, 6 pm WeChat** (2.0.0): Shortcuts automations ask Pork whether to-dos are left (at 12 am: yesterday's, at 6 pm: today's). If yes, Pork sends the list and the automation opens Outlook / WeChat.
 - **Live Activity** (Lock Screen + Dynamic Island) instead of the time on the toolbar icon. It turns gold (+) by itself when you reach the goal and red (−) when the break runs out.
 - **Widgets**: small and medium Home Screen widgets (Pork's room), and Lock Screen widgets (clock, `24m` / `+3m` / `−2m`).
 - **Blocking** with Screen Time instead of closing tabs: you choose your **focus apps** (for example Safari, ChatGPT, Claude, Gemini, Libby, Books, Messages, Mail, Phone). Websites use the same focus-site list as Safari.
 - **Notifications** with buttons: *Take a break* (goal reached) and *Let Pork out* (break over). The scratching sound is the notification sound.
 - **Late night: only focus apps** (new in 1.1.0): from 12:00 am to 6:00 am (change the times in Settings), only your focus apps and focus sites open, even without a focus session. Other apps show *"It's late, Pork is asleep 🌙"*. Needs blocking turned on (full version, not Lite).
-- **Focus apps and sites for school, work and everyday**: pick Kindle, Outlook, Handshake, Slack, Phone, Messages, Canvas, Google Calendar, Google Tasks, Calendar, Reminders, Notes, Notion, Gmail, Clock, Claude, Maps, WeChat and Puppy Pomodoro in **Choose focus apps** (Apple only lets you pick apps yourself; an app can't add them by name). Their websites are already in the focus-site list: Canvas (`instructure.com`), Handshake, Slack, Notion, Gmail, Google Calendar, Google Tasks, Google Maps, Outlook, Kindle (`read.amazon.com`), Apple Maps, WeChat.
+- **Focus apps** (updated in 2.0.0): Outlook, WeChat, Kindle, Gmail, Google Tasks, Google Calendar, Calendar, Reminders, Handshake, Slack, Messages, Phone, Canvas, Claude, Gemini, ChatGPT (and Puppy Pomodoro). Everything else is a distraction. Pick them in **Choose focus apps** (Apple only lets you pick apps yourself; an app can't add them by name). Their websites are already in the focus-site list: Canvas (`instructure.com`), Handshake, Slack, Notion, Gmail, Google Calendar, Google Tasks, Google Maps, Outlook, Kindle (`read.amazon.com`), Apple Maps, WeChat.
 - **Focus sites**: the danmu site (`sssamui.github.io/morethanaproject/danmu`) is a focus site; its YouTube videos play during focus.
 - **Treat jar**: tap a treat (instead of hovering) to see when it was earned and whether it was a goal treat or a bonus.
 - **Pork's room** in the app is the same drawing and animations as the Safari version.
@@ -61,8 +65,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v1.1.1.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v1.1.1**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v2.0.0.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v2.0.0**.
 
 ### 2. Open it in Xcode
 

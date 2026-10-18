@@ -6,6 +6,10 @@
 	<string>group.$(PORK_ID_PREFIX)</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Your to-dos from Reminders show as sticky notes, and you can check them off.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>The event on now in your Calendar shows as a big sticky note.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Pork's photos and videos play from the album you pick when you pick up your phone.</string>
 	<key>CFBundleURLTypes</key>

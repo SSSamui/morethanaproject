@@ -43,14 +43,6 @@ final class AppModel: ObservableObject {
         send(.settings(st))
     }
 
-    /// "Yes, continue": Pork won't say hi again for a while.
-    func allowPhoneForAWhile() {
-        var s = PorkStore.load()
-        s.hiAllowedUntil = Date().addingTimeInterval(TimeInterval(s.settings.hiGraceMin * 60))
-        PorkStore.save(s)
-        state = s
-    }
-
     func show(_ text: String) {
         toast = text
         toastTask?.cancel()
@@ -73,13 +65,5 @@ final class AppModel: ObservableObject {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.55)) {
             state = s
         }
-    }
-}
-
-enum Gate {
-    /// Should Pork show his photos before you use the phone?
-    static func shouldSayHi(_ s: PorkState, now: Date = Date()) -> Bool {
-        guard s.settings.hiEnabled, s.phase == .idle else { return false }
-        return (s.hiAllowedUntil ?? .distantPast) <= now
     }
 }

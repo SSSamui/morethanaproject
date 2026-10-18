@@ -1,5 +1,5 @@
-// Settings: clock, blocking (Screen Time), focus sites, "Pork says hi",
-// treat jar.
+// Settings: clock, blocking (Screen Time), focus sites, to-dos, Pork's
+// check-ins, treat jar.
 
 import Photos
 import SwiftUI
@@ -51,7 +51,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Blocking (Screen Time)")
                 } footer: {
-                    Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Late at night (12:00 am to 6:00 am unless you change it) only focus apps and sites open, even without a focus session. Pick your focus apps: Safari, Kindle, Outlook, Handshake, Slack, Phone, Messages, Canvas, Google Calendar, Google Tasks, Calendar, Reminders, Notes, Notion, Gmail, Clock, Claude, Maps, WeChat, Puppy Pomodoro, ChatGPT, Gemini, Libby, Books… (Phone calls, alarms and Settings always work.)")
+                    Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Late at night (12:00 am to 6:00 am unless you change it) only focus apps and sites open, even without a focus session. Pick your focus apps: Outlook, WeChat, Kindle, Gmail, Google Tasks, Google Calendar, Calendar, Reminders, Handshake, Slack, Messages, Phone, Canvas, Claude, Gemini, ChatGPT and Puppy Pomodoro. Everything else is a distraction. (Phone calls, alarms and Settings always work.)")
                 }
                 #endif
 
@@ -68,24 +68,35 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("Show Pork when I pick up my phone", isOn: $st.hiEnabled)
-                    Picker("Album in Photos", selection: $st.hiAlbum) {
+                    TextField("School list", text: $st.schoolList)
+                        .autocorrectionDisabled()
+                    TextField("Routine list", text: $st.routineList)
+                        .autocorrectionDisabled()
+                    Button("Allow Reminders & Calendar") { Task { await TodoStore.shared.requestAccess() } }
+                } header: {
+                    Text("To-dos (Apple Reminders)")
+                } footer: {
+                    Text("Sticky notes show the school list for the next 7 days (and anything overdue) and the routine list for today only. The list names must match your lists in Reminders. Tap ✓ on a note to mark it done in Reminders.")
+                }
+
+                Section {
+                    Toggle("Pork's check-ins", isOn: $st.hiEnabled)
+                    Stepper("Pork reminder after \(st.nudgeMin) min", value: $st.nudgeMin, in: 1...60)
+                    Stepper("To-dos after \(st.notesMin) min", value: $st.notesMin, in: (st.nudgeMin + 1)...120)
+                    Picker("Pork's album in Photos", selection: $st.hiAlbum) {
                         ForEach(albumChoices, id: \.self) { Text($0).tag($0) }
                     }
-                    Stepper("Watch Pork for \(st.hiSeconds) s", value: $st.hiSeconds, in: 15...600, step: 15)
-                    Stepper(st.hiGraceMin == 0 ? "Ask every time" : "Then leave me alone for \(st.hiGraceMin) min",
-                            value: $st.hiGraceMin, in: 0...240, step: 5)
                     Toggle("Videos without sound", isOn: $st.hiMuted)
-                    Button("Try it now") {
+                    Button("Try the check-in") {
                         save()
                         dismiss()
                         model.showHi = true
                     }
-                    Button("How to turn it on (Shortcuts)") { showShortcutHelp = true }
+                    Button("How to set up Shortcuts (pick-up, 12 am Outlook, 6 pm WeChat)") { showShortcutHelp = true }
                 } header: {
-                    Text("Pork says hi")
+                    Text("Pork's check-ins")
                 } footer: {
-                    Text("When you open an app (not Phone, Messages or Mail) and the clock isn't running, Pork's photos and videos play first. Then you choose whether to continue.")
+                    Text("When you open a distraction app, Pork reminds you after \(st.nudgeMin) min and shows your to-dos after \(st.notesMin) min. If a Calendar event is on, it shows right away as a big sticky note. At 12 am Outlook opens and at 6 pm WeChat opens if to-dos are left. This needs the Shortcuts automations (button above).")
                 }
 
                 Section {
@@ -194,19 +205,33 @@ struct ShortcutHelpView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("iPhone apps can't see when you unlock your phone, so a Shortcuts automation opens Pork whenever you open another app.")
-                    step(1, "Open the **Shortcuts** app → **Automation** tab → **+** (or **New Automation**).")
-                    step(2, "Choose **App**. Tap **Choose**, select every app you want Pork to greet you in. Don't select Phone, Messages, Mail or Puppy Pomodoro. Tap **Done**.")
-                    step(3, "Keep **Is Opened** checked. Choose **Run Immediately** and turn off **Notify When Run**. Tap **Next**.")
-                    step(4, "Tap **New Blank Automation**. Tap **Add Action**, search for **Should Pork say hi**, and add it.")
-                    step(5, "Search for **If** and add it under the first action. It should read “If **Should Pork say hi** is **true**”. (Tap the condition to pick “is true” if needed.)")
-                    step(6, "Search for **Say hi to Pork** and drag it inside the If (between If and Otherwise). Tap **Done**.")
-                    Text("That's it. When the clock isn't running, opening one of those apps shows Pork first. After you choose “Yes, continue”, Pork leaves you alone for the time you set; swipe right along the bottom edge of the screen to go back to your app.")
+                    Text("iPhone apps can't see when you pick up the phone or which app you open, and can't open other apps by themselves. Shortcuts automations do that for Pork. Make these 4, once. For each: open **Shortcuts** → **Automation** tab → **+** (or **New Automation**).")
+
+                    Text("1. When you open a distraction app").font(.headline)
+                    step(1, "Choose **App** → **Choose** → select your distraction apps (Instagram, YouTube, TikTok, Safari, games…). Not your focus apps. Tap **Done**.")
+                    step(2, "Keep **Is Opened**, choose **Run Immediately**, turn off **Notify When Run**, tap **Next** → **New Blank Automation**.")
+                    step(3, "**Add Action** → search **Pork: distraction app opened** → add it.")
+                    step(4, "Add **If** under it (“If Pork: distraction app opened is true”). Inside the If, add **Show Pork's check-in**. Tap **Done**.")
+
+                    Text("2. When you open a focus app").font(.headline)
+                    step(1, "**App** → select Outlook, WeChat, Kindle, Gmail, Google Tasks, Google Calendar, Calendar, Reminders, Handshake, Slack, Canvas, Claude, Gemini, ChatGPT → **Done**.")
+                    step(2, "**Is Opened**, **Run Immediately**, **Notify When Run** off → **Next** → **New Blank Automation**.")
+                    step(3, "**Add Action** → **Pork: focus app opened** → **Done**.")
+
+                    Text("3. 12:00 am: Outlook").font(.headline)
+                    step(1, "Choose **Time of Day** → **12:00 AM**, **Daily**, **Run Immediately** → **Next** → **New Blank Automation**.")
+                    step(2, "**Add Action** → **Pork: to-dos left?** → tap **App to open** and type Outlook.")
+                    step(3, "Add **If** (“is true”), and inside it **Open App** → choose **Outlook**. Tap **Done**.")
+
+                    Text("4. 6:00 pm: WeChat").font(.headline)
+                    step(1, "Same as 3, with **6:00 PM** and **WeChat**.")
+
+                    Text("At 12 am Pork checks yesterday's to-dos; at 6 pm today's. Apps only open while the phone is unlocked; otherwise you get Pork's reminder with the list.")
                         .foregroundStyle(.secondary)
                 }
                 .padding(20)
             }
-            .navigationTitle("Pork says hi")
+            .navigationTitle("Shortcuts for Pork")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { Button("Done") { dismiss() } }
         }

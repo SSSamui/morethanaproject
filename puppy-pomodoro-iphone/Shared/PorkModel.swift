@@ -67,6 +67,12 @@ struct PorkSettings: Codable, Equatable {
     var hiAlbum = "Pork"
     var hiMuted = false
 
+    // To-dos from Reminders and the check-in reminders
+    var schoolList = "school 2026 fall"   // homework and projects: next 7 days
+    var routineList = "routine"           // everyday jobs: shown for today only
+    var nudgeMin = 5                      // Pork reminder after this many minutes on distractions
+    var notesMin = 10                     // to-dos + screen time after this many minutes
+
     // Late at night only focus apps and sites open (minutes after midnight)
     var nightOn = true
     var nightStart = 0      // 12:00 am
@@ -90,6 +96,10 @@ struct PorkSettings: Codable, Equatable {
         nightOn = try c.decodeIfPresent(Bool.self, forKey: .nightOn) ?? d.nightOn
         nightStart = try c.decodeIfPresent(Int.self, forKey: .nightStart) ?? d.nightStart
         nightEnd = try c.decodeIfPresent(Int.self, forKey: .nightEnd) ?? d.nightEnd
+        schoolList = try c.decodeIfPresent(String.self, forKey: .schoolList) ?? d.schoolList
+        routineList = try c.decodeIfPresent(String.self, forKey: .routineList) ?? d.routineList
+        nudgeMin = try c.decodeIfPresent(Int.self, forKey: .nudgeMin) ?? d.nudgeMin
+        notesMin = try c.decodeIfPresent(Int.self, forKey: .notesMin) ?? d.notesMin
     }
 
     /// Is `date` inside the late-night hours? (They may cross midnight, like 11 pm–7 am.)
@@ -119,6 +129,10 @@ struct PorkSettings: Codable, Equatable {
         s.hiGraceMin = min(240, max(0, hiGraceMin))
         s.nightStart = min(24 * 60 - 1, max(0, nightStart))
         s.nightEnd = min(24 * 60 - 1, max(0, nightEnd))
+        s.nudgeMin = min(60, max(1, nudgeMin))
+        s.notesMin = min(120, max(s.nudgeMin + 1, notesMin))
+        s.schoolList = schoolList.trimmingCharacters(in: .whitespaces)
+        s.routineList = routineList.trimmingCharacters(in: .whitespaces)
         var seen = Set<String>()
         s.focusSites = focusSites.compactMap(FocusSite.parse).map(\.text).filter { seen.insert($0).inserted }
         return s
