@@ -244,10 +244,25 @@ window.VIQ_CLOUD = (() => {
     }
   }
 
-  async function readDanmu(viewQuery, tableQuery) {
+  // ai.sql adds `visible_to` (danmu readable by chosen people only). Before it's run the
+  // view has no such column, so we ask for it, and leave it out if the database says no.
+  let hasAi = null;                        // null = not checked yet
+  function isMissingAiCol(e) {
+    return (e.code === '42703' || e.code === 'PGRST204' || e.status === 400) && /visible_to/i.test(e.message || '');
+  }
+
+  async function readDanmu(q) {
     if (hasView !== false) {
       try {
-        const rows = (await call('/rest/v1/danmu_public?' + viewQuery)) || [];
+        let rows;
+        try {
+          rows = (await call('/rest/v1/danmu_public?select=' + VIEW_COLS + (hasAi === false ? '' : ',visible_to') + '&' + q)) || [];
+          if (hasAi === null) hasAi = true;
+        } catch (e) {
+          if (hasAi === false || !isMissingAiCol(e)) throw e;
+          hasAi = false;
+          rows = (await call('/rest/v1/danmu_public?select=' + VIEW_COLS + '&' + q)) || [];
+        }
         hasView = true;
         await fillNames(rows);
         return rows.map(normalize);
@@ -256,7 +271,7 @@ window.VIQ_CLOUD = (() => {
         hasView = false;
       }
     }
-    return ((await call('/rest/v1/danmu?' + tableQuery)) || []).map(normalize);
+    return ((await call('/rest/v1/danmu?select=' + TABLE_COLS + '&' + q)) || []).map(normalize);
   }
 
   const VIEW_COLS = 'user_id,client_id,video_id,video_title,time_sec,text,style,is_summary,updated_at,' +
@@ -265,14 +280,12 @@ window.VIQ_CLOUD = (() => {
 
   // All danmu on a video, everyone's
   function getVideo(videoId) {
-    const q = 'video_id=eq.' + encodeURIComponent(videoId) + '&order=time_sec.asc&limit=10000';
-    return readDanmu('select=' + VIEW_COLS + '&' + q, 'select=' + TABLE_COLS + '&' + q);
+    return readDanmu('video_id=eq.' + encodeURIComponent(videoId) + '&order=time_sec.asc&limit=10000');
   }
 
   // Most recent danmu from everyone, across all videos (for the "New danmu" feed)
   function getRecent(limit) {
-    const q = 'order=updated_at.desc&limit=' + (limit || 300);
-    return readDanmu('select=' + VIEW_COLS + '&' + q, 'select=' + TABLE_COLS + '&' + q);
+    return readDanmu('order=updated_at.desc&limit=' + (limit || 300));
   }
 
   // Is "show my name to one person only" available? (privacy.sql applied)
@@ -282,6 +295,26 @@ window.VIQ_CLOUD = (() => {
       catch (e) { if (isMissingView(e)) hasView = false; else throw e; }
     }
     return hasView;
+  }
+
+  // Can a danmu be visible to chosen people only? (ai.sql applied)
+  async function aiReady() {
+    if (hasAi === null) {
+      try { await call('/rest/v1/danmu_public?select=visible_to&limit=1'); hasAi = true; hasView = true; }
+      catch (e) {
+        if (isMissingAiCol(e)) hasAi = false;
+        else if (isMissingView(e)) { hasAi = false; hasView = false; }
+        else throw e;
+      }
+    }
+    return hasAi;
+  }
+
+  // Everyone with an account: [{id, name}] (for "who can see")
+  async function listPeople() {
+    const rows = (await call('/rest/v1/profiles?select=id,display_name&order=display_name.asc&limit=500')) || [];
+    rows.forEach(p => nameCache.set(p.id, p.display_name));
+    return rows.map(p => ({ id: p.id, name: p.display_name }));
   }
 
   // Find someone by their display name → {id, name}
@@ -333,17 +366,21 @@ window.VIQ_CLOUD = (() => {
   }
   // Danmu of several videos at once (home page filtered by a video tag)
   function getVideosDanmu(ids) {
-    const q = 'video_id=in.(' + ids.map(encodeURIComponent).join(',') + ')&order=updated_at.desc&limit=3000';
-    return readDanmu('select=' + VIEW_COLS + '&' + q, 'select=' + TABLE_COLS + '&' + q);
+    return readDanmu('video_id=in.(' + ids.map(encodeURIComponent).join(',') + ')&order=updated_at.desc&limit=3000');
   }
 
   // Create or update our own danmu (idempotent on user_id + client_id).
   // n.nameTo = {id,name} → with a hidden name, only that person may see who wrote it.
+  // n.visibleTo = [user ids] → only the writer and those people can read the danmu at all
+  // (null = everyone). Leave the key out to keep what's saved.
   async function upsert(videoId, videoTitle, notes) {
     if (!notes.length) return;
     const withTargets = await privacyReady().catch(() => false);
     const anyTarget = notes.some(n => n.nameTo && n.style && n.style.anon);
     if (anyTarget && !withTargets) throw new Error('"Only one person" needs the database update (privacy.sql). Ask the owner to run it');
+    const visOk = notes.some(n => 'visibleTo' in n) && await aiReady().catch(() => false);
+    if (!visOk && notes.some(n => n.visibleTo && n.visibleTo.length))
+      throw new Error('"Who can see" needs the database update (ai.sql). Ask the owner to run it');
     return call('/rest/v1/danmu?on_conflict=user_id,client_id', {
       method: 'POST', auth: true, prefer: 'resolution=merge-duplicates,return=minimal',
       body: notes.map(n => Object.assign({
@@ -355,7 +392,8 @@ window.VIQ_CLOUD = (() => {
         text: String(n.text).slice(0, 500),
         style: n.style ? Object.assign({}, n.style, { nameTo: undefined }) : null,
         is_summary: !!n.isSummary
-      }, withTargets ? { name_visible_to: n.nameTo && n.style && n.style.anon ? [n.nameTo.id] : null } : {}))
+      }, withTargets ? { name_visible_to: n.nameTo && n.style && n.style.anon ? [n.nameTo.id] : null } : {},
+         visOk ? { visible_to: n.visibleTo && n.visibleTo.length ? n.visibleTo : null } : {}))
     });
   }
 
@@ -368,6 +406,6 @@ window.VIQ_CLOUD = (() => {
 
   return { isConfigured, init, isSignedIn, getUser, onChange,
            signUp, signIn, signOut, updateProfile, verifyEmailCode, resendCode,
-           getVideo, getRecent, upsert, remove, findUser, privacyReady,
+           getVideo, getRecent, upsert, remove, findUser, privacyReady, aiReady, listPeople,
            normTag, tagsReady, getAllVideoTags, getVideoTags, addVideoTag, removeVideoTag, getVideosDanmu };
 })();

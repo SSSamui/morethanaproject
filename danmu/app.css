@@ -145,6 +145,7 @@ body.fs .fs-compose:focus-within, body.fs .fs-compose:hover { opacity: 1; }
 .sheet {
   width: 100%; max-width: 460px; background: var(--panel); border: 1px solid var(--line);
   border-radius: 16px 16px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  max-height: 92vh; max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain;
 }
 @media (min-width: 700px) { .sheet { border-radius: 16px; } }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
@@ -261,3 +262,22 @@ body.compact .tagchip { max-width: 74px; }
   body.compact .drawer:not(.open) #emoji-btn { display: none; }   /* back when the panel is open (⌃) */
   body.compact .tagchip { max-width: 40px; }
 }
+
+/* ✨ AI social cues sheet */
+.ai h3 { margin: 6px 0 0; font-size: 15px; }
+.ai .checks { display: flex; flex-wrap: wrap; gap: 6px; }
+.ai .checks label { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; padding: 5px 10px;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+.ai .checks label.on { border-color: var(--blue); background: rgba(79,158,255,.16); }
+.ai .checks input { width: auto !important; margin: 0; }
+.ai .checks .dotc { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.ai textarea { width: 100%; min-height: 80px; resize: vertical; background: var(--panel2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: 14px/1.4 var(--font); }
+.ai .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai .btns button { flex: 1 1 auto; }
+.ai .preview { display: flex; flex-direction: column; gap: 4px; max-height: 40vh; overflow-y: auto; }
+.ai .preview label { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; line-height: 1.35; padding: 4px 2px; }
+.ai .preview input { width: auto !important; margin-top: 3px; }
+.ai .preview .t { color: var(--blue); font-variant-numeric: tabular-nums; min-width: 38px; }
+.ai .preview .cat { font-size: 12px; font-weight: 700; margin-right: 4px; }
+.ai a { color: var(--blue); }

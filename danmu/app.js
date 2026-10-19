@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '13';
+  const APP_VERSION = '14';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
@@ -40,7 +40,7 @@
   const ANON = { name: '🙈 Anonymous', color: '#9ca3af' };
   const isMine = r => { const u = me(); return !!(u && r.user_id === u.id); };
   // How a danmu's author appears to ME: {name, color, hidden, revealed, note}
-  function author(r) {
+  function authorOf(r) {
     const base = { name: r.profiles?.display_name || 'Someone', color: r.profiles?.color || '#a78bfa' };
     if (isMine(r)) {
       const anon = !!(r.style && r.style.anon), to = (r.name_to || [])[0];
@@ -51,6 +51,20 @@
     if (r.name_hidden) return { name: ANON.name, color: ANON.color, hidden: true };
     if (r.name_revealed) return Object.assign(base, { revealed: true, note: '🔒', tip: 'Only you can see who wrote this' });
     return base;
+  }
+  // AI social cues: "🤖 AI" instead of the name; 👥 on yours that only chosen people can see
+  function author(r) {
+    const a = authorOf(r);
+    if (r.style && r.style.ai && !a.hidden) {
+      a.tip = 'AI social cue added by ' + a.name + (a.tip ? ' · ' + a.tip : '');
+      a.name = '🤖 AI';
+    }
+    if (isMine(r) && r.visible_to && r.visible_to.length) {
+      const others = r.visible_to.filter(id => id !== me().id).length;
+      a.note = (a.note || '') + '👥';
+      a.tip = (a.tip ? a.tip + ' · ' : '') + (others ? 'Only you and ' + others + (others === 1 ? ' person' : ' people') + ' can see this danmu' : 'Only you can see this danmu');
+    }
+    return a;
   }
   const STYLE_KEY = 'viq_web_style', SEEN_KEY = 'viq_web_feed_seen', DANMU_ON_KEY = 'viq_web_danmu_on', NAMES_KEY = 'viq_web_show_names';
   const POLL_MS = 10000, SCROLL_MS = 7000;
@@ -923,6 +937,242 @@
   function highlightNow(t) {
     document.querySelectorAll('#danmu-list .row').forEach(el => el.classList.toggle('now', Math.abs(+el.dataset.t - t) <= 1));
   }
+
+  // ── ✨ AI social cues ──────────────────────────────────────────────────────
+  // No API keys: we build a prompt from ai-guide.md (your editable notes), you paste it into
+  // Gemini (it can watch YouTube links) or Claude (give it the transcript), then paste the
+  // answer back. The danmu are saved as yours, tagged by category, visible to the people you pick.
+  const AI_GUIDE_URL = 'ai-guide.md';
+  const AI_EDIT_URL = 'https://github.com/SSSamui/morethanaproject/edit/main/danmu/ai-guide.md';
+  const AI_CATS_KEY = 'viq_web_ai_cats', AI_WHO_KEY = 'viq_web_ai_who', AI_TOOL_KEY = 'viq_web_ai_tool', AI_DRAFT_KEY = 'viq_web_ai_draft';
+  const AI_COLORS = ['#fbbf24', '#60a5fa', '#f472b6', '#34d399', '#a78bfa', '#fb923c', '#22d3ee', '#f87171', '#a3e635', '#e879f9', '#fde047', '#93c5fd'];
+  let aiGuide = null, aiPeople = [], aiParsed = [];
+
+  // ai-guide.md → {cats:[{name, desc}], instructions, reference}
+  function parseGuide(md) {
+    const sec = {}; let cur = '';
+    md.split(/\r?\n/).forEach(line => {
+      const h = line.match(/^##\s+(.+?)\s*$/);
+      if (h) { cur = h[1].toLowerCase(); sec[cur] = []; return; }
+      if (cur) sec[cur].push(line);
+    });
+    const find = word => Object.keys(sec).find(k => k.includes(word));
+    const cats = (sec[find('categor')] || []).map(l => l.match(/^\s*[-*]\s*\*\*(.+?)\*\*\s*[—–:-]+\s*(.+)$/))
+      .filter(Boolean).map(m => ({ name: C.normTag(m[1]), desc: m[2].trim() })).filter(c => c.name);
+    const text = k => (sec[find(k)] || []).join('\n').trim();
+    return { cats, instructions: text('instruction'), reference: text('reference') };
+  }
+  const catColor = name => {
+    const i = aiGuide ? aiGuide.cats.findIndex(c => c.name === name) : -1;
+    return AI_COLORS[(i < 0 ? AI_COLORS.length - 1 : i) % AI_COLORS.length];
+  };
+
+  function aiPrompt(cats, tool, transcript) {
+    let title = $('video-title').textContent || '', len = 0;
+    try { len = player.getDuration() || 0; } catch { /* not ready */ }
+    const url = 'https://www.youtube.com/' + (isShort ? 'shorts/' + videoId : 'watch?v=' + videoId);
+    return [
+      'You are adding "social cue" danmu (short comments that appear on screen at a moment of the video) to a YouTube video, to help a teen learn social skills.',
+      '',
+      'Video: ' + (title ? '"' + title + '" ' : '') + url + (len ? ' (length ' + fmt(len) + ')' : ''),
+      transcript ? 'The transcript (with times) is at the end. Use it, and the video if you can watch it.'
+                 : 'Watch the video at the link (both the speech and what people do).',
+      '',
+      'Write danmu ONLY in these categories:',
+      ...cats.map(c => '- ' + c.name + ' — ' + c.desc),
+      '',
+      'Rules:',
+      aiGuide.instructions,
+      '',
+      'Answer with ONLY a JSON array (no other text), one object per danmu, in time order:',
+      '[{"time":"0:12","category":"' + (cats[0] ? cats[0].name : 'emotion') + '","text":"…"}]',
+      '"time" is the moment in the video as m:ss. "category" is one of: ' + cats.map(c => c.name).join(', ') + '.',
+      '',
+      '=== Reference notes (use these words, steps and rules) ===',
+      aiGuide.reference,
+      transcript ? '\n=== Transcript ===\n' + transcript : ''
+    ].join('\n').trim();
+  }
+
+  // "m:ss", "h:mm:ss", "75", "1m15s" → seconds (or null)
+  function parseTime(v) {
+    if (typeof v === 'number') return isFinite(v) && v >= 0 ? Math.floor(v) : null;
+    const s = String(v || '').trim();
+    let m = s.match(/^(?:(\d+):)?(\d{1,2}):(\d{2})(?:\.\d+)?$/);
+    if (m) return (+(m[1] || 0)) * 3600 + (+m[2]) * 60 + (+m[3]);
+    m = s.match(/^(?:(\d+)\s*m(?:in)?)?\s*(?:(\d+)\s*s(?:ec)?)?$/i);
+    if (m && (m[1] || m[2])) return (+(m[1] || 0)) * 60 + (+(m[2] || 0));
+    return /^\d+(\.\d+)?$/.test(s) ? Math.floor(+s) : null;
+  }
+  // The AI's answer → [{time_sec, category, text}]. Takes a JSON array (also inside ```json fences)
+  // or lines like "0:12 [emotion] text" / "0:12 - emotion: text".
+  function parseAiAnswer(raw) {
+    const out = [], known = new Set((aiGuide?.cats || []).map(c => c.name));
+    const add = (t, cat, text) => {
+      const sec = parseTime(t); text = String(text || '').replace(/^["“]|["”]$/g, '').trim();
+      if (sec === null || !text) return;
+      out.push({ time_sec: sec, category: C.normTag(cat || ''), text: text.slice(0, 500) });
+    };
+    const a = raw.indexOf('['), b = raw.lastIndexOf(']');
+    if (a >= 0 && b > a) {
+      try {
+        const arr = JSON.parse(raw.slice(a, b + 1));
+        if (Array.isArray(arr) && arr.some(x => x && typeof x === 'object')) {
+          arr.forEach(x => x && add(x.time ?? x.time_sec ?? x.t ?? x.timestamp, x.category ?? x.tag ?? x.type, x.text ?? x.danmu ?? x.comment));
+          return out.sort((p, q) => p.time_sec - q.time_sec);
+        }
+      } catch { /* not JSON → read lines */ }
+    }
+    raw.split(/\r?\n/).forEach(line => {
+      const m = line.replace(/\*\*/g, '').replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').match(/^\[?(\d{1,2}(?::\d{2}){1,2})\]?\s*[-–—:]?\s*(.+)$/);
+      if (!m) return;
+      let rest = m[2].trim(), cat = '';
+      const c = rest.match(/^(?:\[([^\]]{1,30})\]|\(([^)]{1,30})\)|\*{0,2}([A-Za-z][\w -]{0,29}?)\*{0,2}\s*:)\s*(.+)$/);
+      if (c && (c[1] || c[2] || known.has(C.normTag(c[3])))) { cat = c[1] || c[2] || c[3]; rest = c[4]; }
+      add(m[1], cat, rest.replace(/^[-–—:]\s*/, ''));
+    });
+    return out.sort((p, q) => p.time_sec - q.time_sec);
+  }
+
+  async function copyText(text, fallbackEl) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch {
+      try { fallbackEl.classList.remove('hidden'); fallbackEl.select(); return document.execCommand('copy'); }
+      catch { return false; }
+    }
+  }
+
+  async function openAi() {
+    const u = me(); if (!u) return openSheet();
+    if (!videoId) return;
+    $('sheet-title').textContent = '✨ AI social cues';
+    $('sheet-bg').classList.remove('hidden');
+    const body = $('sheet-body');
+    body.innerHTML = '<p class="note">Loading your guide…</p>';
+    try {
+      const res = await fetch(AI_GUIDE_URL + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      aiGuide = parseGuide(await res.text());
+      if (!aiGuide.cats.length) throw new Error('no categories found under "## Categories"');
+    } catch (e) {
+      body.innerHTML = '<p class="note err">❌ Could not read ai-guide.md (' + esc(e.message) + ').</p>';
+      return;
+    }
+    try { aiPeople = (await C.listPeople()).filter(p => p.id !== u.id); } catch { aiPeople = []; }
+
+    const savedCats = lsGet(AI_CATS_KEY, null), savedWho = lsGet(AI_WHO_KEY, null);
+    const catOn = c => !savedCats || savedCats.includes(c.name);
+    const whoOn = p => savedWho ? savedWho.includes(p.id) : true;   // first time: everyone who has an account now
+    const draft = lsGet(AI_DRAFT_KEY, null);
+    const tool = lsGet(AI_TOOL_KEY, 'gemini');
+    body.innerHTML =
+      '<div class="ai">' +
+      '<h3>1. What should the AI comment on?</h3>' +
+      '<div class="checks" id="ai-cats">' + aiGuide.cats.map((c, i) =>
+        '<label title="' + esc(c.desc) + '"' + (catOn(c) ? ' class="on"' : '') + '><input type="checkbox" data-i="' + i + '"' + (catOn(c) ? ' checked' : '') + '>' +
+        '<span class="dotc" style="background:' + catColor(c.name) + '"></span>' + esc(c.name) + '</label>').join('') + '</div>' +
+      '<p class="note">From your <a href="' + AI_EDIT_URL + '" target="_blank" rel="noopener">ai-guide.md</a> (tap to edit it on GitHub).</p>' +
+      '<h3>2. Who can see them?</h3>' +
+      '<div class="checks" id="ai-who"><label class="on"><input type="checkbox" checked disabled>' + esc(u.name) + ' (me)</label>' +
+        aiPeople.map((p, i) => '<label' + (whoOn(p) ? ' class="on"' : '') + '><input type="checkbox" data-i="' + i + '"' + (whoOn(p) ? ' checked' : '') + '>' + esc(p.name) + '</label>').join('') +
+        '<label' + (savedWho === 'all' ? ' class="on"' : '') + '><input type="checkbox" id="ai-all"' + (savedWho === 'all' ? ' checked' : '') + '>🌐 Everyone</label></div>' +
+      '<p class="note">People who join later won\'t see them unless you tick 🌐 Everyone.</p>' +
+      '<h3>3. Ask the AI</h3>' +
+      '<div class="tabs" id="ai-tool"><button data-t="gemini"' + (tool === 'gemini' ? ' class="active"' : '') + '>Gemini</button>' +
+        '<button data-t="claude"' + (tool === 'claude' ? ' class="active"' : '') + '>Claude</button></div>' +
+      '<p class="note" id="ai-tool-note"></p>' +
+      '<textarea id="ai-transcript" placeholder="Transcript (optional for Gemini, needed for Claude). On YouTube: …more → Show transcript → copy it here."></textarea>' +
+      '<div class="btns"><button class="primary" id="ai-copy">📋 Copy prompt</button><button class="ghost" id="ai-open">Open Gemini ↗</button></div>' +
+      '<textarea id="ai-prompt" class="hidden" readonly></textarea>' +
+      '<h3>4. Paste the AI\'s answer</h3>' +
+      '<textarea id="ai-answer" placeholder=\'[{"time":"0:12","category":"emotion","text":"…"}]  or lines like  0:12 [emotion] …\'>' + esc(draft && draft.v === videoId ? draft.text : '') + '</textarea>' +
+      '<div class="preview" id="ai-preview"></div>' +
+      '<div class="btns"><button class="primary" id="ai-save" disabled>Save</button></div>' +
+      '<p class="note" id="ai-msg"></p>' +
+      '</div>';
+
+    const toggleLabel = inp => inp.closest('label').classList.toggle('on', inp.checked);
+    body.querySelectorAll('#ai-cats input').forEach(inp => inp.onchange = () => {
+      toggleLabel(inp);
+      lsSet(AI_CATS_KEY, [...body.querySelectorAll('#ai-cats input:checked')].map(x => aiGuide.cats[+x.dataset.i].name));
+    });
+    const saveWho = () => lsSet(AI_WHO_KEY, $('ai-all').checked ? 'all' : [...body.querySelectorAll('#ai-who input[data-i]:checked')].map(x => aiPeople[+x.dataset.i].id));
+    body.querySelectorAll('#ai-who input[data-i]').forEach(inp => inp.onchange = () => { toggleLabel(inp); saveWho(); });
+    $('ai-all').onchange = () => { toggleLabel($('ai-all')); saveWho(); };
+
+    let curTool = tool;
+    const setTool = t => {
+      curTool = t; lsSet(AI_TOOL_KEY, t);
+      body.querySelectorAll('#ai-tool button').forEach(b => b.classList.toggle('active', b.dataset.t === t));
+      $('ai-open').textContent = 'Open ' + (t === 'claude' ? 'Claude' : 'Gemini') + ' ↗';
+      $('ai-tool-note').textContent = t === 'claude'
+        ? 'Claude can\'t watch videos: paste the transcript below first.'
+        : 'Gemini can watch the YouTube link itself. A transcript is optional.';
+    };
+    body.querySelectorAll('#ai-tool button').forEach(b => b.onclick = () => setTool(b.dataset.t));
+    setTool(tool);
+
+    const chosenCats = () => [...body.querySelectorAll('#ai-cats input:checked')].map(x => aiGuide.cats[+x.dataset.i]);
+    $('ai-copy').onclick = async () => {
+      const cats = chosenCats(), tr = $('ai-transcript').value.trim();
+      if (!cats.length) return toast('Pick at least one category');
+      if (curTool === 'claude' && !tr) return toast('Claude needs the transcript: paste it in the box first', 3500);
+      const text = aiPrompt(cats, curTool, tr);
+      $('ai-prompt').value = text;
+      const ok = await copyText(text, $('ai-prompt'));
+      toast(ok ? '📋 Prompt copied. Paste it into ' + (curTool === 'claude' ? 'Claude' : 'Gemini') : 'Copy the prompt from the box', 3500);
+      if (!ok) $('ai-prompt').classList.remove('hidden');
+    };
+    $('ai-open').onclick = () => window.open(curTool === 'claude' ? 'https://claude.ai/new' : 'https://gemini.google.com/app', '_blank', 'noopener');
+
+    const renderPreview = () => {
+      const raw = $('ai-answer').value;
+      lsSet(AI_DRAFT_KEY, { v: videoId, text: raw });
+      aiParsed = raw.trim() ? parseAiAnswer(raw) : [];
+      $('ai-preview').innerHTML = aiParsed.map((d, i) =>
+        '<label><input type="checkbox" data-i="' + i + '" checked><span class="t">' + fmt(d.time_sec) + '</span><span>' +
+        (d.category ? '<span class="cat" style="color:' + catColor(d.category) + '">#' + esc(d.category) + '</span>' : '') + esc(d.text) + '</span></label>').join('');
+      $('ai-preview').querySelectorAll('input').forEach(inp => inp.onchange = countSel);
+      countSel();
+      $('ai-msg').textContent = raw.trim() && !aiParsed.length ? 'No danmu found. The answer should be a JSON list or lines starting with a time (0:12 …).' : '';
+      $('ai-msg').className = 'note' + (raw.trim() && !aiParsed.length ? ' err' : '');
+    };
+    const countSel = () => {
+      const n = $('ai-preview').querySelectorAll('input:checked').length;
+      $('ai-save').disabled = !n; $('ai-save').textContent = n ? 'Save ' + n + ' danmu' : 'Save';
+    };
+    $('ai-answer').oninput = renderPreview;
+    renderPreview();
+    $('ai-save').onclick = () => saveAi([...$('ai-preview').querySelectorAll('input:checked')].map(x => aiParsed[+x.dataset.i]));
+  }
+
+  async function saveAi(list) {
+    const u = me(); if (!u || !list.length) return;
+    const all = $('ai-all').checked;
+    const visibleTo = all ? null : [u.id, ...[...document.querySelectorAll('#ai-who input[data-i]:checked')].map(x => aiPeople[+x.dataset.i].id)];
+    const base = Date.now();
+    const made = list.map((d, i) => ({
+      user_id: u.id, client_id: base + i, time_sec: d.time_sec, text: d.text, is_summary: false,
+      style: { font: 'default', size: 'm', color: catColor(d.category), mode: 'top', duration: 6, anon: false, tag: d.category, ai: true },
+      profiles: { display_name: u.name, color: u.color }, name_to: [], visible_to: visibleTo
+    }));
+    $('ai-save').disabled = true; $('ai-msg').className = 'note'; $('ai-msg').textContent = 'Saving…';
+    try {
+      for (let i = 0; i < made.length; i += 100)
+        await C.upsert(videoId, $('video-title').textContent, made.slice(i, i + 100).map(r =>
+          ({ id: r.client_id, time: r.time_sec, text: r.text, style: r.style, isSummary: false, visibleTo })));
+    } catch (e) {
+      $('ai-save').disabled = false;
+      $('ai-msg').className = 'note err'; $('ai-msg').textContent = '❌ Not saved: ' + e.message;
+      return;
+    }
+    lsSet(AI_DRAFT_KEY, null);
+    rows = rows.concat(made).sort((a, b) => a.time_sec - b.time_sec);
+    renderList(); closeSheet();
+    const who = all ? 'everyone' : visibleTo.length === 1 ? 'only you' : 'you and ' + aiPeople.filter(p => visibleTo.includes(p.id)).map(p => p.name).join(', ');
+    toast('✨ Saved ' + made.length + ' AI danmu · visible to ' + who, 4000);
+  }
+  $('ai-btn').onclick = openAi;
 
   // ── Account ────────────────────────────────────────────────────────────────
   function updatePill() {
