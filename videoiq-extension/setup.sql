@@ -70,11 +70,13 @@ begin new.updated_at = now(); return new; end $$;
 create trigger danmu_touch before update on public.danmu
   for each row execute function public.touch_updated_at();
 
--- ── Privacy (hidden names / name visible to one person)
+-- ── Privacy + who can read (hidden names / name visible to one person / danmu visible to chosen people)
 --
 -- Lets a writer hide their name on a danmu from everyone, or show it to ONE chosen
--- person only. After this, nobody can read who wrote a hidden-name danmu — not even
--- by querying the database directly — except the writer and the chosen person.
+-- person only, and lets a danmu be readable by chosen people only (AI social cues).
+
+-- Who (besides the writer) may read the danmu at all. Empty (null) = everyone.
+alter table public.danmu add column if not exists visible_to uuid[];
 
 -- Who (besides the writer) may see the writer's name on a hidden-name danmu
 alter table public.danmu add column if not exists name_visible_to uuid[];
@@ -89,7 +91,8 @@ select d.client_id, d.video_id, d.video_title, d.time_sec, d.text, d.style, d.is
        case when s.shown then p.color end          as color,
        not s.shown                                  as name_hidden,
        (s.anon and s.shown and not s.mine)          as name_revealed,   -- hidden from others, shown to you
-       case when s.mine then d.name_visible_to end  as name_visible_to  -- only the writer sees their choice
+       case when s.mine then d.name_visible_to end  as name_visible_to, -- only the writer sees their choice
+       case when s.mine then d.visible_to end       as visible_to        -- only the writer sees who can read it
 from public.danmu d
 join public.profiles p on p.id = d.user_id
 cross join lateral (
@@ -99,7 +102,11 @@ cross join lateral (
 cross join lateral (
   select a.anon, a.mine,
          (not a.anon) or a.mine or coalesce(auth.uid() = any (d.name_visible_to), false) as shown
-) s;
+) s
+-- A danmu with visible_to set can only be read by its writer and those people
+where d.visible_to is null
+   or coalesce(d.user_id = auth.uid(), false)
+   or coalesce(auth.uid() = any (d.visible_to), false);
 
 grant select on public.danmu_public to anon, authenticated;
 

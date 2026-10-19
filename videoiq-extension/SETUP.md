@@ -146,6 +146,18 @@ website's home page. Supabase → **SQL Editor** → **New query** → open **`t
 paste → **Run**. Safe to run again. (New installs: `setup.sql` already includes it.)
 Comment tags (#emotion, #conversation…) need no database change.
 
+## Update: AI social cues — "who can see" (run once)
+Needed for **✨ AI cues** on the website when you pick who can see them (e.g. only you and K).
+Supabase → **SQL Editor** → **New query** → open **`ai.sql`**, copy **all of it**, paste → **Run**.
+It also includes the privacy update above, so you don't need to run `privacy.sql` separately.
+Safe to run again. (New installs: `setup.sql` already includes it.)
+
+After this, a danmu with "who can see" set can only be read by its writer and the chosen
+people, enforced by the database. Without it, AI cues can still be saved for 🌐 Everyone.
+
+What the AI writes is set by **`danmu/ai-guide.md`** (categories, rules and your notes).
+Edit it on github.com (✏️ → Commit changes); the website reads it fresh every time.
+
 ## Where to see the data
 Supabase → **Table Editor** → `danmu` (all danmu from everyone) and `profiles`
 (all users). **Authentication → Users** lists the accounts.
