@@ -90,6 +90,44 @@ enum Alerts {
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "pork.now", content: content, trigger: nil))
     }
 
+    /// A message right now.
+    static func say(_ title: String, _ body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "pork.say." + title, content: content, trigger: nil))
+    }
+
+    /// Every morning at 8: "Good morning! Make today's promise to Pork."
+    static func scheduleMorning() {
+        let content = UNMutableNotificationContent()
+        content.title = "Good morning! ☀️"
+        content.body = "Pork wants to hear today's promise. How much play time today, and when do we sleep?"
+        content.sound = .default
+        content.userInfo = ["open": "morning"]
+        var when = DateComponents()
+        when.hour = DayPlans.wakeHour
+        when.minute = 0
+        UNUserNotificationCenter.current().add(UNNotificationRequest(
+            identifier: "pork.morning", content: content,
+            trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true)))
+    }
+
+    /// Tonight at bedtime: "Time to sleep 🌙".
+    static func scheduleBedtime(_ plan: DayPlan, now: Date = Date()) {
+        let cal = Calendar.current
+        var at = cal.startOfDay(for: now).addingTimeInterval(TimeInterval(plan.bedtime * 60))
+        if at <= now { at = at.addingTimeInterval(24 * 3600) }
+        let content = UNMutableNotificationContent()
+        content.title = "Bedtime 🌙"
+        content.body = "Pork is going to sleep. From now on only focus apps until morning. Good night!"
+        content.sound = .default
+        UNUserNotificationCenter.current().add(UNNotificationRequest(
+            identifier: "pork.bedtime", content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: max(1, at.timeIntervalSince(now)), repeats: false)))
+    }
+
     private static func add(_ id: String, at date: Date, title: String, body: String,
                             category: String, sound: UNNotificationSound) {
         let content = UNMutableNotificationContent()

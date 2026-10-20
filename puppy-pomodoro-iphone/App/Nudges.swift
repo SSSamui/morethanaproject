@@ -23,16 +23,46 @@ enum Nudges {
         defaults.string(forKey: "distractDay") == dayKey() ? defaults.integer(forKey: "distractOpens") : 0
     }
 
+    /// How many times you opened a distraction app yesterday.
+    static var opensYesterday: Int {
+        let y = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+        if defaults.string(forKey: "distractDay") == dayKey(y) { return defaults.integer(forKey: "distractOpens") }
+        return defaults.string(forKey: "distractPrevDay") == dayKey(y) ? defaults.integer(forKey: "distractPrevOpens") : 0
+    }
+
+    /// Remembers that the phone was in use (for the sleep guess in the free
+    /// version). Keeps the last 2 days.
+    static func recordUse(_ now: Date = Date()) {
+        var log = (defaults.array(forKey: "useLog") as? [Date]) ?? []
+        if let last = log.last, now.timeIntervalSince(last) < 60 { return }
+        log.append(now)
+        log.removeAll { now.timeIntervalSince($0) > 48 * 3600 }
+        defaults.set(log, forKey: "useLog")
+    }
+
+    /// Fell asleep / woke up, guessed from when apps were opened.
+    static func sleepGuess(now: Date = Date()) -> (sleep: Date, wake: Date)? {
+        let log = (defaults.array(forKey: "useLog") as? [Date]) ?? []
+        let from = Calendar.current.startOfDay(for: now).addingTimeInterval(-6 * 3600) // yesterday 6 pm
+        let marks = log.filter { $0 >= from && $0 <= now }.map { UseMark(start: $0, end: $0) }
+        return SleepGuess.find(marks)
+    }
+
     /// A distraction app was opened. Returns true when Pork's check-in should
-    /// open right away (there's a calendar event now that wasn't shown yet).
+    /// open right away: today's promise isn't made yet, or there's a calendar
+    /// event now that wasn't shown yet.
     static func distractionOpened(now: Date = Date()) async -> Bool {
         let st = PorkStore.load().settings
+        recordUse(now)
         // count it
         if defaults.string(forKey: "distractDay") != dayKey(now) {
+            defaults.set(defaults.string(forKey: "distractDay"), forKey: "distractPrevDay")
+            defaults.set(defaults.integer(forKey: "distractOpens"), forKey: "distractPrevOpens")
             defaults.set(dayKey(now), forKey: "distractDay")
             defaults.set(0, forKey: "distractOpens")
         }
         defaults.set(defaults.integer(forKey: "distractOpens") + 1, forKey: "distractOpens")
+        if DayPlans.needsPromise(DayPlans.all(), now: now) { return true }
         guard st.hiEnabled else { return false }
 
         // Start the 5 / 10 minute reminders, unless they're already waiting.
@@ -55,6 +85,7 @@ enum Nudges {
 
     /// A focus app was opened: no reminders needed.
     static func focusOpened() {
+        recordUse()
         defaults.removeObject(forKey: "distractSince")
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [porkID, notesID])
     }

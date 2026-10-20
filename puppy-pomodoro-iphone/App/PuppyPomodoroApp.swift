@@ -55,6 +55,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
            response.notification.request.content.userInfo["open"] as? String == "checkin" {
             Task { @MainActor in AppModel.shared.showHi = true }
         }
+        if response.notification.request.content.userInfo["open"] as? String == "morning" {
+            Task { @MainActor in AppModel.shared.checkMorning() }
+        }
         Task {
             await LiveActivities.update(s)
             completionHandler()

@@ -9,6 +9,7 @@ final class AppModel: ObservableObject {
 
     @Published private(set) var state = PorkStore.load()
     @Published var showHi = false
+    @Published var showMorning = false
     @Published var toast: String?
     @Published var releasingUntil = Date.distantPast // door animation after "let Pork out"
 
@@ -34,6 +35,36 @@ final class AppModel: ObservableObject {
         setState(s)
         Task { await LiveActivities.update(s) }
         Alerts.requestPermission()
+        Alerts.scheduleMorning()
+        Nudges.recordUse()
+        LockWatcher.shared.update(s)
+        #if !LITE
+        ScreenTime.scheduleMorning()
+        ScreenTime.checkPromise()
+        #endif
+        checkMorning()
+    }
+
+    /// After 8 am with no promise yet: the morning screen comes first.
+    func checkMorning() {
+        if DayPlans.needsPromise(DayPlans.all()) {
+            showHi = false
+            showMorning = true
+        }
+    }
+
+    /// Today's promise to Pork: play time and bedtime. Starts today's rules.
+    func makePromise(minutes: Int, bedtime: Int) {
+        let plan = DayPlan(day: DayPlans.dayKey(Date()), promiseMin: minutes, bedtime: bedtime, madeAt: Date())
+        DayPlans.save(plan)
+        updateSettings {
+            $0.nightStart = bedtime   // after bedtime only focus apps, until morning
+            $0.nightOn = true
+        }
+        Alerts.scheduleBedtime(plan)
+        #if !LITE
+        ScreenTime.startPromise(plan)
+        #endif
     }
 
     func updateSettings(_ change: (inout PorkSettings) -> Void) {
@@ -53,6 +84,7 @@ final class AppModel: ObservableObject {
     }
 
     private func setState(_ s: PorkState) {
+        LockWatcher.shared.update(s)
         let prev = state
         // Back to focus from the break: play the door animation.
         if (prev.phase == .break || prev.phase == .overtime) && s.phase == .focus {

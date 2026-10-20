@@ -4,6 +4,10 @@
 <dict>
 	<key>PorkAppGroup</key>
 	<string>group.$(PORK_ID_PREFIX)</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSRemindersFullAccessUsageDescription</key>

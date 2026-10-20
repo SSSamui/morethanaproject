@@ -81,6 +81,156 @@ enum ScreenTime {
         try? center.startMonitoring(nightActivity, during: schedule)
     }
 
+    // MARK: today's promise
+
+    /// Blocks distractions in the morning until today's promise is made.
+    static let morningStore = ManagedSettingsStore(named: ManagedSettingsStore.Name("porkMorning"))
+    /// Blocks distractions when today's promised play time is used up.
+    static let promiseStore = ManagedSettingsStore(named: ManagedSettingsStore.Name("porkPromise"))
+    static let morningActivity = DeviceActivityName("pork.morning")
+    static let promiseActivity = DeviceActivityName("pork.promise")
+    static let graceActivity = DeviceActivityName("pork.grace")
+    private static let step = 10 // minutes between usage checks
+
+    /// What counts as phone time: pick "All Apps & Categories" in Settings.
+    /// (Focus apps are taken out again, so only play time counts.)
+    static var countApps: FamilyActivitySelection {
+        get {
+            guard let data = PorkStore.defaults.data(forKey: "countApps"),
+                  let sel = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
+            else { return FamilyActivitySelection() }
+            return sel
+        }
+        set {
+            if let data = try? JSONEncoder().encode(newValue) {
+                PorkStore.defaults.set(data, forKey: "countApps")
+            }
+        }
+    }
+
+    private static func shieldDistractions(_ store: ManagedSettingsStore) {
+        store.shield.applicationCategories = .all(except: focusApps.applicationTokens)
+    }
+
+    /// Every day at 8 am: block distractions until the promise is made.
+    static func scheduleMorning() {
+        let center = DeviceActivityCenter()
+        center.stopMonitoring([morningActivity])
+        applyMorning()
+        guard isOn else { return }
+        let schedule = DeviceActivitySchedule(
+            intervalStart: DateComponents(hour: DayPlans.wakeHour, minute: 0),
+            intervalEnd: DateComponents(hour: DayPlans.wakeHour, minute: 30),
+            repeats: true)
+        try? center.startMonitoring(morningActivity, during: schedule)
+    }
+
+    static func applyMorning(now: Date = Date()) {
+        if isOn && DayPlans.needsPromise(DayPlans.all(), now: now) {
+            shieldDistractions(morningStore)
+        } else {
+            morningStore.clearAllSettings()
+        }
+    }
+
+    /// Play time used today (minutes), counted by the monitor.
+    static var playUsedToday: Int {
+        let d = PorkStore.defaults
+        guard d.string(forKey: "useDay") == DayPlans.dayKey(Date()) else { return 0 }
+        return max(0, d.integer(forKey: "allMin") - d.integer(forKey: "focusMin"))
+    }
+
+    static var promiseReachedToday: Bool {
+        PorkStore.defaults.string(forKey: "promiseReachedDay") == DayPlans.dayKey(Date())
+    }
+
+    /// Start counting today's play time, from now until bedtime.
+    static func startPromise(_ plan: DayPlan, now: Date = Date()) {
+        let center = DeviceActivityCenter()
+        center.stopMonitoring([promiseActivity, graceActivity])
+        morningStore.clearAllSettings()
+        promiseStore.clearAllSettings()
+        let d = PorkStore.defaults
+        if d.string(forKey: "useDay") != plan.day {
+            d.set(plan.day, forKey: "useDay")
+            d.set(0, forKey: "allMin")
+            d.set(0, forKey: "focusMin")
+            d.removeObject(forKey: "promiseWarned")
+        }
+        d.set(d.integer(forKey: "allMin"), forKey: "allBase")
+        d.set(d.integer(forKey: "focusMin"), forKey: "focusBase")
+        guard isOn else { return }
+
+        // Until bedtime (or the end of today if bedtime is after midnight).
+        let cal = Calendar.current
+        var end = cal.startOfDay(for: now).addingTimeInterval(TimeInterval(plan.bedtime * 60))
+        if plan.bedtime < 12 * 60 || end <= now { end = cal.startOfDay(for: now).addingTimeInterval(24 * 3600 - 60) }
+        guard end.timeIntervalSince(now) >= 15 * 60 else { return }
+        let parts: Set<Calendar.Component> = [.hour, .minute, .second]
+        let schedule = DeviceActivitySchedule(intervalStart: cal.dateComponents(parts, from: now),
+                                              intervalEnd: cal.dateComponents(parts, from: end),
+                                              repeats: false)
+        let count = countApps
+        let focus = focusApps.applicationTokens
+        var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
+        for k in 1...(12 * 60 / step) {
+            let mins = k * step
+            events[DeviceActivityEvent.Name("all.\(mins)")] = DeviceActivityEvent(
+                applications: count.applicationTokens, categories: count.categoryTokens,
+                webDomains: count.webDomainTokens, threshold: DateComponents(minute: mins))
+            if !focus.isEmpty {
+                events[DeviceActivityEvent.Name("focus.\(mins)")] = DeviceActivityEvent(
+                    applications: focus, threshold: DateComponents(minute: mins))
+            }
+        }
+        try? center.startMonitoring(promiseActivity, during: schedule, events: events)
+    }
+
+    /// The monitor heard "all.30" or "focus.20": update today's play time.
+    static func usageReached(_ name: String) {
+        let parts = name.split(separator: ".")
+        guard parts.count == 2, let mins = Int(parts[1]) else { return }
+        let d = PorkStore.defaults
+        let key = parts[0] == "all" ? "allMin" : "focusMin"
+        let base = d.integer(forKey: parts[0] == "all" ? "allBase" : "focusBase")
+        d.set(max(d.integer(forKey: key), base + mins), forKey: key)
+        checkPromise()
+    }
+
+    /// Warn at 3/4 of the promise; block distractions when it's used up.
+    static func checkPromise() {
+        guard let plan = DayPlans.today() else { return }
+        let used = playUsedToday
+        let d = PorkStore.defaults
+        if used * 4 >= plan.promiseMin * 3, d.string(forKey: "promiseWarned") != plan.day, used < plan.promiseMin {
+            d.set(plan.day, forKey: "promiseWarned")
+            Alerts.say("Pork's promise 🐾", "\(Dur.text(TimeInterval((plan.promiseMin - used) * 60))) of play time left today.")
+        }
+        if used >= plan.promiseMin, !promiseReachedToday {
+            d.set(plan.day, forKey: "promiseReachedDay")
+            shieldDistractions(promiseStore)
+            Alerts.say("That's today's promise 🐾", "You promised Pork \(Dur.text(TimeInterval(plan.promiseMin * 60))) of play time. Only focus apps for the rest of today.")
+        }
+    }
+
+    /// "15 more minutes": unblock now, block again in 15 minutes.
+    static func grace() {
+        promiseStore.clearAllSettings()
+        let d = PorkStore.defaults
+        d.set(d.integer(forKey: "graceCount") + 1, forKey: "graceCount")
+        let cal = Calendar.current
+        let now = Date()
+        let parts: Set<Calendar.Component> = [.hour, .minute, .second]
+        let schedule = DeviceActivitySchedule(intervalStart: cal.dateComponents(parts, from: now),
+                                              intervalEnd: cal.dateComponents(parts, from: now.addingTimeInterval(15 * 60)),
+                                              repeats: false)
+        try? DeviceActivityCenter().startMonitoring(graceActivity, during: schedule)
+    }
+
+    static func graceOver() {
+        if promiseReachedToday { shieldDistractions(promiseStore) }
+    }
+
     /// Players that focus sites embed (for example the YouTube player on the
     /// danmu site). They only show videos inside other pages, so allowing them
     /// doesn't open YouTube itself.

@@ -192,6 +192,15 @@
 			path = Report;
 			sourceTree = "<group>";
 		};
+		7C58855E670C20F80C2DE330 = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
 		B98E79DB409BE89E35A4EE3F = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			explicitFileTypes = {
@@ -280,6 +289,7 @@
 			isa = PBXGroup;
 			children = (
 				B98E79DB409BE89E35A4EE3F,
+				7C58855E670C20F80C2DE330,
 				C15381C41766B5D671EFD8CE,
 				319C939B2407DFD1ED397437,
 				E52C3F056D492C170FAACFBF,
@@ -327,6 +337,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				B98E79DB409BE89E35A4EE3F,
+				7C58855E670C20F80C2DE330,
 				C15381C41766B5D671EFD8CE,
 				319C939B2407DFD1ED397437,
 			);
@@ -351,6 +362,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				2EB716BE9C953C3096BFFF92,
+				7C58855E670C20F80C2DE330,
 				C15381C41766B5D671EFD8CE,
 			);
 			name = PorkShieldConfig;
@@ -374,6 +386,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				E52C3F056D492C170FAACFBF,
+				7C58855E670C20F80C2DE330,
 				C15381C41766B5D671EFD8CE,
 				319C939B2407DFD1ED397437,
 			);
@@ -398,6 +411,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				5B79A0A12F72FA6F5547A040,
+				7C58855E670C20F80C2DE330,
 			);
 			name = PorkReport;
 			packageProductDependencies = (
@@ -420,6 +434,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				53E01F8CC9680F03CA38DB2F,
+				7C58855E670C20F80C2DE330,
 				C15381C41766B5D671EFD8CE,
 			);
 			name = PorkShieldAction;
@@ -443,6 +458,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				FCA1335569FBD5E7E97868F1,
+				7C58855E670C20F80C2DE330,
 				C15381C41766B5D671EFD8CE,
 			);
 			name = PorkMonitor;
@@ -635,7 +651,7 @@
 				INFOPLIST_FILE = "Config/App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Puppy Pomodoro";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -665,7 +681,7 @@
 				INFOPLIST_FILE = "Config/Report-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's screen time";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).report";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -690,7 +706,7 @@
 				INFOPLIST_FILE = "Config/Widget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's clock";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -715,7 +731,7 @@
 				INFOPLIST_FILE = "Config/Report-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's screen time";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).report";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -740,7 +756,7 @@
 				INFOPLIST_FILE = "Config/Widget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's clock";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -765,7 +781,7 @@
 				INFOPLIST_FILE = "Config/Monitor-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's break watcher";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).monitor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -790,7 +806,7 @@
 				INFOPLIST_FILE = "Config/ShieldAction-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app buttons";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldaction";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -815,7 +831,7 @@
 				INFOPLIST_FILE = "Config/Monitor-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's break watcher";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).monitor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -840,7 +856,7 @@
 				INFOPLIST_FILE = "Config/App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Puppy Pomodoro";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -870,7 +886,7 @@
 				INFOPLIST_FILE = "Config/ShieldAction-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app buttons";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldaction";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -895,7 +911,7 @@
 				INFOPLIST_FILE = "Config/ShieldConfig-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app screen";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldconfig";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -972,7 +988,7 @@
 				INFOPLIST_FILE = "Config/ShieldConfig-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's blocked-app screen";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).shieldconfig";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

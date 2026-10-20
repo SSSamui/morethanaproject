@@ -69,6 +69,15 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		8AEC9335022427EF49889447 = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
 		926AB5F8038C0A840721DE20 = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			explicitFileTypes = {
@@ -120,6 +129,7 @@
 			isa = PBXGroup;
 			children = (
 				0F065DCE8A3ABD1C823B20C9,
+				8AEC9335022427EF49889447,
 				D3D0C75DBB59243092F6C130,
 				926AB5F8038C0A840721DE20,
 				E7B54CBB72B07C8C51EB7C52,
@@ -155,6 +165,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				0F065DCE8A3ABD1C823B20C9,
+				8AEC9335022427EF49889447,
 				D3D0C75DBB59243092F6C130,
 				926AB5F8038C0A840721DE20,
 			);
@@ -179,6 +190,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				E7B54CBB72B07C8C51EB7C52,
+				8AEC9335022427EF49889447,
 				D3D0C75DBB59243092F6C130,
 				926AB5F8038C0A840721DE20,
 			);
@@ -280,7 +292,7 @@
 				INFOPLIST_FILE = "Config/Widget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's clock";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -357,7 +369,7 @@
 				INFOPLIST_FILE = "Config/Widget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Pork's clock";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX).widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -382,7 +394,7 @@
 				INFOPLIST_FILE = "Config/App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Puppy Pomodoro";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -412,7 +424,7 @@
 				INFOPLIST_FILE = "Config/App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Puppy Pomodoro";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 3.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(PORK_ID_PREFIX)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

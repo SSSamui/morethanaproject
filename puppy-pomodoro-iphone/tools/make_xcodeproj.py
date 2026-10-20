@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ID_PREFIX = "com.sssamui.puppypomodoro"
-VERSION = "2.1.0"
+VERSION = "3.0.0"
 
 
 def oid(*parts):
@@ -45,18 +45,18 @@ def dump(v, ind=1):
 
 
 # name, folders, Info.plist, entitlements (full / lite), bundle suffix, screen time only
-APP = ("PuppyPomodoro", ["App", "Shared", "LiveShared"], "App-Info.plist",
+APP = ("PuppyPomodoro", ["App", "Common", "Shared", "LiveShared"], "App-Info.plist",
        ("App.entitlements", "GroupOnly.entitlements"), "", False)
 EXTENSIONS = [
-    ("PorkWidget", ["Widget", "Shared", "LiveShared"], "Widget-Info.plist",
+    ("PorkWidget", ["Widget", "Common", "Shared", "LiveShared"], "Widget-Info.plist",
      ("GroupOnly.entitlements", "GroupOnly.entitlements"), ".widget", False),
-    ("PorkShieldConfig", ["ShieldConfig", "Shared"], "ShieldConfig-Info.plist",
+    ("PorkShieldConfig", ["ShieldConfig", "Common", "Shared"], "ShieldConfig-Info.plist",
      ("ScreenTimeExtension.entitlements", None), ".shieldconfig", True),
-    ("PorkShieldAction", ["ShieldAction", "Shared"], "ShieldAction-Info.plist",
+    ("PorkShieldAction", ["ShieldAction", "Common", "Shared"], "ShieldAction-Info.plist",
      ("ScreenTimeExtension.entitlements", None), ".shieldaction", True),
-    ("PorkMonitor", ["Monitor", "Shared"], "Monitor-Info.plist",
+    ("PorkMonitor", ["Monitor", "Common", "Shared"], "Monitor-Info.plist",
      ("ScreenTimeExtension.entitlements", None), ".monitor", True),
-    ("PorkReport", ["Report"], "Report-Info.plist",
+    ("PorkReport", ["Report", "Common"], "Report-Info.plist",
      ("ScreenTimeExtension.entitlements", None), ".report", True),
 ]
 DISPLAY = {

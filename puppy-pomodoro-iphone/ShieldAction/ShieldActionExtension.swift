@@ -22,8 +22,15 @@ class ShieldActionExtension: ShieldActionDelegate {
     }
 
     private func respond(_ action: ShieldAction) -> ShieldActionResponse {
-        guard action == .primaryButtonPressed else { return .close }
         var s = PorkStore.load()
+        // "15 more minutes" on the promise screen (not during a focus session).
+        if action == .secondaryButtonPressed {
+            if s.phase == .idle || s.phase == .break, ScreenTime.promiseReachedToday, !s.settings.isNight(Date()) {
+                ScreenTime.grace()
+                return .defer
+            }
+            return .close
+        }
         let now = Date()
         s.advance(now)
         switch s.phase {

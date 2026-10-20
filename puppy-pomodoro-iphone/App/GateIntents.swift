@@ -56,7 +56,11 @@ struct SayHiToPorkIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        AppModel.shared.showHi = true
+        if DayPlans.needsPromise(DayPlans.all()) {
+            AppModel.shared.showMorning = true
+        } else {
+            AppModel.shared.showHi = true
+        }
         return .result()
     }
 }

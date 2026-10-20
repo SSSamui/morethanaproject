@@ -1,6 +1,10 @@
-// Screen Time wakes this up at the focus goal and when the break runs out,
-// even if the app is closed. It refreshes Pork's blocked-app screen: "Start my
-// break" after the goal, "Let Pork out" when the break is over.
+// Screen Time wakes this up even if the app is closed:
+// - at the focus goal and when the break runs out (refreshes Pork's
+//   blocked-app screen: "Start my break", "Let Pork out");
+// - at bedtime and in the morning (late-night block);
+// - at 8 am (block distractions until today's promise is made);
+// - every 10 minutes of phone time (today's promise), and after
+//   "15 more minutes".
 
 import DeviceActivity
 import Foundation
@@ -12,6 +16,11 @@ class PorkMonitor: DeviceActivityMonitor {
             ScreenTime.applyNight(PorkStore.load().settings)
             return
         }
+        if activity == ScreenTime.morningActivity {
+            ScreenTime.applyMorning()
+            return
+        }
+        if activity == ScreenTime.promiseActivity || activity == ScreenTime.graceActivity { return }
         // If Screen Time woke us a few seconds early, wait for the real time.
         let before = PorkStore.load()
         if (before.phase == .focus || before.phase == .break), !before.paused, let end = before.endsAt {
@@ -28,6 +37,17 @@ class PorkMonitor: DeviceActivityMonitor {
         if activity == ScreenTime.nightActivity {
             Thread.sleep(forTimeInterval: 1)
             ScreenTime.applyNight(PorkStore.load().settings)
+        }
+        if activity == ScreenTime.graceActivity {
+            ScreenTime.graceOver()
+        }
+    }
+
+    // Today's play time reached another 10 minutes.
+    override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {
+        super.eventDidReachThreshold(event, activity: activity)
+        if activity == ScreenTime.promiseActivity {
+            ScreenTime.usageReached(event.rawValue)
         }
     }
 }

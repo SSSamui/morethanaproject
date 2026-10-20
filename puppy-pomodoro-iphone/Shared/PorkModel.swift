@@ -72,6 +72,7 @@ struct PorkSettings: Codable, Equatable {
     var routineList = "routine"           // everyday jobs: shown for today only
     var nudgeMin = 5                      // Pork reminder after this many minutes on distractions
     var notesMin = 10                     // to-dos + screen time after this many minutes
+    var pauseOnLock = true                // the focus clock stops while the phone is locked
 
     // Late at night only focus apps and sites open (minutes after midnight)
     var nightOn = true
@@ -100,6 +101,7 @@ struct PorkSettings: Codable, Equatable {
         routineList = try c.decodeIfPresent(String.self, forKey: .routineList) ?? d.routineList
         nudgeMin = try c.decodeIfPresent(Int.self, forKey: .nudgeMin) ?? d.nudgeMin
         notesMin = try c.decodeIfPresent(Int.self, forKey: .notesMin) ?? d.notesMin
+        pauseOnLock = try c.decodeIfPresent(Bool.self, forKey: .pauseOnLock) ?? d.pauseOnLock
     }
 
     /// Is `date` inside the late-night hours? (They may cross midnight, like 11 pm–7 am.)

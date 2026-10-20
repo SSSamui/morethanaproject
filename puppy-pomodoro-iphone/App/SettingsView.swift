@@ -19,6 +19,8 @@ struct SettingsView: View {
     @State private var blocking = ScreenTime.isOn
     @State private var focusApps = ScreenTime.focusApps
     @State private var pickApps = false
+    @State private var countApps = ScreenTime.countApps
+    @State private var pickCount = false
     @State private var screenTimeError: String?
     #endif
 
@@ -30,6 +32,7 @@ struct SettingsView: View {
                     Stepper("Break: \(st.breakMin) min", value: $st.breakMin, in: 1...60)
                     Stepper("Bonus treat every \(st.bonusEveryMin) min of extra focus", value: $st.bonusEveryMin, in: 1...60)
                     Toggle("Scratching sound", isOn: $st.sound)
+                    Toggle("Pause the clock when the phone locks", isOn: $st.pauseOnLock)
                 }
 
                 #if !LITE
@@ -38,6 +41,10 @@ struct SettingsView: View {
                         .onChange(of: blocking) { _, on in turnBlocking(on) }
                     Button("Choose focus apps…") { pickApps = true }
                         .disabled(!blocking)
+                    Button("Choose what counts as phone time…") { pickCount = true }
+                        .disabled(!blocking)
+                    Text("For today's promise: tap “All Apps & Categories” in the list. Focus apps are left out again, so only play time counts.")
+                        .font(.footnote).foregroundStyle(.secondary)
                     Text(appsSummary).font(.footnote).foregroundStyle(.secondary)
                     Toggle("Only focus apps late at night", isOn: $st.nightOn)
                         .disabled(!blocking)
@@ -51,7 +58,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Blocking (Screen Time)")
                 } footer: {
-                    Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Late at night (12:00 am to 6:00 am unless you change it) only focus apps and sites open, even without a focus session. Pick your focus apps: Outlook, WeChat, Kindle, Gmail, Google Tasks, Google Calendar, Calendar, Reminders, Handshake, Slack, Messages, Phone, Canvas, Claude, Gemini, ChatGPT and Puppy Pomodoro. Everything else is a distraction. (Phone calls, alarms and Settings always work.)")
+                    Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Late at night (12:00 am to 6:00 am unless you change it) only focus apps and sites open, even without a focus session. Pick your focus apps: Outlook, WeChat, Kindle, Gmail, Google Drive, Google Tasks, Google Calendar, Calendar, Reminders, Handshake, Slack, Messages, Phone, Canvas, Claude, Gemini, ChatGPT and Puppy Pomodoro. Everything else is a distraction. (Phone calls, alarms and Settings always work.)")
                 }
                 #endif
 
@@ -119,6 +126,12 @@ struct SettingsView: View {
             .sheet(isPresented: $showShortcutHelp) { ShortcutHelpView() }
             #if !LITE
             .familyActivityPicker(isPresented: $pickApps, selection: $focusApps)
+            .familyActivityPicker(isPresented: $pickCount, selection: $countApps)
+            .onChange(of: pickCount) { _, open in
+                guard !open else { return }
+                ScreenTime.countApps = countApps
+                if let plan = DayPlans.today() { ScreenTime.startPromise(plan) }
+            }
             .onChange(of: pickApps) { _, open in
                 guard !open else { return }
                 ScreenTime.focusApps = focusApps

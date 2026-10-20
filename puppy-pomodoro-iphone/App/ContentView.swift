@@ -15,6 +15,7 @@ struct ContentView: View {
                     if let event = todos.event {
                         BigEventNote(event: event)
                     }
+                    PromiseCard()
                     TimelineView(.periodic(from: .now, by: 0.25)) { context in
                         PorkScreen(now: context.date)
                     }
@@ -41,6 +42,9 @@ struct ContentView: View {
                 .padding(16)
             }
             .background(Color(.systemGroupedBackground))
+            .fullScreenCover(isPresented: $model.showMorning) {
+                MorningView().environmentObject(model)
+            }
             .refreshable { await todos.refresh() }
             .task { await todos.refresh() }
             .navigationTitle("🐾 Puppy Pomodoro")
@@ -244,5 +248,32 @@ struct ControlsView: View {
             }
         }
         .tint(color)
+    }
+}
+
+/// Today's promise to Pork, on the main screen.
+struct PromiseCard: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        if let plan = DayPlans.today() {
+            HStack(spacing: 12) {
+                Text("🤞").font(.largeTitle)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Today's promise to Pork").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    Text("\(Dur.text(TimeInterval(plan.promiseMin * 60))) of play · bedtime \(PorkSettings.timeText(plan.bedtime))")
+                        .font(.headline)
+                    #if !LITE
+                    Text("Played \(Dur.text(TimeInterval(ScreenTime.playUsedToday * 60))) so far")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    #endif
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(14)
+            .background(Color(red: 1.0, green: 0.95, blue: 0.62), in: RoundedRectangle(cornerRadius: 6))
+            .foregroundStyle(.black.opacity(0.85))
+            .rotationEffect(.degrees(-1))
+        }
     }
 }
