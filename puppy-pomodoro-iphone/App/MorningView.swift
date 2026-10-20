@@ -80,7 +80,7 @@ struct MorningView: View {
                     .labelsHidden()
                     .frame(height: 120)
                     .clipped()
-                Text("After bedtime only focus apps open, until 6:00 am.")
+                Text("After bedtime only focus apps open, until 6:00 am. A bedtime after midnight (like 4 am) still counts as today.")
                     .font(.footnote).foregroundStyle(.black.opacity(0.6))
             }
             .padding(18)
@@ -204,11 +204,9 @@ struct MorningView: View {
     }
 
     #if !LITE
+    /// Yesterday 8 am until this morning (so a late night counts as yesterday).
     private static var yesterdayFilter: DeviceActivityFilter {
-        let cal = Calendar.current
-        let day = cal.date(byAdding: .day, value: -1, to: Date()) ?? Date()
-        let interval = cal.dateInterval(of: .day, for: day) ?? DateInterval(start: day, duration: 86_400)
-        return DeviceActivityFilter(segment: .daily(during: interval), users: .all, devices: .init([.iPhone]))
+        DeviceActivityFilter(segment: .hourly(during: DayPlans.yesterdayWindow()), users: .all, devices: .init([.iPhone]))
     }
 
     /// Yesterday 6 pm until now, hour by hour.

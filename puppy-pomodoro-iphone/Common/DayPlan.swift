@@ -41,6 +41,27 @@ enum DayPlans {
 
     static func today(_ now: Date = Date()) -> DayPlan? { plan(for: now, in: all()) }
 
+    /// The promise that's running now. A bedtime after midnight (like 4 am)
+    /// belongs to the day before: until then, yesterday's promise still runs.
+    static func current(_ plans: [DayPlan], now: Date = Date(), calendar: Calendar = .current) -> DayPlan? {
+        if let today = plan(for: now, in: plans, calendar: calendar) { return today }
+        guard let y = calendar.date(byAdding: .day, value: -1, to: now),
+              let last = plan(for: y, in: plans, calendar: calendar),
+              last.bedtime < 12 * 60 else { return nil }
+        let bedtime = calendar.startOfDay(for: now).addingTimeInterval(TimeInterval(last.bedtime * 60))
+        return now < bedtime ? last : nil
+    }
+
+    static func current(_ now: Date = Date()) -> DayPlan? { current(all(), now: now) }
+
+    /// "Yesterday" for the morning summary: from yesterday 8 am until this
+    /// morning at 8 am (or now), so a late night (sleeping at 4 am) is included.
+    static func yesterdayWindow(now: Date = Date(), calendar: Calendar = .current) -> DateInterval {
+        let today8 = calendar.startOfDay(for: now).addingTimeInterval(TimeInterval(wakeHour * 3600))
+        let start = today8.addingTimeInterval(-24 * 3600)
+        return DateInterval(start: start, end: max(start.addingTimeInterval(3600), min(now, today8)))
+    }
+
     static func yesterday(_ now: Date = Date(), calendar: Calendar = .current) -> DayPlan? {
         guard let y = calendar.date(byAdding: .day, value: -1, to: now) else { return nil }
         return plan(for: y, in: all(), calendar: calendar)

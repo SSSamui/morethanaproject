@@ -20,6 +20,10 @@ class PorkMonitor: DeviceActivityMonitor {
             ScreenTime.applyMorning()
             return
         }
+        if activity == ScreenTime.promiseLateActivity {
+            ScreenTime.promiseLateStarted()
+            return
+        }
         if activity == ScreenTime.promiseActivity || activity == ScreenTime.graceActivity { return }
         // If Screen Time woke us a few seconds early, wait for the real time.
         let before = PorkStore.load()
@@ -46,7 +50,7 @@ class PorkMonitor: DeviceActivityMonitor {
     // Today's play time reached another 10 minutes.
     override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {
         super.eventDidReachThreshold(event, activity: activity)
-        if activity == ScreenTime.promiseActivity {
+        if activity == ScreenTime.promiseActivity || activity == ScreenTime.promiseLateActivity {
             ScreenTime.usageReached(event.rawValue)
         }
     }

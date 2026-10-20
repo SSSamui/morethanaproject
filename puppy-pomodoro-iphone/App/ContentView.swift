@@ -256,7 +256,7 @@ struct PromiseCard: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        if let plan = DayPlans.today() {
+        if let plan = DayPlans.current() {
             HStack(spacing: 12) {
                 Text("🤞").font(.largeTitle)
                 VStack(alignment: .leading, spacing: 2) {

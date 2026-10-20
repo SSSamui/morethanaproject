@@ -71,7 +71,7 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
                               "Only focus apps until \(PorkSettings.timeText(s.settings.nightEnd)). \(name) can wait until morning.",
                               "OK", UIColor(red: 0.29, green: 0.25, blue: 0.47, alpha: 1), nil)
             }
-            if ScreenTime.promiseReachedToday, let plan = DayPlans.today(now) {
+            if ScreenTime.promiseReachedToday, let plan = DayPlans.current(now) {
                 return shield("PorkWait", "That's today's promise 🐾",
                               "You promised Pork \(Dur.text(TimeInterval(plan.promiseMin * 60))) of play time today, and it's used up. Keeping a promise is how Pork knows he can trust you. Only focus apps for the rest of today.",
                               "I keep my promise 🐾", gold, "15 more minutes")

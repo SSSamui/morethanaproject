@@ -103,8 +103,8 @@ enum Alerts {
     static func scheduleMorning() {
         let content = UNMutableNotificationContent()
         content.title = "Good morning! ☀️"
-        content.body = "Pork wants to hear today's promise. How much play time today, and when do we sleep?"
-        content.sound = .default
+        content.body = "Pork is waiting for today's promise: how much play time today, and when do we sleep?"
+        content.interruptionLevel = .passive // silent: it waits on the Lock Screen until you pick up the phone
         content.userInfo = ["open": "morning"]
         var when = DateComponents()
         when.hour = DayPlans.wakeHour

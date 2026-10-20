@@ -22,13 +22,14 @@ struct DistractionOpenedIntent: AppIntent {
 
 struct FocusAppOpenedIntent: AppIntent {
     static var title: LocalizedStringResource = "Pork: focus app opened"
-    static var description = IntentDescription("Cancels Pork's distraction reminders.")
+    static var description = IntentDescription(
+        "Cancels Pork's distraction reminders. True when today's promise isn't made yet (first pick-up after 8 am), so the automation can open it.")
 
     init() {}
 
-    func perform() async throws -> some IntentResult {
+    func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
         Nudges.focusOpened()
-        return .result()
+        return .result(value: DayPlans.needsPromise(DayPlans.all()))
     }
 }
 

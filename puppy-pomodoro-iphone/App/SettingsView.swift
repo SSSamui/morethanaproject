@@ -229,7 +229,7 @@ struct ShortcutHelpView: View {
                     Text("2. When you open a focus app").font(.headline)
                     step(1, "**App** → select Outlook, WeChat, Kindle, Gmail, Google Tasks, Google Calendar, Calendar, Reminders, Handshake, Slack, Canvas, Claude, Gemini, ChatGPT → **Done**.")
                     step(2, "**Is Opened**, **Run Immediately**, **Notify When Run** off → **Next** → **New Blank Automation**.")
-                    step(3, "**Add Action** → **Pork: focus app opened** → **Done**.")
+                    step(3, "**Add Action** → **Pork: focus app opened**. Add **If** (“is true”) and inside it **Show Pork's check-in**. Tap **Done**. (This opens the morning promise the first time you pick up the phone after 8 am.)")
 
                     Text("3. 12:00 am: Outlook").font(.headline)
                     step(1, "Choose **Time of Day** → **12:00 AM**, **Daily**, **Run Immediately** → **Next** → **New Blank Automation**.")

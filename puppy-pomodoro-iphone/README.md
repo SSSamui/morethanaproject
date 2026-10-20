@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 3.0.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 3.1.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -33,11 +33,12 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
 ## New features and changes for the iPhone version
 
 - **To-dos as sticky notes** (new in 2.0.0, works with a free account): from Apple Reminders. The **school 2026 fall** list (homework and projects) shows for the next 7 days, one color per day, plus anything overdue. The **routine** list shows for today only. Tap ✓ on a note to mark it done in Reminders. List names can be changed in Settings. Shown on the main screen and in Pork's check-in.
-- **Morning promise to Pork** (new in 3.0.0): every day after 8 am, the first thing Puppy Pomodoro shows is a full screen that can't be swiped away: *"Good morning! ☀️ Pork wants to know: how much play time do you promise him today?"* (play time = any app or website that isn't a focus app) and *"When do we go to sleep tonight? 🌙"*. Tap **🐾 I promise, Pork!**, then you see **yesterday**: screen time, play time, whether you kept yesterday's promise, time per app (like Apple's Screen Time), and when you put the phone down for the night and picked it up again (sleep). **Start today** starts today's rules:
+- **Morning promise to Pork** (new in 3.0.0): every day, the first time you pick up the phone after 8 am (not at 8 am sharp: the 8 am notification is silent and just waits on the Lock Screen), the first thing Puppy Pomodoro shows is a full screen that can't be swiped away: *"Good morning! ☀️ Pork wants to know: how much play time do you promise him today?"* (play time = any app or website that isn't a focus app) and *"When do we go to sleep tonight? 🌙"*. Tap **🐾 I promise, Pork!**, then you see **yesterday**: screen time, play time, whether you kept yesterday's promise, time per app (like Apple's Screen Time), and when you put the phone down for the night and picked it up again (sleep). **Start today** starts today's rules:
   - after bedtime only focus apps open until 6 am;
   - full version: play time is counted every 10 minutes; at 3/4 Pork warns you, when it's used up distractions show *"That's today's promise 🐾"* with **15 more minutes**.
   - How it reaches you: an 8 am notification, the pick-up automation opens it, and in the full version every distraction app shows *"Good morning! Make today's promise first"* until you do. (An iPhone app can't pop up over other apps by itself.)
   - Free version: yesterday shows your promise, how often you opened distraction apps, and a sleep guess from the automations; per-app times need the full version.
+  - A late bedtime (like 4 or 5 am) counts as the same day (3.1.0): the promise and the play-time count run until bedtime, and "yesterday" in the summary goes from yesterday 8 am to this morning, so the late night is included. Sleep is counted from when you really put the phone down.
   - Sleep times are estimates: Screen Time gives phone use per hour and the first pick-up of the day.
 - **The focus clock stops while the phone is locked** (3.0.0): it pauses when you lock the phone and goes on when you unlock it. Pork keeps the app awake with silent audio during focus to notice the lock (your music keeps playing). Setting: *Pause the clock when the phone locks*. If another app takes over the audio (a video with sound), Pork may miss a lock.
 - **Yesterday's top distractions** (2.1.0, full version only): every day the main screen and Pork's check-in show your 2 biggest distraction apps from yesterday as big sticky notes ("YouTube 2hr 35min", "foodigame 4hr"), plus yesterday's total screen time and time on distractions. Focus apps don't count. Apple only lets a Screen Time report extension (`Report/`) see these numbers, so it needs the paid account; the Lite version shows a note instead.
@@ -73,8 +74,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v3.0.0.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v3.0.0**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v3.1.0.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v3.1.0**.
 
 ### 2. Open it in Xcode
 

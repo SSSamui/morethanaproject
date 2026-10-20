@@ -89,6 +89,7 @@ enum ScreenTime {
     static let promiseStore = ManagedSettingsStore(named: ManagedSettingsStore.Name("porkPromise"))
     static let morningActivity = DeviceActivityName("pork.morning")
     static let promiseActivity = DeviceActivityName("pork.promise")
+    static let promiseLateActivity = DeviceActivityName("pork.promiseLate") // after midnight, until a late bedtime
     static let graceActivity = DeviceActivityName("pork.grace")
     private static let step = 10 // minutes between usage checks
 
@@ -133,21 +134,22 @@ enum ScreenTime {
         }
     }
 
-    /// Play time used today (minutes), counted by the monitor.
+    /// Play time used for the running promise (minutes), counted by the monitor.
     static var playUsedToday: Int {
         let d = PorkStore.defaults
-        guard d.string(forKey: "useDay") == DayPlans.dayKey(Date()) else { return 0 }
+        guard let plan = DayPlans.current(), d.string(forKey: "useDay") == plan.day else { return 0 }
         return max(0, d.integer(forKey: "allMin") - d.integer(forKey: "focusMin"))
     }
 
     static var promiseReachedToday: Bool {
-        PorkStore.defaults.string(forKey: "promiseReachedDay") == DayPlans.dayKey(Date())
+        guard let plan = DayPlans.current() else { return false }
+        return PorkStore.defaults.string(forKey: "promiseReachedDay") == plan.day
     }
 
     /// Start counting today's play time, from now until bedtime.
     static func startPromise(_ plan: DayPlan, now: Date = Date()) {
         let center = DeviceActivityCenter()
-        center.stopMonitoring([promiseActivity, graceActivity])
+        center.stopMonitoring([promiseActivity, promiseLateActivity, graceActivity])
         morningStore.clearAllSettings()
         promiseStore.clearAllSettings()
         let d = PorkStore.defaults
@@ -161,15 +163,14 @@ enum ScreenTime {
         d.set(d.integer(forKey: "focusMin"), forKey: "focusBase")
         guard isOn else { return }
 
-        // Until bedtime (or the end of today if bedtime is after midnight).
+        // Until bedtime. A bedtime after midnight (like 4 am) is counted in two
+        // parts: now until 11:59 pm, then midnight until bedtime.
         let cal = Calendar.current
-        var end = cal.startOfDay(for: now).addingTimeInterval(TimeInterval(plan.bedtime * 60))
-        if plan.bedtime < 12 * 60 || end <= now { end = cal.startOfDay(for: now).addingTimeInterval(24 * 3600 - 60) }
-        guard end.timeIntervalSince(now) >= 15 * 60 else { return }
-        let parts: Set<Calendar.Component> = [.hour, .minute, .second]
-        let schedule = DeviceActivitySchedule(intervalStart: cal.dateComponents(parts, from: now),
-                                              intervalEnd: cal.dateComponents(parts, from: end),
-                                              repeats: false)
+        let midnight = cal.startOfDay(for: now).addingTimeInterval(24 * 3600)
+        let late = plan.bedtime < 12 * 60
+        let end = late ? midnight.addingTimeInterval(-60)
+                       : cal.startOfDay(for: now).addingTimeInterval(TimeInterval(plan.bedtime * 60))
+        let parts: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute, .second]
         let count = countApps
         let focus = focusApps.applicationTokens
         var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
@@ -183,7 +184,24 @@ enum ScreenTime {
                     applications: focus, threshold: DateComponents(minute: mins))
             }
         }
-        try? center.startMonitoring(promiseActivity, during: schedule, events: events)
+        if end.timeIntervalSince(now) >= 15 * 60 {
+            try? center.startMonitoring(promiseActivity, during: DeviceActivitySchedule(
+                intervalStart: cal.dateComponents(parts, from: now),
+                intervalEnd: cal.dateComponents(parts, from: end), repeats: false), events: events)
+        }
+        if late && plan.bedtime >= 15 {
+            try? center.startMonitoring(promiseLateActivity, during: DeviceActivitySchedule(
+                intervalStart: cal.dateComponents(parts, from: midnight),
+                intervalEnd: cal.dateComponents(parts, from: midnight.addingTimeInterval(TimeInterval(plan.bedtime * 60))),
+                repeats: false), events: events)
+        }
+    }
+
+    /// Midnight, with a late bedtime: keep adding to the same day's play time.
+    static func promiseLateStarted() {
+        let d = PorkStore.defaults
+        d.set(d.integer(forKey: "allMin"), forKey: "allBase")
+        d.set(d.integer(forKey: "focusMin"), forKey: "focusBase")
     }
 
     /// The monitor heard "all.30" or "focus.20": update today's play time.
@@ -199,7 +217,7 @@ enum ScreenTime {
 
     /// Warn at 3/4 of the promise; block distractions when it's used up.
     static func checkPromise() {
-        guard let plan = DayPlans.today() else { return }
+        guard let plan = DayPlans.current() else { return }
         let used = playUsedToday
         let d = PorkStore.defaults
         if used * 4 >= plan.promiseMin * 3, d.string(forKey: "promiseWarned") != plan.day, used < plan.promiseMin {
