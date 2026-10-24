@@ -15,6 +15,7 @@ struct ContentView: View {
                     if let event = todos.event {
                         BigEventNote(event: event)
                     }
+                    SleepCard()
                     PromiseCard()
                     TimelineView(.periodic(from: .now, by: 0.25)) { context in
                         PorkScreen(now: context.date)
@@ -22,6 +23,12 @@ struct ContentView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("📝 To do").font(.title3.bold())
                         StickyBoard(todos: todos)
+                    }
+                    .padding(14)
+                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("🎈 Fun instead of scrolling").font(.title3.bold())
+                        FunBoard(todos: todos)
                     }
                     .padding(14)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
@@ -275,5 +282,43 @@ struct PromiseCard: View {
             .foregroundStyle(.black.opacity(0.85))
             .rotationEffect(.degrees(-1))
         }
+    }
+}
+
+/// After bedtime: how much sleep is left. In the evening: "I'm going to sleep".
+struct SleepCard: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+            let st = model.state.settings
+            if model.state.phase == .idle, let wake = SleepMode.wake(st, now: ctx.date) {
+                VStack(spacing: 6) {
+                    Text("😴 Sleep time").font(.headline)
+                    Text(PorkClock.text(wake.timeIntervalSince(ctx.date)))
+                        .font(.system(size: 56, weight: .heavy, design: .rounded))
+                        .monospacedDigit()
+                    Text("of sleep left · up at \(Dur.clock(wake))\(SleepPlan.isWeekend(wake) ? " (weekend)" : "")")
+                        .font(.subheadline)
+                    Button("I'm up ☀️") { model.goToSleep(false) }
+                        .buttonStyle(.bordered).tint(.white)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(18)
+                .foregroundStyle(.white)
+                .background(Color.porkSleep, in: RoundedRectangle(cornerRadius: 20))
+            } else if model.state.phase == .idle, isEvening(ctx.date) {
+                Button { model.goToSleep(true) } label: {
+                    Label("I'm going to sleep 🌙", systemImage: "moon.zzz.fill")
+                        .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent).tint(.porkSleep)
+            }
+        }
+    }
+
+    private func isEvening(_ now: Date) -> Bool {
+        let h = Calendar.current.component(.hour, from: now)
+        return h >= 21 || h < 6
     }
 }

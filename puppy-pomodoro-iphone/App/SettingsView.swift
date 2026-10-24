@@ -33,6 +33,8 @@ struct SettingsView: View {
                     Stepper("Bonus treat every \(st.bonusEveryMin) min of extra focus", value: $st.bonusEveryMin, in: 1...60)
                     Toggle("Scratching sound", isOn: $st.sound)
                     Toggle("Pause the clock when the phone locks", isOn: $st.pauseOnLock)
+                    DatePicker("Get up on weekdays", selection: minutes(\.wakeWeekday), displayedComponents: .hourAndMinute)
+                    DatePicker("Get up on weekends", selection: minutes(\.wakeWeekend), displayedComponents: .hourAndMinute)
                 }
 
                 #if !LITE
@@ -79,11 +81,13 @@ struct SettingsView: View {
                         .autocorrectionDisabled()
                     TextField("Routine list", text: $st.routineList)
                         .autocorrectionDisabled()
+                    TextField("Fun list", text: $st.funList)
+                        .autocorrectionDisabled()
                     Button("Allow Reminders & Calendar") { Task { await TodoStore.shared.requestAccess() } }
                 } header: {
                     Text("To-dos (Apple Reminders)")
                 } footer: {
-                    Text("Sticky notes show the school list for the next 7 days (and anything overdue) and the routine list for today only. The list names must match your lists in Reminders. Tap ✓ on a note to mark it done in Reminders.")
+                    Text("Sticky notes show the school list for the next 7 days (and anything overdue) and the routine list for today only. The fun list holds things to do in spare time instead of distractions; put the link in the reminder like “Robotics talk open:https://youtu.be/…”. Only that video, post or account opens; the rest of YouTube, Reddit or X stays a distraction. The list names must match your lists in Reminders. Tap ✓ on a note to mark it done in Reminders.")
                 }
 
                 Section {
@@ -144,6 +148,16 @@ struct SettingsView: View {
                 loadAlbums()
             }
         }
+    }
+
+    /// A time picker for minutes after midnight.
+    private func minutes(_ key: WritableKeyPath<PorkSettings, Int>) -> Binding<Date> {
+        Binding(
+            get: { Calendar.current.date(from: DateComponents(hour: st[keyPath: key] / 60, minute: st[keyPath: key] % 60)) ?? Date() },
+            set: { date in
+                let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+                st[keyPath: key] = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+            })
     }
 
     private var albumChoices: [String] {

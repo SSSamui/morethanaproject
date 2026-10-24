@@ -73,6 +73,9 @@ struct PorkSettings: Codable, Equatable {
     var nudgeMin = 5                      // Pork reminder after this many minutes on distractions
     var notesMin = 10                     // to-dos + screen time after this many minutes
     var pauseOnLock = true                // the focus clock stops while the phone is locked
+    var funList = "fun"                   // links to do in spare time instead of distractions
+    var wakeWeekday = 8 * 60 + 30         // get up at 8:30 am on weekdays
+    var wakeWeekend = 10 * 60 + 30        // and 10:30 am on weekends
 
     // Late at night only focus apps and sites open (minutes after midnight)
     var nightOn = true
@@ -102,6 +105,9 @@ struct PorkSettings: Codable, Equatable {
         nudgeMin = try c.decodeIfPresent(Int.self, forKey: .nudgeMin) ?? d.nudgeMin
         notesMin = try c.decodeIfPresent(Int.self, forKey: .notesMin) ?? d.notesMin
         pauseOnLock = try c.decodeIfPresent(Bool.self, forKey: .pauseOnLock) ?? d.pauseOnLock
+        funList = try c.decodeIfPresent(String.self, forKey: .funList) ?? d.funList
+        wakeWeekday = try c.decodeIfPresent(Int.self, forKey: .wakeWeekday) ?? d.wakeWeekday
+        wakeWeekend = try c.decodeIfPresent(Int.self, forKey: .wakeWeekend) ?? d.wakeWeekend
     }
 
     /// Is `date` inside the late-night hours? (They may cross midnight, like 11 pm–7 am.)
@@ -110,6 +116,13 @@ struct PorkSettings: Codable, Equatable {
         let c = calendar.dateComponents([.hour, .minute], from: date)
         let m = (c.hour ?? 0) * 60 + (c.minute ?? 0)
         return nightStart < nightEnd ? (m >= nightStart && m < nightEnd) : (m >= nightStart || m < nightEnd)
+    }
+
+    /// If it's sleep time now (after bedtime, or after "I'm going to sleep"),
+    /// when to get up.
+    func wakeIfSleeping(now: Date = Date(), bedtime: Int?, sleptAt: Date?, upAt: Date?) -> Date? {
+        SleepPlan.wakeIfSleeping(now: now, bedtime: bedtime, sleptAt: sleptAt, upAt: upAt,
+                                 weekday: wakeWeekday, weekend: wakeWeekend)
     }
 
     /// "6:00 am" style text for a time of night.

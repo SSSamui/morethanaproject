@@ -121,8 +121,9 @@ enum Alerts {
         if at <= now { at = at.addingTimeInterval(24 * 3600) }
         let content = UNMutableNotificationContent()
         content.title = "Bedtime 🌙"
-        content.body = "Pork is going to sleep. From now on only focus apps until morning. Good night!"
+        content.body = "Pork is going to sleep. From now on only focus apps until morning. Open Pork to see how much sleep you'll get. Good night!"
         content.sound = .default
+        content.userInfo = ["open": "sleep"]
         UNUserNotificationCenter.current().add(UNNotificationRequest(
             identifier: "pork.bedtime", content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: max(1, at.timeIntervalSince(now)), repeats: false)))

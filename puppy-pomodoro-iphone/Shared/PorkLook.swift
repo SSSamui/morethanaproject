@@ -9,10 +9,11 @@ extension Color {
     static let porkBreak = Color(red: 0.231, green: 0.490, blue: 0.847) // blue: break
     static let porkOver = Color(red: 0.851, green: 0.263, blue: 0.231)  // red: break is over
     static let porkWall = Color(red: 0.965, green: 0.906, blue: 0.812)
+    static let porkSleep = Color(red: 0.36, green: 0.31, blue: 0.62)    // indigo: sleep time
 }
 
 struct PorkMoment {
-    enum Kind { case idle, focus, extra, rest, over }
+    enum Kind { case idle, focus, extra, rest, over, sleep }
 
     var kind: Kind
     var paused = false
@@ -61,6 +62,7 @@ struct PorkMoment {
         case "focus": kind = (paused ? pausedLeft <= 0 : passed) ? .extra : .focus
         case "break": kind = passed ? .over : .rest
         case "overtime": kind = .over
+        case "sleep": kind = .sleep
         default: kind = .idle
         }
         if kind == .over, phase == "overtime" { lateBy = Date().timeIntervalSince(target) }
@@ -73,6 +75,7 @@ struct PorkMoment {
         case .extra: return .porkBonus
         case .rest: return .porkBreak
         case .over: return .porkOver
+        case .sleep: return .porkSleep
         }
     }
 
@@ -84,6 +87,7 @@ struct PorkMoment {
         case .extra: return "Extra focus" + p
         case .rest: return "Break" + p
         case .over: return "Break is over!"
+        case .sleep: return "Sleep 🌙"
         }
     }
 
@@ -94,12 +98,13 @@ struct PorkMoment {
         case .extra: return "Pork is earning treats 🦴 · 1 every \(bonusEveryMin) min"
         case .rest: return "Pork is waiting by the door 🚪"
         case .over: return lateBy > 0 && lateBy < paceSeconds ? "Can we go out? 🥺" : "Woof! Let me out! 🐾"
+        case .sleep: return "Pork is asleep · up at \(Dur.clock(target))"
         }
     }
 
     var pose: Pose {
         switch kind {
-        case .idle, .focus, .extra: return .sleep
+        case .idle, .focus, .extra, .sleep: return .sleep
         case .rest: return .wait
         case .over: return lateBy > 0 && lateBy < paceSeconds ? .pace : .door
         }
@@ -119,6 +124,8 @@ struct PorkMoment {
             return paused ? Text("+" + PorkClock.text(pausedLeft)) : Text("+") + Text(target, style: .timer)
         case .over:
             return Text("−") + Text(target, style: .timer)
+        case .sleep:
+            return Text(timerInterval: Date()...max(Date(), target), countsDown: true)
         }
     }
 
@@ -131,6 +138,7 @@ struct PorkMoment {
         case .focus, .rest: return "\(max(1, Int(ceil(target.timeIntervalSince(now) / 60))))m"
         case .extra: return "+\(max(1, Int(ceil(now.timeIntervalSince(target) / 60))))m"
         case .over: return "−\(max(1, Int(ceil(now.timeIntervalSince(target) / 60))))m"
+        case .sleep: return Dur.text(max(0, target.timeIntervalSince(now)))
         }
     }
 }

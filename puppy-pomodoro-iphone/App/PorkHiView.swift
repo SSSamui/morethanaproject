@@ -19,11 +19,33 @@ struct PorkHiView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
+                    if model.funFirst && !todos.snapshot.fun.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("🎈 Something fun instead?")
+                                .font(.system(.title, design: .rounded).weight(.heavy))
+                            Text("Pork picked these from your fun list. They're better than scrolling!")
+                                .font(.subheadline).foregroundStyle(.secondary)
+                            FunBoard(todos: todos)
+                            Button("No thanks, go on") {
+                                model.funFirst = false
+                                dismiss()
+                            }
+                            .buttonStyle(.bordered)
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
                     if let event = todos.event {
                         BigEventNote(event: event)
                     }
 
                     StickyBoard(todos: todos)
+
+                    if !model.funFirst {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("🎈 Fun list").font(.title3.bold())
+                            FunBoard(todos: todos)
+                        }
+                    }
 
                     ScreenTimeCard()
 
@@ -64,7 +86,10 @@ struct PorkHiView: View {
         }
         .task { await todos.refresh() }
         .onAppear { show.start(album: st.hiAlbum, muted: st.hiMuted) }
-        .onDisappear { show.stop() }
+        .onDisappear {
+            show.stop()
+            model.funFirst = false
+        }
         .onReceive(ticker) { show.tick($0) }
     }
 

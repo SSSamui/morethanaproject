@@ -65,6 +65,16 @@ enum Nudges {
         if DayPlans.needsPromise(DayPlans.all(), now: now) { return true }
         guard st.hiEnabled else { return false }
 
+        // Something from the "fun" list instead? Asked at most every 15 minutes,
+        // so after "No thanks" you can go on.
+        let askedAt = defaults.object(forKey: "funAskedAt") as? Date ?? .distantPast
+        var askFun = false
+        if now.timeIntervalSince(askedAt) > 15 * 60, !(await Todos.load(st, now: now)).fun.isEmpty {
+            defaults.set(now, forKey: "funAskedAt")
+            defaults.set(true, forKey: "funFirst")
+            askFun = true
+        }
+
         // Start the 5 / 10 minute reminders, unless they're already waiting.
         let started = defaults.object(forKey: "distractSince") as? Date
         let running = started.map { now.timeIntervalSince($0) < TimeInterval(st.notesMin * 60) } ?? false
@@ -74,13 +84,21 @@ enum Nudges {
         }
 
         // An event in Calendar now: show it once (again after 30 min).
-        guard let event = Todos.currentEvent(now: now), !event.allDay else { return false }
+        guard let event = Todos.currentEvent(now: now), !event.allDay else { return askFun }
         let shownTitle = defaults.string(forKey: "eventShown")
         let shownAt = defaults.object(forKey: "eventShownAt") as? Date ?? .distantPast
-        if shownTitle == event.title && now.timeIntervalSince(shownAt) < 30 * 60 { return false }
+        if shownTitle == event.title && now.timeIntervalSince(shownAt) < 30 * 60 { return askFun }
         defaults.set(event.title, forKey: "eventShown")
         defaults.set(now, forKey: "eventShownAt")
         return true
+    }
+
+    /// True once after a distraction app was opened and Pork should offer the
+    /// fun list first.
+    static func takeFunFirst() -> Bool {
+        let v = defaults.bool(forKey: "funFirst")
+        defaults.set(false, forKey: "funFirst")
+        return v
     }
 
     /// A focus app was opened: no reminders needed.

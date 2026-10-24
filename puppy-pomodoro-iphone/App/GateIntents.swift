@@ -11,7 +11,7 @@ import AppIntents
 struct DistractionOpenedIntent: AppIntent {
     static var title: LocalizedStringResource = "Pork: distraction app opened"
     static var description = IntentDescription(
-        "Starts Pork's reminders (after 5 and 10 minutes). True when a Calendar event is on now, so the automation can show Pork's check-in.")
+        "Starts Pork's reminders (after 5 and 10 minutes). True when Pork should show his check-in first: today's promise isn't made, something from the fun list could replace the distraction, or a Calendar event is on now.")
 
     init() {}
 
@@ -60,6 +60,7 @@ struct SayHiToPorkIntent: AppIntent {
         if DayPlans.needsPromise(DayPlans.all()) {
             AppModel.shared.showMorning = true
         } else {
+            AppModel.shared.funFirst = Nudges.takeFunFirst()
             AppModel.shared.showHi = true
         }
         return .result()

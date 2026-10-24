@@ -13,6 +13,7 @@ struct TodoItem: Identifiable, Hashable {
     let due: Date?
     let hasTime: Bool       // due at a time, not just a day
     let routine: Bool
+    var link: URL? = nil    // "fun" items: the one link to open
 
     func overdue(_ now: Date = Date()) -> Bool {
         guard let due else { return false }
@@ -30,6 +31,7 @@ struct TodoSnapshot {
     var today: [TodoItem] = []      // overdue + due today + today's routine
     var days: [TodoDay] = []        // the next 6 days (school list)
     var noDate: [TodoItem] = []     // school items without a due date
+    var fun: [TodoItem] = []        // "fun" list: things to do instead of distractions
     var missingLists: [String] = []
 
     var isEmpty: Bool { today.isEmpty && days.isEmpty && noDate.isEmpty }
@@ -68,23 +70,34 @@ enum Todos {
         }
         let school = find(st.schoolList)
         let routine = find(st.routineList)
+        let fun = find(st.funList)
         if school == nil { snap.missingLists.append(st.schoolList) }
         if routine == nil { snap.missingLists.append(st.routineList) }
-        let wanted = [school, routine].compactMap { $0 }
+        let wanted = [school, routine, fun].compactMap { $0 }
         guard !wanted.isEmpty else { return snap }
 
         let routineID = routine?.calendarIdentifier
+        let funID = fun?.calendarIdentifier
         let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: wanted)
         let items: [TodoItem] = await withCheckedContinuation { done in
             store.fetchReminders(matching: predicate) { reminders in
                 let mapped = (reminders ?? []).map { r -> TodoItem in
                     let comps = r.dueDateComponents
                     let due = comps.flatMap { Calendar.current.date(from: $0) }
+                    let isFun = r.calendar.calendarIdentifier == funID
+                    var title = r.title ?? ""
+                    var link: URL? = nil
+                    if isFun {
+                        let parsed = FunLink.parse(title: title, notes: r.notes, url: r.url)
+                        title = parsed.title
+                        link = parsed.link ?? URL(string: "about:blank") // a fun item without a link
+                    }
                     return TodoItem(id: r.calendarItemIdentifier,
-                                    title: r.title ?? "",
-                                    due: due,
+                                    title: title,
+                                    due: isFun ? nil : due,
                                     hasTime: comps?.hour != nil,
-                                    routine: r.calendar.calendarIdentifier == routineID)
+                                    routine: r.calendar.calendarIdentifier == routineID,
+                                    link: link)
                 }
                 done.resume(returning: mapped)
             }
@@ -96,8 +109,9 @@ enum Todos {
         let order: (TodoItem, TodoItem) -> Bool = { ($0.due ?? .distantFuture) < ($1.due ?? .distantFuture) }
 
         // Routine: today only (no date, or due today/earlier).
-        let routineToday = items.filter { $0.routine && ($0.due == nil || $0.due! < endToday) }
-        let schoolItems = items.filter { !$0.routine }
+        let routineToday = items.filter { $0.routine && $0.link == nil && ($0.due == nil || $0.due! < endToday) }
+        snap.fun = items.filter { $0.link != nil }
+        let schoolItems = items.filter { !$0.routine && $0.link == nil }
         snap.today = (schoolItems.filter { $0.due != nil && $0.due! < endToday } + routineToday).sorted(by: order)
         for d in 1...6 {
             let from = cal.date(byAdding: .day, value: d, to: startToday)!
@@ -174,6 +188,7 @@ final class TodoStore: ObservableObject {
                 return rest.isEmpty ? nil : TodoDay(date: day.date, items: rest)
             }
             snapshot.noDate.removeAll { $0.id == item.id }
+            snapshot.fun.removeAll { $0.id == item.id }
         }
         // A routine job that repeats comes back with its next date.
         Task { await refresh() }

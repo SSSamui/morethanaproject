@@ -55,6 +55,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
            response.notification.request.content.userInfo["open"] as? String == "checkin" {
             Task { @MainActor in AppModel.shared.showHi = true }
         }
+        if response.notification.request.content.userInfo["open"] as? String == "sleep" {
+            Task { @MainActor in AppModel.shared.goToSleep(true) }
+        }
         if response.notification.request.content.userInfo["open"] as? String == "morning" {
             Task { @MainActor in AppModel.shared.checkMorning() }
         }

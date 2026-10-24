@@ -103,7 +103,7 @@ struct PorkButton: View {
                     Button(intent: LetPorkOutIntent()) { Text("Back to focus") }.tint(.porkBreak)
                 case .over:
                     Button(intent: LetPorkOutIntent()) { Text("🐾 Let Pork out") }.tint(.porkOver)
-                case .idle:
+                case .idle, .sleep:
                     EmptyView()
                 }
             }

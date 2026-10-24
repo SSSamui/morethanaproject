@@ -10,6 +10,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var state = PorkStore.load()
     @Published var showHi = false
     @Published var showMorning = false
+    @Published var funFirst = false     // the check-in opens with "something fun instead?"
     @Published var toast: String?
     @Published var releasingUntil = Date.distantPast // door animation after "let Pork out"
 
@@ -57,6 +58,7 @@ final class AppModel: ObservableObject {
     func makePromise(minutes: Int, bedtime: Int) {
         let plan = DayPlan(day: DayPlans.dayKey(Date()), promiseMin: minutes, bedtime: bedtime, madeAt: Date())
         DayPlans.save(plan)
+        SleepMode.end()
         updateSettings {
             $0.nightStart = bedtime   // after bedtime only focus apps, until morning
             $0.nightOn = true
@@ -65,6 +67,15 @@ final class AppModel: ObservableObject {
         #if !LITE
         ScreenTime.startPromise(plan)
         #endif
+    }
+
+    /// "I'm going to sleep" / "I'm up": the sleep countdown on the screen
+    /// and the Lock Screen.
+    func goToSleep(_ on: Bool) {
+        on ? SleepMode.start() : SleepMode.end()
+        let s = state
+        Task { await LiveActivities.update(s) }
+        objectWillChange.send()
     }
 
     func updateSettings(_ change: (inout PorkSettings) -> Void) {

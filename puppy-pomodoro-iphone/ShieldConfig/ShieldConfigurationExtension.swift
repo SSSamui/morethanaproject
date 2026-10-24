@@ -67,8 +67,11 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
                           "🐾 End the fun — let Pork out", red, "Not now")
         default:
             if s.settings.isNight(now) {
+                let bedtime = DayPlans.current(now)?.bedtime ?? s.settings.nightStart
+                let wake = s.settings.wakeIfSleeping(now: now, bedtime: bedtime, sleptAt: nil, upAt: nil)
+                let left = wake.map { " 😴 \(Dur.text($0.timeIntervalSince(now))) of sleep left (up at \(Dur.clock($0)))." } ?? ""
                 return shield("PorkSleep", "It's late, Pork is asleep 🌙",
-                              "Only focus apps until \(PorkSettings.timeText(s.settings.nightEnd)). \(name) can wait until morning.",
+                              "Only focus apps until \(PorkSettings.timeText(s.settings.nightEnd)). \(name) can wait until morning.\(left)",
                               "OK", UIColor(red: 0.29, green: 0.25, blue: 0.47, alpha: 1), nil)
             }
             if ScreenTime.promiseReachedToday, let plan = DayPlans.current(now) {
