@@ -6,7 +6,28 @@ import WidgetKit
 struct PorkEntry: TimelineEntry {
     let date: Date
     let state: PorkState
-    var moment: PorkMoment { PorkMoment(state, at: date) }
+    /// After 10 pm: time to sleep; after bedtime: sleep left.
+    var night: PorkMoment? {
+        let st = state.settings
+        if let bedtime = SleepMode.bedtimeSoon(st, now: date) {
+            return PorkMoment(phase: "bedtime", paused: false, target: bedtime, pausedLeft: 0,
+                              carry: 0, bonusEveryMin: st.bonusEveryMin, stale: false)
+        }
+        if let wake = SleepMode.wake(st, now: date) {
+            return PorkMoment(phase: "sleep", paused: false, target: wake, pausedLeft: 0,
+                              carry: 0, bonusEveryMin: st.bonusEveryMin, stale: false)
+        }
+        return nil
+    }
+
+    /// Home Screen: the clock, or the night countdowns when no session runs.
+    var moment: PorkMoment {
+        let clock = PorkMoment(state, at: date)
+        return clock.kind == .idle ? (night ?? clock) : clock
+    }
+
+    /// Lock Screen: after 10 pm the bedtime / sleep countdown comes first.
+    var lockMoment: PorkMoment { night ?? moment }
 }
 
 struct PorkProvider: TimelineProvider {
@@ -39,7 +60,8 @@ struct PorkProvider: TimelineProvider {
                 break
             }
         }
-        let entries = dates.map { PorkEntry(date: $0, state: s) }
+        dates += SleepMode.changes(s.settings, now: now)
+        let entries = Array(Set(dates)).sorted().map { PorkEntry(date: $0, state: s) }
         completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(30 * 60))))
     }
 }
@@ -60,7 +82,7 @@ struct PorkWidgetView: View {
     let entry: PorkEntry
 
     var body: some View {
-        let m = entry.moment
+        let m = family.isLockScreen ? entry.lockMoment : entry.moment
         Group {
             switch family {
             case .systemMedium:
@@ -84,11 +106,15 @@ struct PorkWidgetView: View {
                 }
             case .accessoryCircular:
                 VStack(spacing: 0) {
-                    Text("🐾").font(.caption2)
+                    Text(m.kind == .bedtime || m.kind == .sleep ? "🌙" : "🐾").font(.caption2)
                     Text(m.short).font(.caption.bold()).minimumScaleFactor(0.6)
                 }
             case .accessoryInline:
-                Text("🐾 \(m.label) · \(m.short)")
+                if m.kind == .bedtime || m.kind == .sleep {
+                    Text(m.kind == .bedtime ? "🌙 Sleep in " : "😴 Sleep left ") + m.timer
+                } else {
+                    Text("🐾 \(m.label) · \(m.short)")
+                }
             default:
                 VStack(spacing: 2) {
                     Text(m.label.uppercased()).font(.caption2.bold()).foregroundStyle(m.color)
@@ -105,5 +131,11 @@ struct PorkWidgetView: View {
             if family == .systemSmall || family == .systemMedium { Color.porkWall } else { Color.clear }
         }
         .widgetURL(URL(string: "puppypomodoro://open"))
+    }
+}
+
+extension WidgetFamily {
+    var isLockScreen: Bool {
+        self == .accessoryInline || self == .accessoryRectangular || self == .accessoryCircular
     }
 }

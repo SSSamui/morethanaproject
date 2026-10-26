@@ -13,6 +13,7 @@ struct PorkActivityAttributes: ActivityAttributes {
         var pausedLeft: TimeInterval
         var carry: TimeInterval
         var bonusEveryMin: Int
+        var wake: Date? = nil      // bedtime countdown: when to get up after bedtime
     }
 }
 

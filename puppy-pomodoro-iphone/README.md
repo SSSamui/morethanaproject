@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 3.2.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 3.3.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -41,6 +41,7 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
   - A late bedtime (like 4 or 5 am) counts as the same day (3.1.0): the promise and the play-time count run until bedtime, and "yesterday" in the summary goes from yesterday 8 am to this morning, so the late night is included. Sleep is counted from when you really put the phone down.
   - Sleep times are estimates: Screen Time gives phone use per hour and the first pick-up of the day.
 - **Fun list instead of distractions** (new in 3.2.0): a Reminders list called **fun** with things you'd love to do in spare time, each with its link: `Robotics talk open:https://youtu.be/…` (the link can also go in the reminder's notes or URL field). They show as purple sticky notes on the main screen and in Pork's check-in. When you open a distraction app, the automation brings up *"🎈 Something fun instead?"* with those notes first (at most every 15 minutes; **No thanks, go on** lets you continue). Tapping a note opens **only that link** inside Puppy Pomodoro: a YouTube video plays in the YouTube player (no YouTube app, no other videos), a Reddit post or an X account opens but links to anywhere else are stopped. Kindle links open the Kindle app. The rest of YouTube, Reddit and X stays a distraction.
+- **"Time to sleep" countdown from 10 pm** (new in 3.3.0): every time you turn on the phone after 10 pm, the top of the Lock Screen shows how long until your bedtime (from today's promise), like *🌙 Sleep in 1:47:12*; after bedtime it switches to *😴 Sleep left 7:02:40*. Add the **Puppy Pomodoro** Lock Screen widget once (inline, above the clock, or the rectangle under it). The main screen and the Lock Screen / Dynamic Island countdown show it too. A bedtime before 10 pm starts the countdown 2 hours earlier; a bedtime after midnight (like 4 am) still starts at 10 pm.
 - **Sleep countdown** (3.2.0): after bedtime (12 am, or whatever you promised), or when you tap **I'm going to sleep 🌙** (shown from 9 pm), the main screen and the Lock Screen show how much sleep is left until you get up: **8:30 am on weekdays, 10:30 am on weekends** (Settings). The late-night blocked-app screen says it too. **I'm up ☀️** (or making the morning promise) ends it.
 - **The focus clock stops while the phone is locked** (3.0.0): it pauses when you lock the phone and goes on when you unlock it. Pork keeps the app awake with silent audio during focus to notice the lock (your music keeps playing). Setting: *Pause the clock when the phone locks*. If another app takes over the audio (a video with sound), Pork may miss a lock.
 - **Yesterday's top distractions** (2.1.0, full version only): every day the main screen and Pork's check-in show your 2 biggest distraction apps from yesterday as big sticky notes ("YouTube 2hr 35min", "foodigame 4hr"), plus yesterday's total screen time and time on distractions. Focus apps don't count. Apple only lets a Screen Time report extension (`Report/`) see these numbers, so it needs the paid account; the Lite version shows a note instead.
@@ -76,8 +77,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v3.2.0.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v3.2.0**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v3.3.0.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v3.3.0**.
 
 ### 2. Open it in Xcode
 
@@ -127,10 +128,10 @@ If Xcode later says an identifier like `com.sssamui.puppypomodoro` *"is not avai
 
 These steps are also in the app: ⚙︎ → **How to turn it on (Shortcuts)**.
 
-### 8. Add the widgets (optional)
+### 8. Add the widgets
 
+- **Lock Screen (for the "time to sleep" countdown)**: touch and hold the Lock Screen → **Customize** → **Lock Screen**. Tap the line **above the clock** (the date) and choose **Puppy Pomodoro** for the one-line countdown, and/or tap the area **under the clock** and add the Puppy Pomodoro rectangle. Tap **Done**.
 - **Home Screen**: touch and hold an empty spot → **Edit** (top left) → **Add Widget** → search **Puppy Pomodoro** → pick small or medium → **Add Widget**.
-- **Lock Screen**: touch and hold the Lock Screen → **Customize** → **Lock Screen** → tap the widget area → **Puppy Pomodoro**.
 - The **Live Activity** (Lock Screen + Dynamic Island) appears by itself when you start a focus.
 
 ### Without a paid developer account: PuppyPomodoroLite

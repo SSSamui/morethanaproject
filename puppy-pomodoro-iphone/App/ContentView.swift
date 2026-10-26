@@ -307,6 +307,20 @@ struct SleepCard: View {
                 .padding(18)
                 .foregroundStyle(.white)
                 .background(Color.porkSleep, in: RoundedRectangle(cornerRadius: 20))
+            } else if let bedtime = SleepMode.bedtimeSoon(st, now: ctx.date) {
+                VStack(spacing: 6) {
+                    Text("🌙 Time to sleep in").font(.headline)
+                    Text(PorkClock.text(bedtime.timeIntervalSince(ctx.date)))
+                        .font(.system(size: 56, weight: .heavy, design: .rounded))
+                        .monospacedDigit()
+                    Text("Bedtime \(Dur.clock(bedtime)) · your promise to Pork").font(.subheadline)
+                    Button("I'm going to sleep now 🌙") { model.goToSleep(true) }
+                        .buttonStyle(.bordered).tint(.white)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(18)
+                .foregroundStyle(.white)
+                .background(Color.porkSleep.opacity(0.85), in: RoundedRectangle(cornerRadius: 20))
             } else if model.state.phase == .idle, isEvening(ctx.date) {
                 Button { model.goToSleep(true) } label: {
                     Label("I'm going to sleep 🌙", systemImage: "moon.zzz.fill")

@@ -2,6 +2,7 @@
 // widgets and Screen Time extensions); this keeps a copy for SwiftUI.
 
 import SwiftUI
+import WidgetKit
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -73,6 +74,7 @@ final class AppModel: ObservableObject {
     /// and the Lock Screen.
     func goToSleep(_ on: Bool) {
         on ? SleepMode.start() : SleepMode.end()
+        WidgetCenter.shared.reloadAllTimelines()
         let s = state
         Task { await LiveActivities.update(s) }
         objectWillChange.send()

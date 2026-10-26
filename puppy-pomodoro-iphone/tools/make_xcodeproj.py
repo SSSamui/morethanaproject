@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ID_PREFIX = "com.sssamui.puppypomodoro"
-VERSION = "3.2.0"
+VERSION = "3.3.0"
 
 
 def oid(*parts):
