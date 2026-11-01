@@ -62,8 +62,13 @@ enum Nudges {
             defaults.set(0, forKey: "distractOpens")
         }
         defaults.set(defaults.integer(forKey: "distractOpens") + 1, forKey: "distractOpens")
+        if PorkPause.isOn { return false }   // ⏸ go wild for 30 minutes
         if DayPlans.needsPromise(DayPlans.all(), now: now) { return true }
         guard st.hiEnabled else { return false }
+
+        // This pick-up: a new one after 20 quiet minutes.
+        let newPickUp = !PickUp.isActive(now)
+        if newPickUp { PickUp.begin(now) } else { PickUp.touch(now) }
 
         // Something from the "fun" list instead? Asked at most every 15 minutes,
         // so after "No thanks" you can go on.
@@ -75,16 +80,24 @@ enum Nudges {
             askFun = true
         }
 
-        // Start the 5 / 10 minute reminders, unless they're already waiting.
-        let started = defaults.object(forKey: "distractSince") as? Date
-        let running = started.map { now.timeIntervalSince($0) < TimeInterval(st.notesMin * 60) } ?? false
-        if !running {
-            defaults.set(now, forKey: "distractSince")
+        // Start the 5 / 10 minute reminders for a new pick-up. With Screen Time
+        // (full version) they follow real minutes on distraction apps;
+        // otherwise they're timed from now.
+        if newPickUp {
+            #if !LITE
+            if ScreenTime.isOn {
+                ScreenTime.startPickUp(now: now)
+            } else {
+                await schedule(st, from: now)
+            }
+            #else
             await schedule(st, from: now)
+            #endif
         }
 
         // An event in Calendar now: show it once (again after 30 min).
         guard let event = Todos.currentEvent(now: now), !event.allDay else { return askFun }
+        guard newPickUp || event.start > now else { return askFun }
         let shownTitle = defaults.string(forKey: "eventShown")
         let shownAt = defaults.object(forKey: "eventShownAt") as? Date ?? .distantPast
         if shownTitle == event.title && now.timeIntervalSince(shownAt) < 30 * 60 { return askFun }
@@ -104,6 +117,11 @@ enum Nudges {
     /// A focus app was opened: no reminders needed.
     static func focusOpened() {
         recordUse()
+        PickUp.end()
+        Alerts.cancelPaws()
+        #if !LITE
+        ScreenTime.endPickUp()
+        #endif
         defaults.removeObject(forKey: "distractSince")
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [porkID, notesID])
     }
@@ -130,8 +148,8 @@ enum Nudges {
         center.removePendingNotificationRequests(withIdentifiers: [porkID, notesID])
 
         let pork = UNMutableNotificationContent()
-        pork.title = "Pork misses you 🐾"
-        pork.body = "\(st.nudgeMin) minutes on distractions. Put the phone down and come back to your to-dos?"
+        pork.title = "Pork is scratching the door 🐾"
+        pork.body = "\(st.nudgeMin) minutes on distractions this time. Pork wants you back!"
         pork.sound = .default
         pork.categoryIdentifier = category
         pork.userInfo = ["open": "checkin"]
@@ -152,6 +170,7 @@ enum Nudges {
         try? await center.add(UNNotificationRequest(
             identifier: notesID, content: notes,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(st.notesMin * 60), repeats: false)))
+        if st.pawsOn { Alerts.paws(after: TimeInterval(st.notesMin * 60)) }
     }
 
     /// A random photo of Pork from the album (or his drawing) for the reminder.

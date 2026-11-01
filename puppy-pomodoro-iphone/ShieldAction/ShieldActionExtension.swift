@@ -25,6 +25,10 @@ class ShieldActionExtension: ShieldActionDelegate {
         var s = PorkStore.load()
         // "15 more minutes" on the promise screen (not during a focus session).
         if action == .secondaryButtonPressed {
+            if ScreenTime.pawCovered {
+                ScreenTime.uncoverPaws()
+                return .defer
+            }
             if s.phase == .idle || s.phase == .break, ScreenTime.promiseReachedToday, !s.settings.isNight(Date()) {
                 ScreenTime.grace()
                 return .defer

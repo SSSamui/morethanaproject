@@ -37,6 +37,7 @@ struct PorkHiView: View {
                     if let event = todos.event {
                         BigEventNote(event: event)
                     }
+                    TimeCard()
 
                     StickyBoard(todos: todos)
 
@@ -64,6 +65,7 @@ struct PorkHiView: View {
                         .buttonStyle(.borderedProminent).tint(.porkFocus).controlSize(.large)
 
                         Button {
+                            Nudges.focusOpened() // this pick-up is over
                             dismiss()
                             model.show("Good choice! Pork is proud of you 🐾")
                         } label: {

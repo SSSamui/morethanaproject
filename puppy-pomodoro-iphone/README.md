@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 3.3.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 4.0.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -31,6 +31,13 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
 | — | **To-dos as sticky notes** from Apple Reminders (2.0.0) |
 
 ## New features and changes for the iPhone version
+
+**4.0.0: Pork becomes your outside brain.** The app opens on **Pork's board**, where everything is visible: where you should be (a big sticky note for the Calendar event on now or in the next 15 minutes), **your time** (distractions today, useful apps today, this pick-up), to-dos for the week, the fun list, Pork's room and photos, and **⏸ Pause 30 min**. The pomodoro clock moved to the **Focus** tab.
+- **Your time is always visible**: the Lock Screen widget shows *📱 1h40 today* (full version; free: how often you opened distraction apps), the Lock Screen / Dynamic Island shows *📱 This pick-up 6:12* counting up while you're on distraction apps.
+- **Light friction**: opening a distraction app brings Pork's gate (fun list, the event, your time, **No thanks, go on**). Useful apps (Duo, entrance, mail, Canvas, calendars, health, Uber…) never get a reminder; their time is only shown.
+- **This pick-up**: Pork scratches the door after 5 minutes on distractions; after 10 minutes you get your time and to-dos, and then (optional, *Then Pork's paws walk onto the screen*) paw prints drop onto the screen every 15 seconds for 2 minutes; at 12 minutes Pork's paws cover the distraction app (full version) with **Go on, 5 more min**. In the full version these follow real minutes on distraction apps (a locked phone doesn't count).
+- **⏸ Pause 30 min** on the board or the Lock Screen: no gates, reminders or blocking; everything comes back by itself.
+- **Mac → iPhone**: a **Study** Focus on the Mac (Share Across Devices) turns on the iPhone's Focus too, and two iPhone automations run **Pork: start focus / stop focus**.
 
 - **To-dos as sticky notes** (new in 2.0.0, works with a free account): from Apple Reminders. The **school 2026 fall** list (homework and projects) shows for the next 7 days, one color per day, plus anything overdue. The **routine** list shows for today only. Tap ✓ on a note to mark it done in Reminders. List names can be changed in Settings. Shown on the main screen and in Pork's check-in.
 - **Morning promise to Pork** (new in 3.0.0): every day, the first time you pick up the phone after 8 am (not at 8 am sharp: the 8 am notification is silent and just waits on the Lock Screen), the first thing Puppy Pomodoro shows is a full screen that can't be swiped away: *"Good morning! ☀️ Pork wants to know: how much play time do you promise him today?"* (play time = any app or website that isn't a focus app) and *"When do we go to sleep tonight? 🌙"*. Tap **🐾 I promise, Pork!**, then you see **yesterday**: screen time, play time, whether you kept yesterday's promise, time per app (like Apple's Screen Time), and when you put the phone down for the night and picked it up again (sleep). **Start today** starts today's rules:
@@ -77,8 +84,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v3.3.0.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v3.3.0**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v4.0.0.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v4.0.0**.
 
 ### 2. Open it in Xcode
 

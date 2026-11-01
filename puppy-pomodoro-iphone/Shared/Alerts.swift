@@ -90,6 +90,28 @@ enum Alerts {
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "pork.now", content: content, trigger: nil))
     }
 
+    static let pawIDs = (1...8).map { "pork.paw.\($0)" }
+
+    /// After 10 minutes on distractions: Pork's paw prints walk onto the
+    /// screen, one more every 15 seconds, for 2 minutes.
+    static func paws(after delay: TimeInterval = 0) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: pawIDs)
+        for k in 1...8 {
+            let content = UNMutableNotificationContent()
+            content.title = String(repeating: "🐾", count: k * 2)
+            content.body = k < 8 ? "Pork is walking onto your screen…" : "Pork's paws cover the screen. Time to put the phone down? 🐾"
+            content.userInfo = ["open": "checkin"]
+            center.add(UNNotificationRequest(
+                identifier: pawIDs[k - 1], content: content,
+                trigger: UNTimeIntervalNotificationTrigger(timeInterval: max(1, delay + Double(k) * 15), repeats: false)))
+        }
+    }
+
+    static func cancelPaws() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: pawIDs)
+    }
+
     /// A message right now.
     static func say(_ title: String, _ body: String) {
         let content = UNMutableNotificationContent()

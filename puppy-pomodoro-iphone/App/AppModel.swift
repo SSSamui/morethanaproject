@@ -80,6 +80,21 @@ final class AppModel: ObservableObject {
         objectWillChange.send()
     }
 
+    /// ⏸ Pause 30 min (on) / Resume (off).
+    func pause(_ on: Bool) {
+        #if !LITE
+        on ? ScreenTime.pause(minutes: 30) : ScreenTime.resumeAll()
+        #else
+        on ? PorkPause.start(minutes: 30) : PorkPause.end()
+        #endif
+        if on { Alerts.cancelPaws() }
+        WidgetCenter.shared.reloadAllTimelines()
+        let s = state
+        Task { await LiveActivities.update(s) }
+        objectWillChange.send()
+        show(on ? "Paused for 30 min. Pork will be back 🐾" : "Pork is back 🐾")
+    }
+
     func updateSettings(_ change: (inout PorkSettings) -> Void) {
         var st = state.settings
         change(&st)

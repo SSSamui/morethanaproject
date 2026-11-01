@@ -1,5 +1,5 @@
-// The main screen: the event on now, clock, Pork's room, buttons, to-dos
-// and the treat jar.
+// The main screen: Pork's board (the outside brain) and the Focus tab (the
+// pomodoro clock, also started from the Mac's Study Focus).
 
 import SwiftUI
 
@@ -7,33 +7,28 @@ struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showSettings = false
     @ObservedObject private var todos = TodoStore.shared
+    @AppStorage("tab") private var tab = "board"
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    if let event = todos.event {
-                        BigEventNote(event: event)
+                    Picker("", selection: $tab) {
+                        Text("🐾 Board").tag("board")
+                        Text("⏱ Focus").tag("focus")
                     }
-                    SleepCard()
-                    PromiseCard()
-                    TimelineView(.periodic(from: .now, by: 0.25)) { context in
-                        PorkScreen(now: context.date)
+                    .pickerStyle(.segmented)
+                    // a focus session running (for example from the Mac): show the clock first
+                    if tab == "focus" || model.state.phase != .idle {
+                        TimelineView(.periodic(from: .now, by: 0.25)) { context in
+                            PorkScreen(now: context.date)
+                        }
                     }
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("📝 To do").font(.title3.bold())
-                        StickyBoard(todos: todos)
+                    if tab == "board" {
+                        BoardView(todos: todos)
+                    } else {
+                        TreatJarView()
                     }
-                    .padding(14)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("🎈 Fun instead of scrolling").font(.title3.bold())
-                        FunBoard(todos: todos)
-                    }
-                    .padding(14)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
-                    ScreenTimeCard()
-                    TreatJarView()
                     #if !LITE
                     if !ScreenTime.isOn {
                         Button { showSettings = true } label: {
@@ -54,7 +49,7 @@ struct ContentView: View {
             }
             .refreshable { await todos.refresh() }
             .task { await todos.refresh() }
-            .navigationTitle("🐾 Puppy Pomodoro")
+            .navigationTitle("🐾 Pork")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

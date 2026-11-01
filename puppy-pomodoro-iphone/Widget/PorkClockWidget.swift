@@ -96,6 +96,12 @@ struct PorkWidgetView: View {
                     Image(m.roomImage).resizable().scaledToFit()
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
+            case .accessoryRectangular where m.kind == .idle:
+                VStack(alignment: .leading) {
+                    Text(PorkPause.isOn ? "⏸ Pork is paused" : "📱 Distractions").font(.caption2.bold())
+                    Text(TodayUsage.text()).font(.title3.bold())
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             case .accessoryRectangular:
                 HStack {
                     VStack(alignment: .leading) {
@@ -112,6 +118,8 @@ struct PorkWidgetView: View {
             case .accessoryInline:
                 if m.kind == .bedtime || m.kind == .sleep {
                     Text(m.kind == .bedtime ? "🌙 Sleep in " : "😴 Sleep left ") + m.timer
+                } else if m.kind == .idle {
+                    Text("📱 " + TodayUsage.text())
                 } else {
                     Text("🐾 \(m.label) · \(m.short)")
                 }

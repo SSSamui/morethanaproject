@@ -10,6 +10,7 @@ import DeviceActivity
 import FamilyControls
 import Foundation
 import ManagedSettings
+import WidgetKit
 
 enum ScreenTime {
     static let store = ManagedSettingsStore(named: ManagedSettingsStore.Name("pork"))
@@ -42,7 +43,7 @@ enum ScreenTime {
 
     static func apply(_ s: PorkState) {
         let focusing = s.phase == .focus && !s.paused
-        if isOn && (focusing || s.phase == .overtime) {
+        if isOn && !PorkPause.isOn && (focusing || s.phase == .overtime) {
             let apps = focusApps
             store.shield.applicationCategories = .all(except: apps.applicationTokens)
             if focusing {
@@ -59,7 +60,7 @@ enum ScreenTime {
 
     /// Late at night: only focus apps and focus sites, focus session or not.
     static func applyNight(_ st: PorkSettings, now: Date = Date()) {
-        if isOn && st.isNight(now) {
+        if isOn && !PorkPause.isOn && st.isNight(now) {
             nightStore.shield.applicationCategories = .all(except: focusApps.applicationTokens)
             nightStore.webContent.blockedByFilter = .all(except: Set(allowedHosts(st.focusSites).map { WebDomain(domain: $0) }))
         } else {
@@ -110,6 +111,7 @@ enum ScreenTime {
     }
 
     private static func shieldDistractions(_ store: ManagedSettingsStore) {
+        guard !PorkPause.isOn else { return }
         store.shield.applicationCategories = .all(except: focusApps.applicationTokens)
     }
 
@@ -213,6 +215,7 @@ enum ScreenTime {
         let base = d.integer(forKey: parts[0] == "all" ? "allBase" : "focusBase")
         d.set(max(d.integer(forKey: key), base + mins), forKey: key)
         checkPromise()
+        WidgetCenter.shared.reloadAllTimelines() // the Lock Screen shows today's time
     }
 
     /// Warn at 3/4 of the promise; block distractions when it's used up.
@@ -246,6 +249,117 @@ enum ScreenTime {
     }
 
     static func graceOver() {
+        if promiseReachedToday { shieldDistractions(promiseStore) }
+    }
+
+    // MARK: this pick-up (full version: counted by Screen Time)
+
+    /// Covers distraction apps with Pork's paws after 12 minutes (optional).
+    static let pawStore = ManagedSettingsStore(named: ManagedSettingsStore.Name("porkPaws"))
+    static let pickUpActivity = DeviceActivityName("pork.pickup")
+    static let pauseActivity = DeviceActivityName("pork.pause")
+
+    static var pawCovered: Bool { PorkStore.defaults.bool(forKey: "pawCovered") }
+
+    /// A new pick-up: count distraction minutes from now, minute by minute.
+    static func startPickUp(now: Date = Date()) {
+        let center = DeviceActivityCenter()
+        center.stopMonitoring([pickUpActivity])
+        uncoverPaws()
+        let d = PorkStore.defaults
+        for k in ["puAll", "puFocus"] { d.set(0, forKey: k) }
+        d.set(false, forKey: "puNudged")
+        d.set(false, forKey: "puNotes")
+        d.set(PorkStore.load().settings.notesMin + 2, forKey: "puNextCover")
+        guard isOn else { return }
+        let cal = Calendar.current
+        let parts: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute, .second]
+        let count = countApps
+        let focus = focusApps.applicationTokens
+        var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
+        for m in 1...90 {
+            events[DeviceActivityEvent.Name("all.\(m)")] = DeviceActivityEvent(
+                applications: count.applicationTokens, categories: count.categoryTokens,
+                webDomains: count.webDomainTokens, threshold: DateComponents(minute: m))
+            if !focus.isEmpty {
+                events[DeviceActivityEvent.Name("focus.\(m)")] = DeviceActivityEvent(
+                    applications: focus, threshold: DateComponents(minute: m))
+            }
+        }
+        try? center.startMonitoring(pickUpActivity, during: DeviceActivitySchedule(
+            intervalStart: cal.dateComponents(parts, from: now),
+            intervalEnd: cal.dateComponents(parts, from: now.addingTimeInterval(4 * 3600)), repeats: false),
+            events: events)
+    }
+
+    /// The monitor heard another minute of phone use in this pick-up.
+    static func pickUpReached(_ name: String) {
+        let parts = name.split(separator: ".")
+        guard parts.count == 2, let mins = Int(parts[1]) else { return }
+        let d = PorkStore.defaults
+        let key = parts[0] == "all" ? "puAll" : "puFocus"
+        d.set(max(d.integer(forKey: key), mins), forKey: key)
+        let play = max(0, d.integer(forKey: "puAll") - d.integer(forKey: "puFocus"))
+        PickUp.setMinutes(play)
+        PickUp.touch()
+        guard !PorkPause.isOn else { return }
+        let st = PorkStore.load().settings
+        if play >= st.nudgeMin, !d.bool(forKey: "puNudged") {
+            d.set(true, forKey: "puNudged")
+            Alerts.say("Pork is scratching the door 🐾", "\(play) min on distractions this time. Pork wants you back!")
+        }
+        if play >= st.notesMin, !d.bool(forKey: "puNotes") {
+            d.set(true, forKey: "puNotes")
+            let todos = (d.stringArray(forKey: "todoPreview") ?? []).prefix(4).map { "• " + $0 }.joined(separator: "\n")
+            Alerts.say("\(play) min this time · \(Dur.text(TimeInterval(playUsedToday * 60))) today 📝",
+                       todos.isEmpty ? "Tap to see your to-dos with Pork." : "To do:\n" + todos)
+            if st.pawsOn { Alerts.paws() }
+        }
+        if st.pawsOn, play >= d.integer(forKey: "puNextCover"), d.integer(forKey: "puNextCover") > 0, !pawCovered {
+            shieldDistractions(pawStore)
+            d.set(true, forKey: "pawCovered")
+        }
+    }
+
+    /// "Go on, 5 more minutes" on the paw screen.
+    static func uncoverPaws(more: Int = 5) {
+        pawStore.clearAllSettings()
+        let d = PorkStore.defaults
+        if d.bool(forKey: "pawCovered") {
+            d.set(PickUp.minutes + more, forKey: "puNextCover")
+        }
+        d.set(false, forKey: "pawCovered")
+    }
+
+    /// A focus app was opened (or Pork's gate said "back to work").
+    static func endPickUp() {
+        DeviceActivityCenter().stopMonitoring([pickUpActivity])
+        pawStore.clearAllSettings()
+        PorkStore.defaults.set(false, forKey: "pawCovered")
+    }
+
+    // MARK: ⏸ pause 30 minutes
+
+    static func pause(minutes: Int = 30) {
+        PorkPause.start(minutes: minutes)
+        for s in [store, nightStore, morningStore, promiseStore, pawStore] { s.clearAllSettings() }
+        let center = DeviceActivityCenter()
+        center.stopMonitoring([pauseActivity])
+        let now = Date()
+        let cal = Calendar.current
+        let parts: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute, .second]
+        try? center.startMonitoring(pauseActivity, during: DeviceActivitySchedule(
+            intervalStart: cal.dateComponents(parts, from: now),
+            intervalEnd: cal.dateComponents(parts, from: now.addingTimeInterval(TimeInterval(max(15, minutes) * 60))),
+            repeats: false))
+    }
+
+    /// The pause is over (or ended early): everything comes back.
+    static func resumeAll() {
+        PorkPause.end()
+        DeviceActivityCenter().stopMonitoring([pauseActivity])
+        apply(PorkStore.load())
+        applyMorning()
         if promiseReachedToday { shieldDistractions(promiseStore) }
     }
 

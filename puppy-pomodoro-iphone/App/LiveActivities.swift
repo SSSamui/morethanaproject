@@ -8,7 +8,17 @@ enum LiveActivities {
         let running = Activity<PorkActivityAttributes>.activities
         var state = PorkActivityAttributes.ContentState(s)
         if s.phase == .idle {
-            if let bedtime = SleepMode.bedtimeSoon(s.settings) {
+            if !PorkPause.isOn, PickUp.isActive(), let start = PickUp.start {
+                // This pick-up on distraction apps: time counts up, Pork scratches after 5 min.
+                #if !LITE
+                let today: Int? = ScreenTime.isOn ? ScreenTime.playUsedToday : nil
+                #else
+                let today: Int? = nil
+                #endif
+                state = PorkActivityAttributes.ContentState(phase: "pickup", paused: false, target: start,
+                                                            pausedLeft: 0, carry: 0, bonusEveryMin: s.settings.bonusEveryMin,
+                                                            todayMin: today, nudgeMin: s.settings.nudgeMin)
+            } else if let bedtime = SleepMode.bedtimeSoon(s.settings) {
                 // After 10 pm: time left until bedtime, then sleep left.
                 let wake = SleepPlan.night(now: Date(), bedtime: SleepMode.bedtime(s.settings) ?? 0,
                                            weekday: s.settings.wakeWeekday, weekend: s.settings.wakeWeekend).wake

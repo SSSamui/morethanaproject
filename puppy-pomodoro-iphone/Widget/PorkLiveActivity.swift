@@ -58,7 +58,7 @@ struct PorkLiveActivity: Widget {
     private func moment(_ context: ActivityViewContext<PorkActivityAttributes>) -> PorkMoment {
         let s = context.state
         return PorkMoment(phase: s.phase, paused: s.paused, target: s.target, pausedLeft: s.pausedLeft,
-                          carry: s.carry, bonusEveryMin: s.bonusEveryMin, stale: context.isStale, wake: s.wake)
+                          carry: s.carry, bonusEveryMin: s.bonusEveryMin, stale: context.isStale, wake: s.wake, todayMin: s.todayMin)
     }
 }
 
@@ -103,6 +103,8 @@ struct PorkButton: View {
                     Button(intent: LetPorkOutIntent()) { Text("Back to focus") }.tint(.porkBreak)
                 case .over:
                     Button(intent: LetPorkOutIntent()) { Text("🐾 Let Pork out") }.tint(.porkOver)
+                case .pickup, .pickupLong:
+                    Button(intent: PauseThirtyIntent()) { Text("⏸ 30 min") }.tint(.gray)
                 case .idle, .sleep, .bedtime:
                     EmptyView()
                 }

@@ -94,6 +94,7 @@ struct SettingsView: View {
                     Toggle("Pork's check-ins", isOn: $st.hiEnabled)
                     Stepper("Pork reminder after \(st.nudgeMin) min", value: $st.nudgeMin, in: 1...60)
                     Stepper("To-dos after \(st.notesMin) min", value: $st.notesMin, in: (st.nudgeMin + 1)...120)
+                    Toggle("Then Pork's paws walk onto the screen", isOn: $st.pawsOn)
                     Picker("Pork's album in Photos", selection: $st.hiAlbum) {
                         ForEach(albumChoices, id: \.self) { Text($0).tag($0) }
                     }
@@ -252,6 +253,11 @@ struct ShortcutHelpView: View {
 
                     Text("4. 6:00 pm: WeChat").font(.headline)
                     step(1, "Same as 3, with **6:00 PM** and **WeChat**.")
+
+                    Text("5. Studying on the Mac → focus on the iPhone").font(.headline)
+                    step(1, "On the **Mac**: System Settings → **Focus** → add a Focus called **Study**, and turn on **Share Across Devices**. Turn it on from Control Center when you study.")
+                    step(2, "On the **iPhone**: Shortcuts → Automation → **+** → **Focus** → **Study** → **When Turning On**, **Run Immediately** → **New Blank Automation** → **Pork: start focus** → **Done**.")
+                    step(3, "Make one more: **Study** → **When Turning Off** → **Pork: stop focus**.")
 
                     Text("At 12 am Pork checks yesterday's to-dos; at 6 pm today's. Apps only open while the phone is unlocked; otherwise you get Pork's reminder with the list.")
                         .foregroundStyle(.secondary)

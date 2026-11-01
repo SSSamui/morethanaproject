@@ -142,15 +142,15 @@ enum Todos {
         try? store.save(r, commit: true)
     }
 
-    /// An event happening now, else the next one in the coming hour, else
-    /// today's all-day event.
+    /// An event happening now or starting in the next 15 minutes ("where you
+    /// should be"), else today's all-day event.
     static func currentEvent(now: Date = Date()) -> NowEvent? {
         guard hasCalendar else { return nil }
         let store = EKEventStore()
         let start = Calendar.current.startOfDay(for: now)
-        let predicate = store.predicateForEvents(withStart: start, end: now.addingTimeInterval(60 * 60), calendars: nil)
+        let predicate = store.predicateForEvents(withStart: start, end: now.addingTimeInterval(15 * 60), calendars: nil)
         let events = store.events(matching: predicate).sorted { $0.startDate < $1.startDate }
-        let timed = events.first { !$0.isAllDay && $0.endDate > now && $0.startDate <= now.addingTimeInterval(60 * 60) }
+        let timed = events.first { !$0.isAllDay && $0.endDate > now && $0.startDate <= now.addingTimeInterval(15 * 60) }
         guard let e = timed ?? events.first(where: { $0.isAllDay && $0.endDate > now }) else { return nil }
         return NowEvent(title: e.title ?? "Event", start: e.startDate, end: e.endDate,
                         allDay: e.isAllDay, location: e.location?.isEmpty == false ? e.location : nil)
@@ -171,6 +171,8 @@ final class TodoStore: ObservableObject {
         event = Todos.currentEvent()
         guard !needsAccess else { return }
         snapshot = await Todos.load(PorkStore.load().settings)
+        // for Pork's reminders and the paw screen (they can't read Reminders)
+        PorkStore.defaults.set(snapshot.preview, forKey: "todoPreview")
     }
 
     func requestAccess() async {

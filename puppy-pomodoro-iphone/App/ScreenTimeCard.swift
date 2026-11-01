@@ -11,6 +11,7 @@ extension DeviceActivityReport.Context {
     static let topApps = Self("Pork top apps")
     static let yesterday = Self("Pork yesterday")
     static let sleep = Self("Pork sleep")
+    static let today = Self("Pork today")
 }
 #endif
 

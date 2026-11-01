@@ -8,7 +8,7 @@
 
 import AppIntents
 
-struct DistractionOpenedIntent: AppIntent {
+struct DistractionOpenedIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pork: distraction app opened"
     static var description = IntentDescription(
         "Starts Pork's reminders (after 5 and 10 minutes). True when Pork should show his check-in first: today's promise isn't made, something from the fun list could replace the distraction, or a Calendar event is on now.")
@@ -16,11 +16,13 @@ struct DistractionOpenedIntent: AppIntent {
     init() {}
 
     func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
-        .result(value: await Nudges.distractionOpened())
+        let show = await Nudges.distractionOpened()
+        await LiveActivities.update(PorkStore.load())   // "This pick-up" on the Lock Screen
+        return .result(value: show)
     }
 }
 
-struct FocusAppOpenedIntent: AppIntent {
+struct FocusAppOpenedIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pork: focus app opened"
     static var description = IntentDescription(
         "Cancels Pork's distraction reminders. True when today's promise isn't made yet (first pick-up after 8 am), so the automation can open it.")
@@ -29,6 +31,7 @@ struct FocusAppOpenedIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
         Nudges.focusOpened()
+        await LiveActivities.update(PorkStore.load())
         return .result(value: DayPlans.needsPromise(DayPlans.all()))
     }
 }
@@ -63,6 +66,31 @@ struct SayHiToPorkIntent: AppIntent {
             AppModel.shared.funFirst = Nudges.takeFunFirst()
             AppModel.shared.showHi = true
         }
+        return .result()
+    }
+}
+
+// MARK: - studying on the Mac
+// Turn on a "Study" Focus on the Mac (Share Across Devices) and the iPhone
+// gets it too; iPhone automations run these to start / stop Pork's focus.
+
+struct StartFocusIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Pork: start focus"
+    static var description = IntentDescription("Starts Pork's focus clock on the iPhone (for example when your Mac's Study Focus turns on).")
+    init() {}
+    func perform() async throws -> some IntentResult {
+        let s = PorkStore.load()
+        if s.phase == .idle { await PorkHooks.settle(PorkCommands.run(.start(nil))) }
+        return .result()
+    }
+}
+
+struct StopFocusIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Pork: stop focus"
+    static var description = IntentDescription("Stops Pork's focus clock on the iPhone (for example when your Mac's Study Focus turns off).")
+    init() {}
+    func perform() async throws -> some IntentResult {
+        await PorkHooks.settle(PorkCommands.run(.stop))
         return .result()
     }
 }

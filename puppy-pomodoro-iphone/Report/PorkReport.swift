@@ -16,6 +16,7 @@ struct PorkReport: DeviceActivityReportExtension {
         TopAppsReport { TopAppsView(top: $0) }
         YesterdayReport { YesterdayView(day: $0) }
         SleepReport { SleepView(sleep: $0) }
+        TodayReport { TodayView(day: $0) }
     }
 }
 
@@ -23,6 +24,7 @@ extension DeviceActivityReport.Context {
     static let topApps = Self("Pork top apps")
     static let yesterday = Self("Pork yesterday")
     static let sleep = Self("Pork sleep")
+    static let today = Self("Pork today")
 }
 
 struct TopApps {
@@ -242,6 +244,66 @@ struct SleepView: View {
                 Text("Pork couldn't tell when you slept last night.").font(.subheadline)
             }
             Spacer(minLength: 0)
+        }
+    }
+}
+
+// MARK: - today (Pork's board)
+
+struct TodayReport: DeviceActivityReportScene {
+    let context: DeviceActivityReport.Context = .today
+    let content: (DaySummary) -> TodayView
+
+    func makeConfiguration(representing data: DeviceActivityResults<DeviceActivityData>) async -> DaySummary {
+        let focus = focusAppTokens()
+        var sum = DaySummary()
+        var perApp: [String: (TimeInterval, Bool)] = [:]
+        for await device in data {
+            for await segment in device.activitySegments {
+                sum.total += segment.totalActivityDuration
+                for await category in segment.categories {
+                    for await app in category.applications {
+                        let isFocus = app.application.token.map { focus.contains($0) } ?? false
+                        if !isFocus { sum.play += app.totalActivityDuration }
+                        let name = app.application.localizedDisplayName ?? "An app"
+                        perApp[name] = ((perApp[name]?.0 ?? 0) + app.totalActivityDuration, isFocus)
+                    }
+                }
+            }
+        }
+        sum.apps = perApp.filter { !$0.value.1 }.sorted { $0.value.0 > $1.value.0 }.prefix(3)
+            .map { (name: $0.key, time: $0.value.0, focus: false) }
+        sum.promise = DayPlans.current()
+        return sum
+    }
+}
+
+struct TodayView: View {
+    let day: DaySummary
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 18) {
+                VStack(alignment: .leading) {
+                    Text("Distractions today").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    Text(Dur.text(day.play)).font(.system(.largeTitle, design: .rounded).weight(.heavy))
+                        .foregroundStyle(Color(red: 0.85, green: 0.26, blue: 0.23))
+                }
+                VStack(alignment: .leading) {
+                    Text("Useful").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    Text(Dur.text(day.total - day.play)).font(.system(.title2, design: .rounded).weight(.bold))
+                        .foregroundStyle(.green)
+                }
+            }
+            if let promise = day.promise {
+                let left = TimeInterval(promise.promiseMin * 60) - day.play
+                Text(left >= 0 ? "🤞 \(Dur.text(left)) of today's promise left" : "🥺 \(Dur.text(-left)) over today's promise")
+                    .font(.subheadline.weight(.semibold))
+            }
+            if !day.apps.isEmpty {
+                Text(day.apps.map { "\($0.name) \(Dur.text($0.time))" }.joined(separator: " · "))
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
         }
     }
 }
