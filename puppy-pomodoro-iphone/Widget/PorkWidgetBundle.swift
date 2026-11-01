@@ -8,5 +8,7 @@ struct PorkWidgetBundle: WidgetBundle {
     var body: some Widget {
         PorkClockWidget()
         PorkLiveActivity()
+        PorkPlanWidget()
+        PorkDumpWidget()
     }
 }

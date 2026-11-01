@@ -60,7 +60,7 @@ enum ScreenTime {
 
     /// Late at night: only focus apps and focus sites, focus session or not.
     static func applyNight(_ st: PorkSettings, now: Date = Date()) {
-        if isOn && !PorkPause.isOn && st.isNight(now) {
+        if isOn && !PorkPause.isOn && StrictRules.isOn(.night, now: now) && st.isNight(now) {
             nightStore.shield.applicationCategories = .all(except: focusApps.applicationTokens)
             nightStore.webContent.blockedByFilter = .all(except: Set(allowedHosts(st.focusSites).map { WebDomain(domain: $0) }))
         } else {
@@ -129,7 +129,7 @@ enum ScreenTime {
     }
 
     static func applyMorning(now: Date = Date()) {
-        if isOn && DayPlans.needsPromise(DayPlans.all(), now: now) {
+        if isOn && StrictRules.isOn(.promise, now: now) && DayPlans.needsPromise(DayPlans.all(), now: now) {
             shieldDistractions(morningStore)
         } else {
             morningStore.clearAllSettings()
@@ -229,8 +229,12 @@ enum ScreenTime {
         }
         if used >= plan.promiseMin, !promiseReachedToday {
             d.set(plan.day, forKey: "promiseReachedDay")
-            shieldDistractions(promiseStore)
-            Alerts.say("That's today's promise 🐾", "You promised Pork \(Dur.text(TimeInterval(plan.promiseMin * 60))) of play time. Only focus apps for the rest of today.")
+            if StrictRules.isOn(.promise) {
+                shieldDistractions(promiseStore)
+                Alerts.say("That's today's promise 🐾", "You promised Pork \(Dur.text(TimeInterval(plan.promiseMin * 60))) of play time. Only focus apps for the rest of today.")
+            } else {
+                Alerts.say("That's today's promise 🐾", "You promised Pork \(Dur.text(TimeInterval(plan.promiseMin * 60))) of play time, and it's used up. Pork trusts you to stop here.")
+            }
         }
     }
 
@@ -249,7 +253,7 @@ enum ScreenTime {
     }
 
     static func graceOver() {
-        if promiseReachedToday { shieldDistractions(promiseStore) }
+        if promiseReachedToday && StrictRules.isOn(.promise) { shieldDistractions(promiseStore) }
     }
 
     // MARK: this pick-up (full version: counted by Screen Time)
@@ -270,6 +274,7 @@ enum ScreenTime {
         for k in ["puAll", "puFocus"] { d.set(0, forKey: k) }
         d.set(false, forKey: "puNudged")
         d.set(false, forKey: "puNotes")
+        d.set(false, forKey: "puBody")
         d.set(PorkStore.load().settings.notesMin + 2, forKey: "puNextCover")
         guard isOn else { return }
         let cal = Calendar.current
@@ -304,6 +309,10 @@ enum ScreenTime {
         PickUp.touch()
         guard !PorkPause.isOn else { return }
         let st = PorkStore.load().settings
+        if d.integer(forKey: "puAll") >= 45, !d.bool(forKey: "puBody") {
+            d.set(true, forKey: "puBody")
+            Alerts.bodyCheck(after: 1)
+        }
         if play >= st.nudgeMin, !d.bool(forKey: "puNudged") {
             d.set(true, forKey: "puNudged")
             Alerts.say("Pork is scratching the door 🐾", "\(play) min on distractions this time. Pork wants you back!")
@@ -315,7 +324,7 @@ enum ScreenTime {
                        todos.isEmpty ? "Tap to see your to-dos with Pork." : "To do:\n" + todos)
             if st.pawsOn { Alerts.paws() }
         }
-        if st.pawsOn, play >= d.integer(forKey: "puNextCover"), d.integer(forKey: "puNextCover") > 0, !pawCovered {
+        if StrictRules.isOn(.paws), play >= d.integer(forKey: "puNextCover"), d.integer(forKey: "puNextCover") > 0, !pawCovered {
             shieldDistractions(pawStore)
             d.set(true, forKey: "pawCovered")
         }
@@ -360,7 +369,17 @@ enum ScreenTime {
         DeviceActivityCenter().stopMonitoring([pauseActivity])
         apply(PorkStore.load())
         applyMorning()
-        if promiseReachedToday { shieldDistractions(promiseStore) }
+        if promiseReachedToday && StrictRules.isOn(.promise) { shieldDistractions(promiseStore) }
+    }
+
+    /// After a strict rule changes (or a change ran out): block or unblock now.
+    static func applyRules() {
+        let s = PorkStore.load()
+        applyNight(s.settings)
+        applyMorning()
+        if !StrictRules.isOn(.promise) { promiseStore.clearAllSettings() }
+        else if promiseReachedToday { shieldDistractions(promiseStore) }
+        if !StrictRules.isOn(.paws) { uncoverPaws() }
     }
 
     /// Players that focus sites embed (for example the YouTube player on the

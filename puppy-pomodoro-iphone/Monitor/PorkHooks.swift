@@ -5,4 +5,5 @@ import Foundation
 enum PorkHooks {
     static func changed(_ s: PorkState) {}
     static func settle(_ s: PorkState) async {}
+    static func completeTodo(_ id: String) async {}
 }

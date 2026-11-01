@@ -12,6 +12,8 @@ final class AppModel: ObservableObject {
     @Published var showHi = false
     @Published var showMorning = false
     @Published var funFirst = false     // the check-in opens with "something fun instead?"
+    @Published var showDump = false     // "Tell Pork…"
+    @Published var celebrating = false  // a to-do was just finished
     @Published var toast: String?
     @Published var releasingUntil = Date.distantPast // door animation after "let Pork out"
 
@@ -38,11 +40,13 @@ final class AppModel: ObservableObject {
         Task { await LiveActivities.update(s) }
         Alerts.requestPermission()
         Alerts.scheduleMorning()
+        InboxReminder.schedule()
         Nudges.recordUse()
         LockWatcher.shared.update(s)
         #if !LITE
         ScreenTime.scheduleMorning()
         ScreenTime.checkPromise()
+        ScreenTime.applyRules() // a 1-day change may have run out
         #endif
         checkMorning()
     }
@@ -78,6 +82,16 @@ final class AppModel: ObservableObject {
         let s = state
         Task { await LiveActivities.update(s) }
         objectWillChange.send()
+    }
+
+    /// A to-do is done: Pork jumps for joy.
+    func celebrate() {
+        withAnimation(.spring) { celebrating = true }
+        if let plan = DayPlans.current() { Alerts.scheduleBedtime(plan) } // tonight's message counts it
+        Task {
+            try? await Task.sleep(nanoseconds: 2_200_000_000)
+            withAnimation { celebrating = false }
+        }
     }
 
     /// ⏸ Pause 30 min (on) / Resume (off).

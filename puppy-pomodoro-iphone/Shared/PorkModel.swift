@@ -77,6 +77,7 @@ struct PorkSettings: Codable, Equatable {
     var wakeWeekday = 8 * 60 + 30         // get up at 8:30 am on weekdays
     var wakeWeekend = 10 * 60 + 30        // and 10:30 am on weekends
     var pawsOn = true                     // after 10 min on distractions: Pork's paws walk onto the screen
+    var inboxList = "Inbox"               // "Tell Pork…": thoughts to sort later
 
     // Late at night only focus apps and sites open (minutes after midnight)
     var nightOn = true
@@ -110,6 +111,7 @@ struct PorkSettings: Codable, Equatable {
         wakeWeekday = try c.decodeIfPresent(Int.self, forKey: .wakeWeekday) ?? d.wakeWeekday
         wakeWeekend = try c.decodeIfPresent(Int.self, forKey: .wakeWeekend) ?? d.wakeWeekend
         pawsOn = try c.decodeIfPresent(Bool.self, forKey: .pawsOn) ?? d.pawsOn
+        inboxList = try c.decodeIfPresent(String.self, forKey: .inboxList) ?? d.inboxList
     }
 
     /// Is `date` inside the late-night hours? (They may cross midnight, like 11 pm–7 am.)

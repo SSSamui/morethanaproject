@@ -12,4 +12,11 @@ enum PorkHooks {
     static func settle(_ s: PorkState) async {
         await LiveActivities.update(s)
     }
+
+    /// A tick on the plan widget: mark it done in Reminders and refresh.
+    static func completeTodo(_ id: String) async {
+        Todos.complete(id)
+        DoneToday.add()
+        await TodoStore.shared.refresh()
+    }
 }

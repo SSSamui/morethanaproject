@@ -58,6 +58,10 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
+            .sheet(isPresented: $model.showDump) { BrainDumpSheet(todos: todos) }
+            .overlay {
+                if model.celebrating { Celebration() }
+            }
             .fullScreenCover(isPresented: $model.showHi) { PorkHiView() }
             .overlay(alignment: .top) {
                 if let toast = model.toast {

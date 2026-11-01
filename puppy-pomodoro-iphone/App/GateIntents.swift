@@ -70,6 +70,23 @@ struct SayHiToPorkIntent: AppIntent {
     }
 }
 
+// MARK: - brain dump
+
+struct TellPorkIntent: AppIntent {
+    static var title: LocalizedStringResource = "Tell Pork"
+    static var description = IntentDescription("Drop a thought into Pork's inbox (your Reminders “Inbox” list).")
+
+    @Parameter(title: "Thought", requestValueDialog: "What's on your mind?")
+    var thought: String
+
+    init() {}
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        Todos.add(thought, to: PorkStore.load().settings.inboxList)
+        return .result(dialog: "Got it. Pork keeps it in your inbox 🐾")
+    }
+}
+
 // MARK: - studying on the Mac
 // Turn on a "Study" Focus on the Mac (Share Across Devices) and the iPhone
 // gets it too; iPhone automations run these to start / stop Pork's focus.
@@ -101,5 +118,9 @@ struct PorkShortcuts: AppShortcutsProvider {
                     phrases: ["Show Pork's check-in in \(.applicationName)"],
                     shortTitle: "Pork's check-in",
                     systemImageName: "pawprint.fill")
+        AppShortcut(intent: TellPorkIntent(),
+                    phrases: ["Tell \(.applicationName)", "Tell \(.applicationName) a thought"],
+                    shortTitle: "Tell Pork",
+                    systemImageName: "bubble.left.fill")
     }
 }

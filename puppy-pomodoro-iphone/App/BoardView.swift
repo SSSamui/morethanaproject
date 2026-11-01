@@ -14,6 +14,16 @@ struct BoardView: View {
 
     var body: some View {
         VStack(spacing: 14) {
+            HStack(spacing: 10) {
+                Button { model.showDump = true } label: {
+                    Label("Tell Pork…", systemImage: "bubble.left.and.text.bubble.right")
+                        .font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent).tint(.porkFocus)
+                if DoneToday.count > 0 {
+                    Text("✅ \(DoneToday.count) today").font(.subheadline.bold())
+                }
+            }
             PauseBar()
             SleepCard()
             if let event = todos.event {
@@ -21,7 +31,11 @@ struct BoardView: View {
             }
             TimeCard()
             PromiseCard()
+            if !todos.snapshot.inbox.isEmpty {
+                section("💭 Inbox: give these a home") { InboxSorter(todos: todos) }
+            }
             section("📝 To do this week") { StickyBoard(todos: todos) }
+            section("📅 Big picture: next 3 weeks") { BigPictureView(todos: todos) }
             section("🎈 Fun instead of scrolling") { FunBoard(todos: todos) }
             PorkCorner()
             ScreenTimeCard()

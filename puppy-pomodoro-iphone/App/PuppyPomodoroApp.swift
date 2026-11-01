@@ -15,6 +15,7 @@ struct PuppyPomodoroApp: App {
                 .environmentObject(model)
                 .onOpenURL { url in
                     if url.host == "hi" { model.showHi = true }
+                    if url.host == "dump" { model.showDump = true }
                 }
         }
         .onChange(of: scenePhase) { _, phase in

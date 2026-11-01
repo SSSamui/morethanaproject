@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var pickApps = false
     @State private var countApps = ScreenTime.countApps
     @State private var pickCount = false
+    @State private var strictTick = 0
     @State private var screenTimeError: String?
     #endif
 
@@ -48,12 +49,8 @@ struct SettingsView: View {
                     Text("For today's promise: tap “All Apps & Categories” in the list. Focus apps are left out again, so only play time counts.")
                         .font(.footnote).foregroundStyle(.secondary)
                     Text(appsSummary).font(.footnote).foregroundStyle(.secondary)
-                    Toggle("Only focus apps late at night", isOn: $st.nightOn)
-                        .disabled(!blocking)
-                    if st.nightOn {
-                        DatePicker("From", selection: nightTime(\.nightStart), displayedComponents: .hourAndMinute)
-                        DatePicker("Until", selection: nightTime(\.nightEnd), displayedComponents: .hourAndMinute)
-                    }
+                    DatePicker("Bedtime (usually set by the morning promise)", selection: nightTime(\.nightStart), displayedComponents: .hourAndMinute)
+                    DatePicker("Night block ends", selection: nightTime(\.nightEnd), displayedComponents: .hourAndMinute)
                     if let screenTimeError {
                         Text(screenTimeError).font(.footnote).foregroundStyle(.red)
                     }
@@ -61,6 +58,23 @@ struct SettingsView: View {
                     Text("Blocking (Screen Time)")
                 } footer: {
                     Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Late at night (12:00 am to 6:00 am unless you change it) only focus apps and sites open, even without a focus session. Pick your focus apps: Outlook, WeChat, Kindle, Gmail, Google Drive, Google Tasks, Google Calendar, Calendar, Reminders, Handshake, Slack, Messages, Phone, Canvas, Claude, Gemini, ChatGPT and Puppy Pomodoro. Everything else is a distraction. (Phone calls, alarms and Settings always work.)")
+                }
+
+                Section {
+                    ForEach(StrictRule.allCases, id: \.self) { rule in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Toggle(rule.title, isOn: strictBinding(rule))
+                            if let until = StrictRules.changedUntil(rule) {
+                                Text("Changed until \(until.formatted(date: .abbreviated, time: .shortened)), then back to \(rule.byDefault ? "on" : "off")")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        .id("\(rule.rawValue)\(strictTick)")
+                    }
+                } header: {
+                    Text("How strict is Pork")
+                } footer: {
+                    Text("Normally the night block and the paw screen are on, and the promise blocks are off. A change lasts 1 day, then goes back, so Pork never gets stuck too strict or too loose.")
                 }
                 #endif
 
@@ -82,6 +96,8 @@ struct SettingsView: View {
                     TextField("Routine list", text: $st.routineList)
                         .autocorrectionDisabled()
                     TextField("Fun list", text: $st.funList)
+                        .autocorrectionDisabled()
+                    TextField("Inbox list (Tell Pork…)", text: $st.inboxList)
                         .autocorrectionDisabled()
                     Button("Allow Reminders & Calendar") { Task { await TodoStore.shared.requestAccess() } }
                 } header: {
@@ -184,6 +200,17 @@ struct SettingsView: View {
     }
 
     #if !LITE
+    /// A strict rule's switch: the change lasts 1 day.
+    private func strictBinding(_ rule: StrictRule) -> Binding<Bool> {
+        Binding(
+            get: { StrictRules.isOn(rule) },
+            set: { on in
+                StrictRules.set(rule, on)
+                ScreenTime.applyRules()
+                strictTick += 1
+            })
+    }
+
     /// A time picker for minutes after midnight.
     private func nightTime(_ key: WritableKeyPath<PorkSettings, Int>) -> Binding<Date> {
         Binding(

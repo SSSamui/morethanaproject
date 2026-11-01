@@ -108,6 +108,16 @@ enum Alerts {
         }
     }
 
+    /// After a long stretch on the phone: water and a stretch (not a block).
+    static func bodyCheck(after delay: TimeInterval) {
+        let content = UNMutableNotificationContent()
+        content.title = "Pork is thirsty 💧"
+        content.body = "45 minutes on the phone. Drink some water and stand up for a minute? Pork will stretch with you."
+        UNUserNotificationCenter.current().add(UNNotificationRequest(
+            identifier: "pork.body", content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: max(1, delay), repeats: false)))
+    }
+
     static func cancelPaws() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: pawIDs)
     }
@@ -143,7 +153,9 @@ enum Alerts {
         if at <= now { at = at.addingTimeInterval(24 * 3600) }
         let content = UNMutableNotificationContent()
         content.title = "Bedtime 🌙"
-        content.body = "Pork is going to sleep. From now on only focus apps until morning. Open Pork to see how much sleep you'll get. Good night!"
+        let done = DoneToday.count
+        content.body = (done > 0 ? "You finished \(done) thing\(done == 1 ? "" : "s") today 🐾 " : "")
+            + "Pork is going to sleep. Open Pork to see how much sleep you'll get. Good night!"
         content.sound = .default
         content.userInfo = ["open": "sleep"]
         UNUserNotificationCenter.current().add(UNNotificationRequest(

@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 4.0.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 4.1.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -31,6 +31,14 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
 | — | **To-dos as sticky notes** from Apple Reminders (2.0.0) |
 
 ## New features and changes for the iPhone version
+
+**4.1.0: gentle by default, and the big picture.**
+- **How strict is Pork** (Settings): the night block and the paw screen at 12 minutes are **on**, the promise blocks are **off** (the morning question and warnings stay). You can change them, but **a change lasts 1 day** and then goes back.
+- **📅 Big picture**: every homework, project and quiz due in the next 3 weeks as a bar from today to the due day, red/orange/green by how close it is. Add how many days a task needs to its title (*Lab report ~3d*, *Midterm study (2 days)*): Pork draws its work days, says when to start, and puts it in **Today** (*▶︎ start now · due Thu*) when it's time.
+- **💭 Tell Pork…**: a button on the board, a 💭 Lock Screen widget, and Siri ("Hey Siri, tell Pork"). The thought goes to a Reminders list **Inbox**; the board shows it with 📚 / 🔁 / 🎈 buttons to give it a home, and on Sunday at 6 pm Pork asks you to sort the week's thoughts.
+- **🐾 Pork's plan widget** (Lock Screen rectangle, Home Screen medium/large): the next event and your to-dos, visible the moment the screen lights up. On the Home Screen tap ○ to tick one off.
+- **🎉 Finishing things**: Pork jumps for joy when you tick a to-do; the board and the bedtime message show how many you finished today.
+- **💧 Body check**: after 45 minutes on the phone, a gentle "drink some water and stand up?".
 
 **4.0.0: Pork becomes your outside brain.** The app opens on **Pork's board**, where everything is visible: where you should be (a big sticky note for the Calendar event on now or in the next 15 minutes), **your time** (distractions today, useful apps today, this pick-up), to-dos for the week, the fun list, Pork's room and photos, and **⏸ Pause 30 min**. The pomodoro clock moved to the **Focus** tab.
 - **Your time is always visible**: the Lock Screen widget shows *📱 1h40 today* (full version; free: how often you opened distraction apps), the Lock Screen / Dynamic Island shows *📱 This pick-up 6:12* counting up while you're on distraction apps.
@@ -84,8 +92,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v4.0.0.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v4.0.0**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v4.1.0.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v4.1.0**.
 
 ### 2. Open it in Xcode
 
@@ -137,6 +145,7 @@ These steps are also in the app: ⚙︎ → **How to turn it on (Shortcuts)**.
 
 ### 8. Add the widgets
 
+- **Lock Screen: Pork's plan** (next event + to-dos, seen as soon as the screen lights up): touch and hold the Lock Screen → **Customize** → **Lock Screen** → tap the area under the clock → **Puppy Pomodoro** → **Pork's plan**. Add the round **💭 Tell Pork** next to it if you like.
 - **Lock Screen (for the "time to sleep" countdown)**: touch and hold the Lock Screen → **Customize** → **Lock Screen**. Tap the line **above the clock** (the date) and choose **Puppy Pomodoro** for the one-line countdown, and/or tap the area **under the clock** and add the Puppy Pomodoro rectangle. Tap **Done**.
 - **Home Screen**: touch and hold an empty spot → **Edit** (top left) → **Add Widget** → search **Puppy Pomodoro** → pick small or medium → **Add Widget**.
 - The **Live Activity** (Lock Screen + Dynamic Island) appears by itself when you start a focus.

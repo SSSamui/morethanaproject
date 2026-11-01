@@ -171,6 +171,7 @@ enum Nudges {
             identifier: notesID, content: notes,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(st.notesMin * 60), repeats: false)))
         if st.pawsOn { Alerts.paws(after: TimeInterval(st.notesMin * 60)) }
+        Alerts.bodyCheck(after: 45 * 60)
     }
 
     /// A random photo of Pork from the album (or his drawing) for the reminder.

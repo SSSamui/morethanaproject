@@ -66,3 +66,45 @@ enum TodayUsage {
         return "\(opens)× today"
     }
 }
+
+/// To-dos finished today (Pork celebrates them).
+enum DoneToday {
+    private static var d: UserDefaults { PorkStore.defaults }
+
+    static var count: Int {
+        d.string(forKey: "doneDay") == DayPlans.dayKey(Date()) ? d.integer(forKey: "doneCount") : 0
+    }
+
+    static func add() {
+        let today = DayPlans.dayKey(Date())
+        if d.string(forKey: "doneDay") != today {
+            d.set(today, forKey: "doneDay")
+            d.set(0, forKey: "doneCount")
+        }
+        d.set(d.integer(forKey: "doneCount") + 1, forKey: "doneCount")
+    }
+}
+
+/// What the plan widget shows (it can't read Reminders or Calendar itself,
+/// so the app leaves a copy here).
+struct PlanCache: Codable {
+    struct Item: Codable, Hashable, Identifiable {
+        var id: String
+        var title: String
+        var tag: String
+    }
+    var items: [Item] = []
+    var eventTitle: String?
+    var eventStart: Date?
+    var eventEnd: Date?
+
+    static func load() -> PlanCache {
+        guard let data = PorkStore.defaults.data(forKey: "planCache"),
+              let c = try? JSONDecoder().decode(PlanCache.self, from: data) else { return PlanCache() }
+        return c
+    }
+
+    func save() {
+        if let data = try? JSONEncoder().encode(self) { PorkStore.defaults.set(data, forKey: "planCache") }
+    }
+}

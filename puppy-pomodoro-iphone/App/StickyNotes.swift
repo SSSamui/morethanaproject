@@ -107,7 +107,9 @@ struct StickyNote: View {
 
     private var tag: String? {
         var parts: [String] = []
-        if item.overdue(), let due = item.due {
+        if let due = item.due, let start = item.startBy, !item.overdue(), due >= Calendar.current.startOfDay(for: Date()).addingTimeInterval(86400), start <= Date() {
+            parts.append("▶︎ start now · due " + due.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+        } else if item.overdue(), let due = item.due {
             parts.append("⚠️ overdue · " + due.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
         } else if item.hasTime, let due = item.due {
             parts.append(due.formatted(date: .omitted, time: .shortened))

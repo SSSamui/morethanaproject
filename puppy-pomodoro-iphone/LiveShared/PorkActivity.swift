@@ -96,3 +96,15 @@ struct PauseThirtyIntent: LiveActivityIntent {
         return .result()
     }
 }
+
+/// ✓ on the plan widget. Runs in the app (it can read Reminders there).
+struct CompleteTodoIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Mark a to-do done"
+    @Parameter(title: "Reminder") var id: String
+    init() {}
+    init(id: String) { self.id = id }
+    func perform() async throws -> some IntentResult {
+        await PorkHooks.completeTodo(id)
+        return .result()
+    }
+}
