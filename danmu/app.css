@@ -273,6 +273,7 @@ body.compact .tagchip { max-width: 74px; }
 .ai .checks .dotc { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .ai textarea { width: 100%; min-height: 80px; resize: vertical; background: var(--panel2); color: var(--text);
   border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: 14px/1.4 var(--font); }
+.ai #ai-prompt { min-height: 140px; max-height: 30vh; font-size: 12px; color: var(--muted); }
 .ai .btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .ai .btns button { flex: 1 1 auto; }
 .ai .preview { display: flex; flex-direction: column; gap: 4px; max-height: 40vh; overflow-y: auto; }
