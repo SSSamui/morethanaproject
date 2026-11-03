@@ -8,6 +8,7 @@ The website reads it fresh every time you open **✨ AI social cues**.
   The name becomes the comment tag of the danmu (so you can filter by it). Add, remove or rename freely.
 - **Reading levels**: how long and how simple the danmu are. You pick one on the website each time.
   Same form: `- **name** — how to write`. The first one is the default.
+- **Summary**: what the AI writes as the summary shown when the video ends.
 - **Instructions for the AI**: general rules the AI follows.
 - **Reference notes**: your notes. The AI uses them as the source for wording, steps and rules.
 
@@ -30,6 +31,13 @@ The website reads it fresh every time you open **✨ AI social cues**.
 - **easy** — Max 6 words per danmu. Very simple, everyday words. Use symbols to save words, e.g. "Sad 7/10 · looks down", "Phone · Step 2: say your name".
 - **medium** — Max 10 words. One simple sentence. Explain the cue in plain words, e.g. "She's embarrassed (7/10): she looks down and laughs."
 - **advanced** — Max 15 words. Can use terms from the notes (Fact-Feeling-Impact, perspective-taking, laughing AT/WITH) and name the reason.
+
+## Summary
+
+Shown on screen when the video ends. Write 1–3 short sentences, using simple words that match the reading level:
+1. The key point: what is the story telling us? (one sentence)
+2. The main social skill or lesson in it (use a name from the notes if one fits, e.g. "Fact-Feeling-Impact", "Steps for starting phone calls").
+3. A question for the viewer: "If you were him/her, what would you do?"
 
 ## Instructions for the AI
 
