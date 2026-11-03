@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '15';
+  const APP_VERSION = '16';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
@@ -944,7 +944,7 @@
   // answer back. The danmu are saved as yours, tagged by category, visible to the people you pick.
   const AI_GUIDE_URL = 'ai-guide.md';
   const AI_EDIT_URL = 'https://github.com/SSSamui/morethanaproject/edit/main/danmu/ai-guide.md';
-  const AI_CATS_KEY = 'viq_web_ai_cats', AI_WHO_KEY = 'viq_web_ai_who', AI_TOOL_KEY = 'viq_web_ai_tool', AI_DRAFT_KEY = 'viq_web_ai_draft';
+  const AI_CATS_KEY = 'viq_web_ai_cats', AI_WHO_KEY = 'viq_web_ai_who', AI_TOOL_KEY = 'viq_web_ai_tool', AI_DRAFT_KEY = 'viq_web_ai_draft', AI_LEVEL_KEY = 'viq_web_ai_level';
   const AI_COLORS = ['#fbbf24', '#60a5fa', '#f472b6', '#34d399', '#a78bfa', '#fb923c', '#22d3ee', '#f87171', '#a3e635', '#e879f9', '#fde047', '#93c5fd'];
   let aiGuide = null, aiPeople = [], aiParsed = [];
 
@@ -957,17 +957,18 @@
       if (cur) sec[cur].push(line);
     });
     const find = word => Object.keys(sec).find(k => k.includes(word));
-    const cats = (sec[find('categor')] || []).map(l => l.match(/^\s*[-*]\s*\*\*(.+?)\*\*\s*[—–:-]+\s*(.+)$/))
+    // "- **name** — description" lines of a section
+    const items = k => (sec[find(k)] || []).map(l => l.match(/^\s*[-*]\s*\*\*(.+?)\*\*\s*[—–:-]+\s*(.+)$/))
       .filter(Boolean).map(m => ({ name: C.normTag(m[1]), desc: m[2].trim() })).filter(c => c.name);
     const text = k => (sec[find(k)] || []).join('\n').trim();
-    return { cats, instructions: text('instruction'), reference: text('reference') };
+    return { cats: items('categor'), levels: items('level'), instructions: text('instruction'), reference: text('reference') };
   }
   const catColor = name => {
     const i = aiGuide ? aiGuide.cats.findIndex(c => c.name === name) : -1;
     return AI_COLORS[(i < 0 ? AI_COLORS.length - 1 : i) % AI_COLORS.length];
   };
 
-  function aiPrompt(cats, tool, transcript) {
+  function aiPrompt(cats, level, transcript) {
     let title = $('video-title').textContent || '', len = 0;
     try { len = player.getDuration() || 0; } catch { /* not ready */ }
     const url = 'https://www.youtube.com/' + (isShort ? 'shorts/' + videoId : 'watch?v=' + videoId);
@@ -984,6 +985,7 @@
       'Rules:',
       aiGuide.instructions,
       '',
+      ...(level ? ['Reading level: ' + level.name + ' — ' + level.desc, 'Follow this length and wording for EVERY danmu (it overrides any other length).', ''] : []),
       'Answer with ONLY a JSON array (no other text), one object per danmu, in time order:',
       '[{"time":"0:12","category":"' + (cats[0] ? cats[0].name : 'emotion') + '","text":"…"}]',
       '"time" is the moment in the video as m:ss. "category" is one of: ' + cats.map(c => c.name).join(', ') + '.',
@@ -1065,6 +1067,8 @@
     const whoOn = p => savedWho ? savedWho.includes(p.id) : true;   // first time: everyone who has an account now
     const draft = lsGet(AI_DRAFT_KEY, null);
     const tool = lsGet(AI_TOOL_KEY, 'gemini');
+    const levels = aiGuide.levels;
+    let level = levels.find(l => l.name === lsGet(AI_LEVEL_KEY, '')) || levels[0] || null;
     body.innerHTML =
       '<div class="ai">' +
       '<h3>1. What should the AI comment on?</h3>' +
@@ -1077,6 +1081,9 @@
         aiPeople.map((p, i) => '<label' + (whoOn(p) ? ' class="on"' : '') + '><input type="checkbox" data-i="' + i + '"' + (whoOn(p) ? ' checked' : '') + '>' + esc(p.name) + '</label>').join('') +
         '<label' + (savedWho === 'all' ? ' class="on"' : '') + '><input type="checkbox" id="ai-all"' + (savedWho === 'all' ? ' checked' : '') + '>🌐 Everyone</label></div>' +
       '<p class="note">People who join later won\'t see them unless you tick 🌐 Everyone.</p>' +
+      (levels.length ? '<h3>Reading level</h3><div class="checks" id="ai-level">' + levels.map((l, i) =>
+        '<label title="' + esc(l.desc) + '"' + (l === level ? ' class="on"' : '') + '><input type="radio" name="ai-level" data-i="' + i + '"' + (l === level ? ' checked' : '') + '>' + esc(l.name) + '</label>').join('') +
+        '</div><p class="note" id="ai-level-note">' + esc(level.desc) + '</p>' : '') +
       '<h3>3. Ask the AI</h3>' +
       '<div class="tabs" id="ai-tool"><button data-t="gemini"' + (tool === 'gemini' ? ' class="active"' : '') + '>Gemini</button>' +
         '<button data-t="claude"' + (tool === 'claude' ? ' class="active"' : '') + '>Claude</button></div>' +
@@ -1093,6 +1100,11 @@
       '</div>';
 
     const toggleLabel = inp => inp.closest('label').classList.toggle('on', inp.checked);
+    body.querySelectorAll('#ai-level input').forEach(inp => inp.onchange = () => {
+      level = levels[+inp.dataset.i]; lsSet(AI_LEVEL_KEY, level.name);
+      body.querySelectorAll('#ai-level input').forEach(toggleLabel);
+      $('ai-level-note').textContent = level.desc;
+    });
     body.querySelectorAll('#ai-cats input').forEach(inp => inp.onchange = () => {
       toggleLabel(inp);
       lsSet(AI_CATS_KEY, [...body.querySelectorAll('#ai-cats input:checked')].map(x => aiGuide.cats[+x.dataset.i].name));
@@ -1118,7 +1130,7 @@
       const cats = chosenCats(), tr = $('ai-transcript').value.trim();
       if (!cats.length) return toast('Pick at least one category');
       if (curTool === 'claude' && !tr) return toast('Claude needs the transcript: paste it in the box first', 3500);
-      const text = aiPrompt(cats, curTool, tr);
+      const text = aiPrompt(cats, level, tr);
       // The prompt goes to the clipboard, and is also shown here so you can see (or copy) it yourself
       const box = $('ai-prompt'), name = curTool === 'claude' ? 'Claude' : 'Gemini';
       box.value = text; box.classList.remove('hidden'); box.scrollTop = 0;

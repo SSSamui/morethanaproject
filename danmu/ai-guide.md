@@ -6,6 +6,8 @@ The website reads it fresh every time you open **✨ AI social cues**.
 
 - **Categories**: one line each, in the form `- **name** — what the AI should write`.
   The name becomes the comment tag of the danmu (so you can filter by it). Add, remove or rename freely.
+- **Reading levels**: how long and how simple the danmu are. You pick one on the website each time.
+  Same form: `- **name** — how to write`. The first one is the default.
 - **Instructions for the AI**: general rules the AI follows.
 - **Reference notes**: your notes. The AI uses them as the source for wording, steps and rules.
 
@@ -23,10 +25,16 @@ The website reads it fresh every time you open **✨ AI social cues**.
 - **rules** — A conversation, humor, electronic or social media rule being followed or broken. Example: "Rule broken: conversation hog".
 - **reflect** — A short question for the viewer to think about. Example: "If you were B, how would you answer?"
 
+## Reading levels
+
+- **easy** — Max 6 words per danmu. Very simple, everyday words. Use symbols to save words, e.g. "Sad 7/10 · looks down", "Phone · Step 2: say your name".
+- **medium** — Max 10 words. One simple sentence. Explain the cue in plain words, e.g. "She's embarrassed (7/10): she looks down and laughs."
+- **advanced** — Max 15 words. Can use terms from the notes (Fact-Feeling-Impact, perspective-taking, laughing AT/WITH) and name the reason.
+
 ## Instructions for the AI
 
 - Write in **English only**, simple and clear, for a teen learning social skills.
-- Each danmu is **one short sentence (max ~15 words)**, tied to a specific moment in the video.
+- Each danmu is tied to a specific moment in the video. Keep it as short as the chosen reading level says.
 - Only comment on what is really in the video (what people say, do, show). Do not invent events.
   When you guess thoughts or motivation, say "probably" or "maybe".
 - Use the words, steps and rules from the Reference notes below (e.g. Fact-Feeling-Impact,
