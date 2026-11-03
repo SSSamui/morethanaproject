@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '14';
+  const APP_VERSION = '15';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
@@ -1083,6 +1083,7 @@
       '<p class="note" id="ai-tool-note"></p>' +
       '<textarea id="ai-transcript" placeholder="Transcript (optional for Gemini, needed for Claude). On YouTube: …more → Show transcript → copy it here."></textarea>' +
       '<div class="btns"><button class="primary" id="ai-copy">📋 Copy prompt</button><button class="ghost" id="ai-open">Open Gemini ↗</button></div>' +
+      '<p class="note hidden" id="ai-copied"></p>' +
       '<textarea id="ai-prompt" class="hidden" readonly></textarea>' +
       '<h3>4. Paste the AI\'s answer</h3>' +
       '<textarea id="ai-answer" placeholder=\'[{"time":"0:12","category":"emotion","text":"…"}]  or lines like  0:12 [emotion] …\'>' + esc(draft && draft.v === videoId ? draft.text : '') + '</textarea>' +
@@ -1118,10 +1119,16 @@
       if (!cats.length) return toast('Pick at least one category');
       if (curTool === 'claude' && !tr) return toast('Claude needs the transcript: paste it in the box first', 3500);
       const text = aiPrompt(cats, curTool, tr);
-      $('ai-prompt').value = text;
-      const ok = await copyText(text, $('ai-prompt'));
-      toast(ok ? '📋 Prompt copied. Paste it into ' + (curTool === 'claude' ? 'Claude' : 'Gemini') : 'Copy the prompt from the box', 3500);
-      if (!ok) $('ai-prompt').classList.remove('hidden');
+      // The prompt goes to the clipboard, and is also shown here so you can see (or copy) it yourself
+      const box = $('ai-prompt'), name = curTool === 'claude' ? 'Claude' : 'Gemini';
+      box.value = text; box.classList.remove('hidden'); box.scrollTop = 0;
+      const ok = await copyText(text, box);
+      $('ai-copied').classList.remove('hidden');
+      $('ai-copied').className = 'note' + (ok ? ' ok' : ' err');
+      $('ai-copied').textContent = ok
+        ? '✓ Copied! The prompt is below. Tap Open ' + name + ', paste it there (long-press → Paste, or Ctrl/⌘+V) and send.'
+        : 'Couldn\'t copy automatically: select all the text in the box below and copy it.';
+      toast(ok ? '📋 Prompt copied. Paste it into ' + name : 'Copy the prompt from the box', 3500);
     };
     $('ai-open').onclick = () => window.open(curTool === 'claude' ? 'https://claude.ai/new' : 'https://gemini.google.com/app', '_blank', 'noopener');
 
