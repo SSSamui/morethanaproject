@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '16';
+  const APP_VERSION = '17';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
@@ -315,7 +315,7 @@
     $('stage').classList.toggle('short', isShort);
     $('stage-msg').classList.add('hidden');
     if (changed) {
-      rows = []; pending.clear(); lastSec = -1; clearDanmu(); cancelEdit();
+      rows = []; pending.clear(); lastSec = -1; clearDanmu(); cancelEdit(); hideSummary();
       $('video-title').textContent = '';
       renderList();
     }
@@ -364,6 +364,8 @@
         },
         onStateChange: e => {
           if (e.data === 1) updateTitle();   // danmu movement follows the player in frame()
+          if (e.data === 0) showSummary();   // video ended
+          else if (e.data === 1 && !sumTimer) hideSummary();
         },
         onError: e => {
           const blocked = e.data === 101 || e.data === 150 || e.data === 153;
@@ -374,6 +376,23 @@
       }
     });
   }
+  // ── Summary card: the video's summaries (📝 danmu) when it ends ──────────
+  let sumTimer = 0;
+  function showSummary(ms) {
+    const list = rows.filter(r => r.is_summary);
+    if (!list.length || !danmuOn) return;
+    const card = $('sumcard');
+    card.innerHTML = '<div class="sum-head"><b>📝 Summary</b><button type="button" id="sum-x" title="Close">✕</button></div>' +
+      list.map(r => {
+        const a = author(r), showName = showNames && !a.hidden && !a.mineAnon;
+        return '<p>' + (showName && list.length > 1 ? '<span class="who" style="color:' + esc(a.color) + '">' + esc(a.name) + '</span> ' : '') + esc(r.text) + '</p>';
+      }).join('');
+    card.classList.remove('hidden');
+    $('sum-x').onclick = hideSummary;
+    clearTimeout(sumTimer); sumTimer = ms ? setTimeout(hideSummary, ms) : 0;
+  }
+  function hideSummary() { clearTimeout(sumTimer); sumTimer = 0; $('sumcard').classList.add('hidden'); }
+
   function showStageMsg(html) { const m = $('stage-msg'); m.innerHTML = html; m.classList.remove('hidden'); }
   function updateTitle() {
     try {
@@ -398,6 +417,7 @@
     const prev = lastSec;
     lastSec = t;
     const fresh = prev < 0, forward = prev >= 0 && t > prev && t - prev <= 3, looped = prev > t && t <= 1;
+    if (looped && isShort && prev >= 3) showSummary(10000);   // a Short that loops never "ends": show it as it starts over
     if (playing && danmuOn && (fresh || forward || looped)) {
       for (let s = forward ? prev + 1 : t; s <= t; s++)
         rows.forEach(r => { if (r.time_sec === s && !r.is_summary && matchesView(r)) launch(r); });
@@ -903,9 +923,10 @@
       const cls = 'row' + (mention && !mine && mention.test(r.text) ? ' mention' : '');
       return '<div class="' + cls + '" data-i="' + i + '" data-t="' + r.time_sec + '">' +
         '<span class="t">' + fmt(r.time_sec) + '</span>' +
-        '<span class="body"><span class="who" style="color:' + esc(a.color) + '"' + (a.tip ? ' title="' + esc(a.tip) + '"' : '') + '>' + esc(a.name) +
+        '<span class="body">' + (r.is_summary ? '<span class="sumtag">📝 Summary</span>' : '') +
+          '<span class="who" style="color:' + esc(a.color) + '"' + (a.tip ? ' title="' + esc(a.tip) + '"' : '') + '>' + esc(a.name) +
           (a.note ? '<span class="lock">' + esc(a.note) + '</span>' : '') + '</span>' +
-          (tagOf(r) ? '<span class="ctag">#' + esc(tagOf(r)) + '</span>' : '') + esc(r.text) + '</span>' +
+          (tagOf(r) && !r.is_summary ? '<span class="ctag">#' + esc(tagOf(r)) + '</span>' : '') + esc(r.text) + '</span>' +
         '<span class="acts">' + (mine
           ? '<button data-a="edit" title="Edit">✎</button><button data-a="del" title="Delete">✕</button>'
           : a.hidden ? '' : '<button data-a="reply" title="Reply">↩</button>') + '</span></div>';
@@ -944,7 +965,7 @@
   // answer back. The danmu are saved as yours, tagged by category, visible to the people you pick.
   const AI_GUIDE_URL = 'ai-guide.md';
   const AI_EDIT_URL = 'https://github.com/SSSamui/morethanaproject/edit/main/danmu/ai-guide.md';
-  const AI_CATS_KEY = 'viq_web_ai_cats', AI_WHO_KEY = 'viq_web_ai_who', AI_TOOL_KEY = 'viq_web_ai_tool', AI_DRAFT_KEY = 'viq_web_ai_draft', AI_LEVEL_KEY = 'viq_web_ai_level';
+  const AI_CATS_KEY = 'viq_web_ai_cats', AI_WHO_KEY = 'viq_web_ai_who', AI_TOOL_KEY = 'viq_web_ai_tool', AI_DRAFT_KEY = 'viq_web_ai_draft', AI_LEVEL_KEY = 'viq_web_ai_level', AI_SUM_KEY = 'viq_web_ai_summary';
   const AI_COLORS = ['#fbbf24', '#60a5fa', '#f472b6', '#34d399', '#a78bfa', '#fb923c', '#22d3ee', '#f87171', '#a3e635', '#e879f9', '#fde047', '#93c5fd'];
   let aiGuide = null, aiPeople = [], aiParsed = [];
 
@@ -961,14 +982,15 @@
     const items = k => (sec[find(k)] || []).map(l => l.match(/^\s*[-*]\s*\*\*(.+?)\*\*\s*[—–:-]+\s*(.+)$/))
       .filter(Boolean).map(m => ({ name: C.normTag(m[1]), desc: m[2].trim() })).filter(c => c.name);
     const text = k => (sec[find(k)] || []).join('\n').trim();
-    return { cats: items('categor'), levels: items('level'), instructions: text('instruction'), reference: text('reference') };
+    return { cats: items('categor'), levels: items('level'), summary: text('summary'),
+             instructions: text('instruction'), reference: text('reference') };
   }
   const catColor = name => {
     const i = aiGuide ? aiGuide.cats.findIndex(c => c.name === name) : -1;
     return AI_COLORS[(i < 0 ? AI_COLORS.length - 1 : i) % AI_COLORS.length];
   };
 
-  function aiPrompt(cats, level, transcript) {
+  function aiPrompt(cats, level, transcript, withSummary) {
     let title = $('video-title').textContent || '', len = 0;
     try { len = player.getDuration() || 0; } catch { /* not ready */ }
     const url = 'https://www.youtube.com/' + (isShort ? 'shorts/' + videoId : 'watch?v=' + videoId);
@@ -989,6 +1011,10 @@
       'Answer with ONLY a JSON array (no other text), one object per danmu, in time order:',
       '[{"time":"0:12","category":"' + (cats[0] ? cats[0].name : 'emotion') + '","text":"…"}]',
       '"time" is the moment in the video as m:ss. "category" is one of: ' + cats.map(c => c.name).join(', ') + '.',
+      ...(withSummary ? [
+        'At the END of the array add ONE more object: {"time":"end","category":"summary","text":"…"}. Its text is the summary of the whole video:',
+        aiGuide.summary || 'The key point of the video in 1–3 short sentences.',
+        '(The summary may be longer than the other danmu.)'] : []),
       '',
       '=== Reference notes (use these words, steps and rules) ===',
       aiGuide.reference,
@@ -1010,10 +1036,13 @@
   // or lines like "0:12 [emotion] text" / "0:12 - emotion: text".
   function parseAiAnswer(raw) {
     const out = [], known = new Set((aiGuide?.cats || []).map(c => c.name));
+    let end = 0; try { end = Math.floor(player.getDuration() || 0); } catch { /* not ready */ }
     const add = (t, cat, text) => {
-      const sec = parseTime(t); text = String(text || '').replace(/^["“]|["”]$/g, '').trim();
+      cat = C.normTag(cat || ''); text = String(text || '').replace(/^["“]|["”]$/g, '').trim();
+      const summary = cat === 'summary' || /^end$/i.test(String(t || '').trim());
+      const sec = summary ? end : parseTime(t);
       if (sec === null || !text) return;
-      out.push({ time_sec: sec, category: C.normTag(cat || ''), text: text.slice(0, 500) });
+      out.push({ time_sec: sec, category: summary ? 'summary' : cat, text: text.slice(0, 500), summary });
     };
     const a = raw.indexOf('['), b = raw.lastIndexOf(']');
     if (a >= 0 && b > a) {
@@ -1021,11 +1050,13 @@
         const arr = JSON.parse(raw.slice(a, b + 1));
         if (Array.isArray(arr) && arr.some(x => x && typeof x === 'object')) {
           arr.forEach(x => x && add(x.time ?? x.time_sec ?? x.t ?? x.timestamp, x.category ?? x.tag ?? x.type, x.text ?? x.danmu ?? x.comment));
-          return out.sort((p, q) => p.time_sec - q.time_sec);
+          return out.sort((p, q) => p.summary - q.summary || p.time_sec - q.time_sec);
         }
       } catch { /* not JSON → read lines */ }
     }
     raw.split(/\r?\n/).forEach(line => {
+      const sm = line.replace(/\*\*/g, '').match(/^\s*(?:[-*•]\s*)?\[?summary\]?\s*[:\-–—]\s*(.+)$/i);
+      if (sm) return add('end', 'summary', sm[1]);
       const m = line.replace(/\*\*/g, '').replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').match(/^\[?(\d{1,2}(?::\d{2}){1,2})\]?\s*[-–—:]?\s*(.+)$/);
       if (!m) return;
       let rest = m[2].trim(), cat = '';
@@ -1033,7 +1064,7 @@
       if (c && (c[1] || c[2] || known.has(C.normTag(c[3])))) { cat = c[1] || c[2] || c[3]; rest = c[4]; }
       add(m[1], cat, rest.replace(/^[-–—:]\s*/, ''));
     });
-    return out.sort((p, q) => p.time_sec - q.time_sec);
+    return out.sort((p, q) => p.summary - q.summary || p.time_sec - q.time_sec);
   }
 
   async function copyText(text, fallbackEl) {
@@ -1084,6 +1115,7 @@
       (levels.length ? '<h3>Reading level</h3><div class="checks" id="ai-level">' + levels.map((l, i) =>
         '<label title="' + esc(l.desc) + '"' + (l === level ? ' class="on"' : '') + '><input type="radio" name="ai-level" data-i="' + i + '"' + (l === level ? ' checked' : '') + '>' + esc(l.name) + '</label>').join('') +
         '</div><p class="note" id="ai-level-note">' + esc(level.desc) + '</p>' : '') +
+      '<div class="checks"><label' + (lsGet(AI_SUM_KEY, true) ? ' class="on"' : '') + '><input type="checkbox" id="ai-sum"' + (lsGet(AI_SUM_KEY, true) ? ' checked' : '') + '>📝 Summary when the video ends</label></div>' +
       '<h3>3. Ask the AI</h3>' +
       '<div class="tabs" id="ai-tool"><button data-t="gemini"' + (tool === 'gemini' ? ' class="active"' : '') + '>Gemini</button>' +
         '<button data-t="claude"' + (tool === 'claude' ? ' class="active"' : '') + '>Claude</button></div>' +
@@ -1100,6 +1132,7 @@
       '</div>';
 
     const toggleLabel = inp => inp.closest('label').classList.toggle('on', inp.checked);
+    $('ai-sum').onchange = () => { toggleLabel($('ai-sum')); lsSet(AI_SUM_KEY, $('ai-sum').checked); };
     body.querySelectorAll('#ai-level input').forEach(inp => inp.onchange = () => {
       level = levels[+inp.dataset.i]; lsSet(AI_LEVEL_KEY, level.name);
       body.querySelectorAll('#ai-level input').forEach(toggleLabel);
@@ -1130,7 +1163,7 @@
       const cats = chosenCats(), tr = $('ai-transcript').value.trim();
       if (!cats.length) return toast('Pick at least one category');
       if (curTool === 'claude' && !tr) return toast('Claude needs the transcript: paste it in the box first', 3500);
-      const text = aiPrompt(cats, level, tr);
+      const text = aiPrompt(cats, level, tr, $('ai-sum').checked);
       // The prompt goes to the clipboard, and is also shown here so you can see (or copy) it yourself
       const box = $('ai-prompt'), name = curTool === 'claude' ? 'Claude' : 'Gemini';
       box.value = text; box.classList.remove('hidden'); box.scrollTop = 0;
@@ -1149,7 +1182,7 @@
       lsSet(AI_DRAFT_KEY, { v: videoId, text: raw });
       aiParsed = raw.trim() ? parseAiAnswer(raw) : [];
       $('ai-preview').innerHTML = aiParsed.map((d, i) =>
-        '<label><input type="checkbox" data-i="' + i + '" checked><span class="t">' + fmt(d.time_sec) + '</span><span>' +
+        '<label><input type="checkbox" data-i="' + i + '" checked><span class="t">' + (d.summary ? '📝 end' : fmt(d.time_sec)) + '</span><span>' +
         (d.category ? '<span class="cat" style="color:' + catColor(d.category) + '">#' + esc(d.category) + '</span>' : '') + esc(d.text) + '</span></label>').join('');
       $('ai-preview').querySelectorAll('input').forEach(inp => inp.onchange = countSel);
       countSel();
@@ -1171,7 +1204,7 @@
     const visibleTo = all ? null : [u.id, ...[...document.querySelectorAll('#ai-who input[data-i]:checked')].map(x => aiPeople[+x.dataset.i].id)];
     const base = Date.now();
     const made = list.map((d, i) => ({
-      user_id: u.id, client_id: base + i, time_sec: d.time_sec, text: d.text, is_summary: false,
+      user_id: u.id, client_id: base + i, time_sec: d.time_sec, text: d.text, is_summary: !!d.summary,
       style: { font: 'default', size: 'm', color: catColor(d.category), mode: 'top', duration: 6, anon: false, tag: d.category, ai: true },
       profiles: { display_name: u.name, color: u.color }, name_to: [], visible_to: visibleTo
     }));
@@ -1179,7 +1212,7 @@
     try {
       for (let i = 0; i < made.length; i += 100)
         await C.upsert(videoId, $('video-title').textContent, made.slice(i, i + 100).map(r =>
-          ({ id: r.client_id, time: r.time_sec, text: r.text, style: r.style, isSummary: false, visibleTo })));
+          ({ id: r.client_id, time: r.time_sec, text: r.text, style: r.style, isSummary: r.is_summary, visibleTo })));
     } catch (e) {
       $('ai-save').disabled = false;
       $('ai-msg').className = 'note err'; $('ai-msg').textContent = '❌ Not saved: ' + e.message;
