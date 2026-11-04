@@ -140,6 +140,7 @@ struct PorkWidgetView: View {
             }
             }
         }
+        .readableOnPaper(family)
         .containerBackground(for: .widget) {
             if family == .systemSmall || family == .systemMedium { Color.porkWall } else { Color.clear }
         }

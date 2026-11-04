@@ -45,6 +45,7 @@ struct PlanWidgetView: View {
 
     var body: some View {
         PlanContent(entry: entry)
+            .readableOnPaper(family)
             .containerBackground(for: .widget) {
                 if family == .accessoryRectangular { Color.clear } else { Color.porkWall }
             }
@@ -88,12 +89,20 @@ struct PlanContent: View {
                         if DoneToday.count > 0 { Text("✅ \(DoneToday.count) today").font(.caption.bold()) }
                     }
                     if let event {
-                        Text("📅 \(event.when) · \(event.title)")
-                            .font(.subheadline.bold()).lineLimit(1)
-                            .padding(6)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(red: 1, green: 0.95, blue: 0.62), in: RoundedRectangle(cornerRadius: 4))
-                            .foregroundStyle(.black)
+                        // The event: dark text on yellow, the time in red, so it can't be missed.
+                        HStack(spacing: 6) {
+                            Rectangle().fill(Color(red: 0.80, green: 0.15, blue: 0.12)).frame(width: 4)
+                            Text(event.when == "now" ? "NOW" : event.when)
+                                .font(.caption.weight(.heavy))
+                                .foregroundStyle(Color(red: 0.80, green: 0.15, blue: 0.12))
+                            Text(event.title)
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(Color(red: 0.10, green: 0.08, blue: 0.06))
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.vertical, 5).padding(.trailing, 6)
+                        .background(Color(red: 1, green: 0.88, blue: 0.35), in: RoundedRectangle(cornerRadius: 4))
                     }
                     ForEach(entry.plan.items.prefix(family == .systemLarge ? 8 : family == .systemSmall ? 2 : 3)) { item in
                         HStack(spacing: 8) {
@@ -103,7 +112,7 @@ struct PlanContent: View {
                             .buttonStyle(.plain)
                             Text(item.title).font(.subheadline).lineLimit(1)
                             Spacer(minLength: 4)
-                            Text(item.tag).font(.caption2.bold()).foregroundStyle(item.tag.contains("late") ? .red : .secondary)
+                            Text(item.tag).font(.caption2.bold()).foregroundStyle(item.tag.contains("late") ? Color(red: 0.80, green: 0.15, blue: 0.12) : Color(red: 0.30, green: 0.26, blue: 0.22))
                         }
                     }
                     if entry.plan.items.isEmpty {
@@ -130,5 +139,20 @@ struct PorkDumpWidget: Widget {
         .configurationDisplayName("Tell Pork")
         .description("Tap to drop a thought into Pork's inbox.")
         .supportedFamilies([.accessoryCircular])
+    }
+}
+
+extension View {
+    /// Home Screen widgets sit on Pork's light "paper" color, so their text
+    /// must stay dark even in Dark Mode. (Lock Screen widgets keep the
+    /// system's own colors.)
+    @ViewBuilder
+    func readableOnPaper(_ family: WidgetFamily) -> some View {
+        if family.isLockScreen {
+            self
+        } else {
+            self.environment(\.colorScheme, .light)
+                .foregroundStyle(Color(red: 0.13, green: 0.10, blue: 0.08))
+        }
     }
 }
