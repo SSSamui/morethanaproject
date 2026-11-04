@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 5.0.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 5.0.1** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -98,8 +98,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v5.0.0.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v5.0.0**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v5.0.1.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v5.0.1**.
 
 ### 2. Open it in Xcode
 

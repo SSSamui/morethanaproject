@@ -6,6 +6,7 @@
 // app's main screen and Pork's check-in. Full version only (paid account).
 
 import DeviceActivity
+import ExtensionKit
 import FamilyControls
 import ManagedSettings
 import SwiftUI

@@ -7,6 +7,7 @@
 // - "Show Pork's check-in" — opens the app with your to-dos.
 
 import AppIntents
+import Foundation
 
 struct DistractionOpenedIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pork: distraction app opened"

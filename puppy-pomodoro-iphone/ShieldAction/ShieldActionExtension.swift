@@ -3,6 +3,7 @@
 // (like opening a non-focus site in Safari). When the break is over,
 // "Let Pork out" ends it and starts the next focus.
 
+import Foundation
 import ManagedSettings
 
 class ShieldActionExtension: ShieldActionDelegate {
