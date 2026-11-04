@@ -193,6 +193,9 @@ struct PorkState: Codable {
     var lastReward: Reward?
     var settings = PorkSettings()
     var hiAllowedUntil: Date?    // Pork won't say hi again before this
+    var taskID: String?          // the to-do this focus session is for
+    var taskTitle: String?
+    var workingSince: Date?      // focus time on the task not counted yet
 
     init() {}
 
@@ -210,6 +213,9 @@ struct PorkState: Codable {
         lastReward = try c.decodeIfPresent(Reward.self, forKey: .lastReward)
         settings = try c.decodeIfPresent(PorkSettings.self, forKey: .settings) ?? PorkSettings()
         hiAllowedUntil = try c.decodeIfPresent(Date.self, forKey: .hiAllowedUntil)
+        taskID = try c.decodeIfPresent(String.self, forKey: .taskID)
+        taskTitle = try c.decodeIfPresent(String.self, forKey: .taskTitle)
+        workingSince = try c.decodeIfPresent(Date.self, forKey: .workingSince)
     }
 
     // MARK: timing

@@ -322,7 +322,7 @@ enum ScreenTime {
             let todos = (d.stringArray(forKey: "todoPreview") ?? []).prefix(4).map { "• " + $0 }.joined(separator: "\n")
             Alerts.say("\(play) min this time · \(Dur.text(TimeInterval(playUsedToday * 60))) today 📝",
                        todos.isEmpty ? "Tap to see your to-dos with Pork." : "To do:\n" + todos)
-            if st.pawsOn { Alerts.paws() }
+            if st.pawsOn && StrictRules.limitsOn() { Alerts.paws() }
         }
         if StrictRules.isOn(.paws), play >= d.integer(forKey: "puNextCover"), d.integer(forKey: "puNextCover") > 0, !pawCovered {
             shieldDistractions(pawStore)

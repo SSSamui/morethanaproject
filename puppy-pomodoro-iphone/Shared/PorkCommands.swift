@@ -7,6 +7,7 @@ import WidgetKit
 
 enum PorkCommand {
     case start(PorkSettings?)
+    case startTask(id: String, title: String)   // ▶︎ on a sticky note: focus on this to-do
     case pause, resume, stop
     case takeBreak      // focus goal reached → break
     case release        // let Pork out → next focus (with the late time added)
@@ -29,11 +30,24 @@ enum PorkCommands {
         let before = s.phase
         s.advance(now)
         var changed = s.phase != before
+        // Count focus time on the current to-do so far.
+        if let id = s.taskID, let since = s.workingSince {
+            ProjectTime.add(id, s.taskTitle ?? "", now.timeIntervalSince(since), now: now)
+            s.workingSince = nil
+            changed = true
+        }
 
         switch cmd {
         case .start(let settings):
             if let settings { s.settings = settings.cleaned() }
             s.startFocus(now)
+            s.taskID = nil
+            s.taskTitle = nil
+            changed = true
+        case .startTask(let id, let title):
+            if s.phase != .focus { s.startFocus(now) }
+            s.taskID = id
+            s.taskTitle = title
             changed = true
         case .pause:
             s.pause(now)
@@ -44,6 +58,8 @@ enum PorkCommands {
         case .stop:
             s.reward(now)
             s.toIdle()
+            s.taskID = nil
+            s.taskTitle = nil
             changed = true
         case .takeBreak:
             if s.phase == .focus, s.reward(now) {
@@ -68,6 +84,11 @@ enum PorkCommands {
             break
         }
 
+        // Focus time on the to-do counts while the focus clock runs.
+        if s.taskID != nil, s.phase == .focus, !s.paused, s.workingSince == nil {
+            s.workingSince = now
+            changed = true
+        }
         if changed { PorkStore.save(s) }
         lock.unlock()
 

@@ -271,7 +271,7 @@ struct TodayReport: DeviceActivityReportScene {
                 }
             }
         }
-        sum.apps = perApp.filter { !$0.value.1 }.sorted { $0.value.0 > $1.value.0 }.prefix(3)
+        sum.apps = perApp.filter { !$0.value.1 }.sorted { $0.value.0 > $1.value.0 }.prefix(6)
             .map { (name: $0.key, time: $0.value.0, focus: false) }
         sum.promise = DayPlans.current()
         return sum
@@ -300,9 +300,20 @@ struct TodayView: View {
                 Text(left >= 0 ? "🤞 \(Dur.text(left)) of today's promise left" : "🥺 \(Dur.text(-left)) over today's promise")
                     .font(.subheadline.weight(.semibold))
             }
-            if !day.apps.isEmpty {
-                Text(day.apps.map { "\($0.name) \(Dur.text($0.time))" }.joined(separator: " · "))
-                    .font(.footnote).foregroundStyle(.secondary)
+            let most = day.apps.first?.time ?? 1
+            ForEach(Array(day.apps.enumerated()), id: \.offset) { _, app in
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack {
+                        Text(app.name).font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Text(Dur.text(app.time)).font(.subheadline.weight(.bold)).monospacedDigit()
+                    }
+                    GeometryReader { g in
+                        Capsule().fill(Color(red: 0.85, green: 0.26, blue: 0.23))
+                            .frame(width: max(4, g.size.width * app.time / max(most, 1)))
+                    }
+                    .frame(height: 7)
+                }
             }
         }
     }

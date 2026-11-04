@@ -57,7 +57,8 @@ struct StickyBoard: View {
                 Text(title).font(.headline)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
                     ForEach(items) { item in
-                        StickyNote(item: item, color: color) { todos.complete(item) }
+                        StickyNote(item: item, color: color, done: { todos.complete(item) },
+                                   work: { AppModel.shared.workOn(item) })
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
@@ -75,6 +76,7 @@ struct StickyNote: View {
     let item: TodoItem
     let color: Color
     let done: () -> Void
+    var work: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -96,6 +98,20 @@ struct StickyNote: View {
             if let tag {
                 Text(tag).font(.caption2.weight(.semibold))
                     .foregroundStyle(item.overdue() ? Color.porkOver : .black.opacity(0.55))
+            }
+            if let work, !item.routine {
+                HStack {
+                    let spent = ProjectTime.total(item.id)
+                    if spent >= 60 {
+                        Text("⏱ \(Dur.text(spent))").font(.caption.weight(.bold)).foregroundStyle(.black.opacity(0.7))
+                    }
+                    Spacer()
+                    Button(action: work) {
+                        Label("Focus", systemImage: "play.fill").font(.caption.weight(.bold))
+                    }
+                    .buttonStyle(.bordered).tint(.black.opacity(0.6)).controlSize(.mini)
+                    .accessibilityLabel("Focus on “\(item.title)”")
+                }
             }
         }
         .padding(12)

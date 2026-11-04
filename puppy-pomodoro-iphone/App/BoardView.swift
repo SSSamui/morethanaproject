@@ -24,21 +24,27 @@ struct BoardView: View {
                     Text("✅ \(DoneToday.count) today").font(.subheadline.bold())
                 }
             }
-            PauseBar()
             SleepCard()
             if let event = todos.event {
                 BigEventNote(event: event)
             }
             TimeCard()
-            PromiseCard()
-            if !todos.snapshot.inbox.isEmpty {
-                section("💭 Inbox: give these a home") { InboxSorter(todos: todos) }
+            if !todos.dayEvents.isEmpty {
+                section("📅 Today's calendar") { DayCalendar(events: todos.dayEvents) }
             }
             section("📝 To do this week") { StickyBoard(todos: todos) }
             section("📅 Big picture: next 3 weeks") { BigPictureView(todos: todos) }
+            if !ProjectTime.list().isEmpty {
+                section("⏱ Time on each project") { ProjectTimes() }
+            }
+            if !todos.snapshot.inbox.isEmpty {
+                section("💭 Inbox: give these a home") { InboxSorter(todos: todos) }
+            }
             section("🎈 Fun instead of scrolling") { FunBoard(todos: todos) }
+            PromiseCard()
             PorkCorner()
             ScreenTimeCard()
+            if StrictRules.limitsOn() || PorkPause.isOn { PauseBar() }
         }
     }
 
@@ -88,7 +94,7 @@ struct TimeCard: View {
             Text("⏱ Your time").font(.title3.bold())
             #if !LITE
             if AuthorizationCenter.shared.authorizationStatus == .approved {
-                DeviceActivityReport(.today, filter: Self.today).frame(minHeight: 110)
+                DeviceActivityReport(.today, filter: Self.today).frame(minHeight: 300)
             } else {
                 Text("Turn on blocking in Settings to see your real minutes.").font(.footnote).foregroundStyle(.secondary)
             }
@@ -148,5 +154,60 @@ struct PorkCorner: View {
         if SleepMode.wake(model.state.settings, now: now) != nil { return .sleep }
         guard !PorkPause.isOn, PickUp.isActive(now), let start = PickUp.start else { return .sleep }
         return now.timeIntervalSince(start) >= TimeInterval(model.state.settings.nudgeMin * 60) ? .door : .wait
+    }
+}
+
+/// Today's events, as a list: past ones faded, the one on now highlighted.
+struct DayCalendar: View {
+    let events: [NowEvent]
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 60)) { ctx in
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(events, id: \.self) { e in
+                    let now = e.start <= ctx.date && e.end > ctx.date
+                    let past = e.end <= ctx.date
+                    HStack(alignment: .top, spacing: 10) {
+                        Text(e.allDay ? "all day" : Dur.clock(e.start))
+                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                            .frame(width: 74, alignment: .leading)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(e.title).font(.subheadline.weight(now ? .heavy : .semibold))
+                            if let loc = e.location { Text("📍 \(loc)").font(.caption).foregroundStyle(.secondary) }
+                        }
+                        Spacer()
+                        if now { Text("NOW").font(.caption.weight(.heavy)).foregroundStyle(Color.porkOver) }
+                    }
+                    .padding(8)
+                    .background(now ? Color(red: 1, green: 0.95, blue: 0.62) : Color.clear, in: RoundedRectangle(cornerRadius: 6))
+                    .foregroundStyle(now ? Color.black : Color.primary)
+                    .opacity(past ? 0.4 : 1)
+                }
+            }
+        }
+    }
+}
+
+/// Focus time per to-do, from ▶︎ Focus on its sticky note.
+struct ProjectTimes: View {
+    var body: some View {
+        let list = Array(ProjectTime.list().prefix(8))
+        let most = list.map(\.seconds).max() ?? 1
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(list, id: \.id) { p in
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack {
+                        Text(p.title).font(.subheadline.weight(.semibold)).lineLimit(1)
+                        Spacer()
+                        Text(Dur.text(p.seconds)).font(.subheadline.weight(.bold)).monospacedDigit()
+                    }
+                    GeometryReader { g in
+                        Capsule().fill(Color.porkFocus).frame(width: max(6, g.size.width * p.seconds / most))
+                    }
+                    .frame(height: 6)
+                }
+            }
+            Text("Tap ▶︎ Focus on a sticky note to count time for it.").font(.caption).foregroundStyle(.secondary)
+        }
     }
 }

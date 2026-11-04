@@ -1,6 +1,9 @@
-// How strict Pork is. Defaults: the late-night block and the paw screen at
-// 12 minutes are on, the promise blocks are off. You can change them in
-// Settings, but a change only lasts 1 day; then it goes back to the default.
+// Time limits (how strict Pork is). One main switch, off unless you turn it
+// on, and it stays the way you set it. With it on: the late-night block and
+// the paw screen at 12 minutes are on, the promise blocks are off; a change
+// to one of those only lasts 1 day, then it goes back.
+// Blocking apps and websites during a Focus session is separate (always on
+// while you focus, if Screen Time is allowed).
 
 import Foundation
 
@@ -29,7 +32,17 @@ enum StrictRules {
     static let lasts: TimeInterval = 24 * 3600
 
     /// Is the rule on right now (your change if it's less than 1 day old, else the default)?
+    /// The main "Time limits" switch (off unless turned on; never resets).
+    static func limitsOn(_ defaults: UserDefaults = PorkGroup.defaults) -> Bool {
+        defaults.bool(forKey: "limitsOn")
+    }
+
+    static func setLimits(_ on: Bool, defaults: UserDefaults = PorkGroup.defaults) {
+        defaults.set(on, forKey: "limitsOn")
+    }
+
     static func isOn(_ rule: StrictRule, now: Date = Date(), defaults: UserDefaults = PorkGroup.defaults) -> Bool {
+        guard limitsOn(defaults) else { return false }
         if let until = defaults.object(forKey: "strict.\(rule.rawValue).until") as? Date, until > now {
             return defaults.bool(forKey: "strict.\(rule.rawValue).value")
         }

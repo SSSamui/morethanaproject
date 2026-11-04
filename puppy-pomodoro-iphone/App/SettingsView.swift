@@ -40,7 +40,7 @@ struct SettingsView: View {
 
                 #if !LITE
                 Section {
-                    Toggle("Block distractions during focus", isOn: $blocking)
+                    Toggle("Use Screen Time", isOn: $blocking)
                         .onChange(of: blocking) { _, on in turnBlocking(on) }
                     Button("Choose focus apps…") { pickApps = true }
                         .disabled(!blocking)
@@ -55,12 +55,15 @@ struct SettingsView: View {
                         Text(screenTimeError).font(.footnote).foregroundStyle(.red)
                     }
                 } header: {
-                    Text("Blocking (Screen Time)")
+                    Text("Screen Time: your time, and Focus")
                 } footer: {
-                    Text("During focus every app except your focus apps shows Pork's screen. After the focus goal, that screen has a “Start my break” button. When the break is over it comes back with “Let Pork out”. Late at night (12:00 am to 6:00 am unless you change it) only focus apps and sites open, even without a focus session. Pick your focus apps: Outlook, WeChat, Kindle, Gmail, Google Drive, Google Tasks, Google Calendar, Calendar, Reminders, Handshake, Slack, Messages, Phone, Canvas, Claude, Gemini, ChatGPT and Puppy Pomodoro. Everything else is a distraction. (Phone calls, alarms and Settings always work.)")
+                    Text("Screen Time lets Pork show your real time (distractions per app, this pick-up) and limit apps and websites ONLY while a Focus session runs: then every app except your focus apps shows Pork's screen, and Safari only opens focus sites. Outside Focus nothing is limited unless you turn on Time limits below. Pick your focus apps: Outlook, WeChat, Kindle, Gmail, Google Drive, Google Tasks, Google Calendar, Calendar, Reminders, Handshake, Slack, Messages, Phone, Canvas, Claude, Gemini, ChatGPT and Puppy Pomodoro. Everything else is a distraction. (Phone calls, alarms and Settings always work.)")
                 }
 
                 Section {
+                    Toggle("Time limits", isOn: limitsBinding)
+                        .id("limits\(strictTick)")
+                    if StrictRules.limitsOn() {
                     ForEach(StrictRule.allCases, id: \.self) { rule in
                         VStack(alignment: .leading, spacing: 2) {
                             Toggle(rule.title, isOn: strictBinding(rule))
@@ -71,10 +74,11 @@ struct SettingsView: View {
                         }
                         .id("\(rule.rawValue)\(strictTick)")
                     }
+                    }
                 } header: {
-                    Text("How strict is Pork")
+                    Text("⏱ Time limits (separate from everything else)")
                 } footer: {
-                    Text("Normally the night block and the paw screen are on, and the promise blocks are off. A change lasts 1 day, then goes back, so Pork never gets stuck too strict or too loose.")
+                    Text("Off: Pork never blocks anything outside a Focus session; he only shows your time, to-dos and calendar, and sends his gentle reminders. On: the night block and the paw screen (with paw prints) are on and the promise blocks are off; a change to one of those lasts 1 day, then goes back. The main switch stays the way you set it.")
                 }
                 #endif
 
@@ -110,7 +114,7 @@ struct SettingsView: View {
                     Toggle("Pork's check-ins", isOn: $st.hiEnabled)
                     Stepper("Pork reminder after \(st.nudgeMin) min", value: $st.nudgeMin, in: 1...60)
                     Stepper("To-dos after \(st.notesMin) min", value: $st.notesMin, in: (st.nudgeMin + 1)...120)
-                    Toggle("Then Pork's paws walk onto the screen", isOn: $st.pawsOn)
+                    Toggle("Then Pork's paws walk onto the screen (with Time limits on)", isOn: $st.pawsOn)
                     Picker("Pork's album in Photos", selection: $st.hiAlbum) {
                         ForEach(albumChoices, id: \.self) { Text($0).tag($0) }
                     }
@@ -200,6 +204,17 @@ struct SettingsView: View {
     }
 
     #if !LITE
+    /// The main time-limits switch (stays as set).
+    private var limitsBinding: Binding<Bool> {
+        Binding(
+            get: { StrictRules.limitsOn() },
+            set: { on in
+                StrictRules.setLimits(on)
+                ScreenTime.applyRules()
+                strictTick += 1
+            })
+    }
+
     /// A strict rule's switch: the change lasts 1 day.
     private func strictBinding(_ rule: StrictRule) -> Binding<Bool> {
         Binding(

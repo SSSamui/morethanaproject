@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 4.1.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 5.0.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -31,6 +31,12 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
 | — | **To-dos as sticky notes** from Apple Reminders (2.0.0) |
 
 ## New features and changes for the iPhone version
+
+**5.0.0: time limits are separate; everything else is about seeing clearly.**
+- **⏱ Time limits** is its own switch in Settings, **off** unless you turn it on, and it stays the way you set it. Off: Pork never blocks anything outside a Focus session. On: the night block and the paw screen (with paw prints) are on, the promise blocks off; changing one of those lasts 1 day.
+- **Apps and websites are limited only while a Focus session runs** (Focus tab, or ▶︎ Focus on a to-do).
+- **The board, top to bottom**: Tell Pork…, sleep countdown, the event now, **⏱ your time** (distractions today with a bar per app, useful time, this pick-up), **📅 today's calendar** (past events faded, the one on now highlighted), **📝 to-dos this week**, **📅 big picture**, **⏱ time on each project**, inbox, fun list, promise, Pork, yesterday.
+- **Time per project**: every to-do sticky note has **▶︎ Focus**. It starts a focus session for that to-do, the Focus tab shows "📌 Lab report · ⏱ 1h20", and the time is added to the project. The note and the board show the total.
 
 **4.1.0: gentle by default, and the big picture.**
 - **How strict is Pork** (Settings): the night block and the paw screen at 12 minutes are **on**, the promise blocks are **off** (the morning question and warnings stay). You can change them, but **a change lasts 1 day** and then goes back.
@@ -92,8 +98,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v4.1.0.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v4.1.0**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v5.0.0.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v5.0.0**.
 
 ### 2. Open it in Xcode
 

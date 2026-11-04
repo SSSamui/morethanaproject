@@ -192,6 +192,17 @@ enum Todos {
         return (try? store.saveCalendar(list, commit: true)) != nil ? list : nil
     }
 
+    /// All of today's events, in order.
+    static func todayEvents(now: Date = Date()) -> [NowEvent] {
+        guard hasCalendar else { return [] }
+        let store = EKEventStore()
+        let start = Calendar.current.startOfDay(for: now)
+        return store.events(matching: store.predicateForEvents(withStart: start, end: start.addingTimeInterval(86400), calendars: nil))
+            .sorted { $0.startDate < $1.startDate }
+            .map { NowEvent(title: $0.title ?? "Event", start: $0.startDate, end: $0.endDate, allDay: $0.isAllDay,
+                            location: $0.location?.isEmpty == false ? $0.location : nil) }
+    }
+
     /// The next timed event today (for the plan widget).
     static func nextEvent(now: Date = Date()) -> NowEvent? {
         guard hasCalendar else { return nil }
@@ -257,11 +268,13 @@ final class TodoStore: ObservableObject {
 
     @Published private(set) var snapshot = TodoSnapshot()
     @Published private(set) var event: NowEvent?
+    @Published private(set) var dayEvents: [NowEvent] = []
     @Published private(set) var needsAccess = !Todos.hasAccess
 
     func refresh() async {
         needsAccess = !Todos.hasAccess
         event = Todos.currentEvent()
+        dayEvents = Todos.todayEvents()
         guard !needsAccess else { return }
         snapshot = await Todos.load(PorkStore.load().settings)
         // for Pork's reminders, the paw screen and the plan widget (they can't read Reminders)

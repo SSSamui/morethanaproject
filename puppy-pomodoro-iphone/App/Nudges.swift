@@ -170,7 +170,7 @@ enum Nudges {
         try? await center.add(UNNotificationRequest(
             identifier: notesID, content: notes,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(st.notesMin * 60), repeats: false)))
-        if st.pawsOn { Alerts.paws(after: TimeInterval(st.notesMin * 60)) }
+        if st.pawsOn && StrictRules.limitsOn() { Alerts.paws(after: TimeInterval(st.notesMin * 60)) }
         Alerts.bodyCheck(after: 45 * 60)
     }
 

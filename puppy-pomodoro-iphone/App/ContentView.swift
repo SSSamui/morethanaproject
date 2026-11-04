@@ -104,6 +104,11 @@ struct PorkScreen: View {
                     .foregroundStyle(s.phase == .idle ? Color.primary : color)
                     .opacity(s.phase == .overtime && Int(now.timeIntervalSince1970 * 2) % 2 == 0 ? 0.6 : 1)
                     .contentTransition(.numericText())
+                if let title = s.taskTitle, s.phase != .idle {
+                    Text("📌 \(title) · ⏱ \(Dur.text(ProjectTime.total(s.taskID ?? "") + (s.workingSince.map { now.timeIntervalSince($0) } ?? 0)))")
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                }
                 Text(sub(s, goal))
                     .font(.footnote)
                     .foregroundStyle(.secondary)

@@ -84,6 +84,14 @@ final class AppModel: ObservableObject {
         objectWillChange.send()
     }
 
+    /// ▶︎ on a sticky note: a focus session for this to-do. Its time is
+    /// counted under the project; apps and websites are limited only now.
+    func workOn(_ item: TodoItem) {
+        send(.startTask(id: item.id, title: item.title))
+        UserDefaults.standard.set("focus", forKey: "tab")
+        show("Focusing on “\(item.title)” 🐾")
+    }
+
     /// A to-do is done: Pork jumps for joy.
     func celebrate() {
         withAnimation(.spring) { celebrating = true }
