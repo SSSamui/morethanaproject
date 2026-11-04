@@ -71,8 +71,8 @@ struct PorkClockWidget: Widget {
         StaticConfiguration(kind: "PorkClock", provider: PorkProvider()) { entry in
             PorkWidgetView(entry: entry)
         }
-        .configurationDisplayName("Pork's clock")
-        .description("Pork and your focus clock.")
+        .configurationDisplayName("Pork")
+        .description("What you need to do, your time, and bedtime. During Focus: Pork's focus clock.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular, .accessoryInline])
     }
 }
@@ -84,6 +84,10 @@ struct PorkWidgetView: View {
     var body: some View {
         let m = family.isLockScreen ? entry.lockMoment : entry.moment
         Group {
+            if m.kind == .idle && family != .accessoryInline && family != .accessoryCircular {
+                // No focus session: what you need to do instead of a clock.
+                PlanContent(entry: PlanEntry(date: entry.date, plan: PlanCache.load()))
+            } else {
             switch family {
             case .systemMedium:
                 VStack(alignment: .leading, spacing: 4) {
@@ -133,6 +137,7 @@ struct PorkWidgetView: View {
                     Text(m.line).font(.system(size: 10)).foregroundStyle(.secondary)
                         .lineLimit(1).minimumScaleFactor(0.7)
                 }
+            }
             }
         }
         .containerBackground(for: .widget) {

@@ -2,7 +2,7 @@
 
 A focus clock with Pork, a fluffy white dog with gray ears and a navy harness. Same rules as the Safari version (`puppy-pomodoro/` on the `claude/pensive-cori-8n9m7p` branch), made for iPhone.
 
-**Version 5.0.1** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
+**Version 5.1.0** · needs iOS 17 or newer and a Mac with Xcode 16 or newer. Every version is also saved as its own zip in [`../puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions).
 
 ## How it works
 
@@ -31,6 +31,8 @@ An iPhone app can't close other apps or draw on top of them, so each Safari feat
 | — | **To-dos as sticky notes** from Apple Reminders (2.0.0) |
 
 ## New features and changes for the iPhone version
+
+**5.1.0: the Pork widget shows what to do.** When no Focus session runs, the Pork widget (Home Screen small/medium, Lock Screen rectangle) shows your next event and to-dos instead of the focus clock; during Focus it shows the clock. The one-line widget above the clock keeps today's time and the bedtime countdown. Pork's plan widget now also comes in the small size.
 
 **5.0.0: time limits are separate; everything else is about seeing clearly.**
 - **⏱ Time limits** is its own switch in Settings, **off** unless you turn it on, and it stays the way you set it. Off: Pork never blocks anything outside a Focus session. On: the night block and the paw screen (with paw prints) are on, the promise blocks off; changing one of those lasts 1 day.
@@ -98,8 +100,8 @@ Not possible on iPhone (Apple doesn't allow it):
 
 ### 1. Get the code on your Mac
 
-1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v5.0.1.zip`), then click **Download raw file** (the ⬇ button).
-2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v5.0.1**.
+1. Open [`puppy-pomodoro-iphone-versions`](../puppy-pomodoro-iphone-versions) on GitHub, click the newest zip (for example `puppy-pomodoro-iphone-v5.1.0.zip`), then click **Download raw file** (the ⬇ button).
+2. Double-click the zip in Downloads. You get a folder **puppy-pomodoro-iphone-v5.1.0**.
 
 ### 2. Open it in Xcode
 

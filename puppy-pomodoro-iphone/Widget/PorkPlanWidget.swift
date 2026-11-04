@@ -35,11 +35,26 @@ struct PorkPlanWidget: Widget {
         }
         .configurationDisplayName("Pork's plan")
         .description("Your next event and to-dos. Tick them off right here.")
-        .supportedFamilies([.accessoryRectangular, .systemMedium, .systemLarge])
+        .supportedFamilies([.accessoryRectangular, .systemSmall, .systemMedium, .systemLarge])
     }
 }
 
 struct PlanWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: PlanEntry
+
+    var body: some View {
+        PlanContent(entry: entry)
+            .containerBackground(for: .widget) {
+                if family == .accessoryRectangular { Color.clear } else { Color.porkWall }
+            }
+            .widgetURL(URL(string: "puppypomodoro://open"))
+    }
+}
+
+/// Next event + to-dos (with ○ to tick on the Home Screen). Also shown by
+/// Pork's clock widget when no focus session runs.
+struct PlanContent: View {
     @Environment(\.widgetFamily) private var family
     let entry: PlanEntry
 
@@ -68,7 +83,7 @@ struct PlanWidgetView: View {
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("🐾 Pork's plan").font(.headline)
+                        Text(family == .systemSmall ? "🐾 To do" : "🐾 Pork's plan").font(.headline)
                         Spacer()
                         if DoneToday.count > 0 { Text("✅ \(DoneToday.count) today").font(.caption.bold()) }
                     }
@@ -80,7 +95,7 @@ struct PlanWidgetView: View {
                             .background(Color(red: 1, green: 0.95, blue: 0.62), in: RoundedRectangle(cornerRadius: 4))
                             .foregroundStyle(.black)
                     }
-                    ForEach(entry.plan.items.prefix(family == .systemLarge ? 8 : 3)) { item in
+                    ForEach(entry.plan.items.prefix(family == .systemLarge ? 8 : family == .systemSmall ? 2 : 3)) { item in
                         HStack(spacing: 8) {
                             Button(intent: CompleteTodoIntent(id: item.id)) {
                                 Image(systemName: "circle").font(.body)
@@ -98,10 +113,6 @@ struct PlanWidgetView: View {
                 }
             }
         }
-        .containerBackground(for: .widget) {
-            if family == .accessoryRectangular { Color.clear } else { Color.porkWall }
-        }
-        .widgetURL(URL(string: "puppypomodoro://open"))
     }
 }
 
