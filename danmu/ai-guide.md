@@ -6,6 +6,9 @@ The website reads it fresh every time you open **✨ AI social cues**.
 
 - **Categories**: one line each, in the form `- **name** — what the AI should write`.
   The name becomes the comment tag of the danmu (so you can filter by it). Add, remove or rename freely.
+- **Structures**: a fixed set of steps about ONE situation, ending with a summary sentence.
+  Each starts with `### name` (the name becomes the tag), followed by its steps and summary sentence.
+  Add a new one by copying a block and changing it. You can tick them on the website like categories.
 - **Reading levels**: how long and how simple the danmu are. You pick one on the website each time.
   Same form: `- **name** — how to write`. The first one is the default.
 - **Summary**: what the AI writes as the summary shown when the video ends.
@@ -25,6 +28,18 @@ The website reads it fresh every time you open **✨ AI social cues**.
 - **steps** — When a known procedure happens (phone call, voicemail, starting a conversation, trading information, exchanging contact info…), name it and the step. Example: "Phone call · Step 2: Say who you are".
 - **rules** — A conversation, humor, electronic or social media rule being followed or broken. Example: "Rule broken: conversation hog".
 - **reflect** — A short question for the viewer to think about. Example: "If you were B, how would you answer?"
+
+## Structures
+
+### emotion-description
+Pick ONE character and ONE situation where they show a clear emotion. Use the character's name if it is said; otherwise describe them ("the boy in red").
+Write one danmu for each step, at the moment it happens:
+1. **Situation** — what happened to the character (only what a camera could record).
+2. **Emotion** — what the character feels, level 1–10, and the clue (face, body, voice).
+3. **Response** — what the character did or said.
+4. **Consequence** — what happened because of the response.
+Summary sentence (time "end"):
+"(Name) feels (emotion) because (situation). (He/She) (response) and (consequence). (He/She) could also (a different, helpful response)."
 
 ## Reading levels
 
