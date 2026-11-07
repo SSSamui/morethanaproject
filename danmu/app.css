@@ -293,3 +293,5 @@ body.compact .tagchip { max-width: 74px; }
 .sumcard .who { font-weight: 700; }
 .sumtag { color: var(--gold); font-size: 12px; font-weight: 700; margin-right: 6px; }
 .ai .note.sub { margin: 4px 0 0; font-size: 13px; }
+.picker-h { flex-basis: 100%; color: var(--muted); font-size: 13px; font-weight: 700; margin-top: 8px; }
+.ctag.char { color: #93c5fd; background: rgba(147,197,253,.12); }
