@@ -40,6 +40,8 @@ Write one danmu for each step, at the moment it happens:
 4. **Consequence** — what happened because of the response.
 Summary sentence (time "end"):
 "(Name) feels (emotion) because (situation). (He/She) (response) and (consequence). (He/She) could also (a different, helpful response)."
+The "could also" part must be specific: the exact words to say (in quotes) or the exact action, never general advice.
+Example: "Mia feels hurt because Jay laughed at her drawing. She walked away, and Jay didn't know she was upset. She could also say: 'That hurt my feelings. Please don't laugh at my art.'"
 
 ## Reading levels
 
@@ -49,10 +51,12 @@ Summary sentence (time "end"):
 
 ## Summary
 
-Shown on screen when the video ends. Write 1–3 short sentences, using simple words that match the reading level:
+Shown on screen when the video ends. Write 2–4 short sentences, using simple words that match the reading level:
 1. The key point: what is the story telling us? (one sentence)
 2. The main social skill or lesson in it (use a name from the notes if one fits, e.g. "Fact-Feeling-Impact", "Steps for starting phone calls").
-3. A question for the viewer: "If you were him/her, what would you do?"
+3. A specific better way to handle it: the exact words the person could say, or the exact thing they could do.
+   Not theory ("she could communicate better"), but real words, e.g. "She could say: 'I don't agree with you, but I see why you're upset. Can we talk after class?'"
+4. A question for the viewer: "If you were him/her, what would you do?"
 
 ## Instructions for the AI
 

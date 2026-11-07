@@ -514,11 +514,12 @@
   85%  { opacity: 1; }
   100% { left: 100%; transform: translateX(0);     opacity: 0; }
 }
-.viq-float-top, .viq-float-bottom {
+.viq-float-top, .viq-float-bottom, .viq-float-cc {
   right: auto; left: 50%; transform: translateX(-50%);
   max-width: 90%; overflow: hidden; text-overflow: ellipsis;
   animation: viq-fixed 5s linear forwards;
 }
+.viq-float-cc { background: rgba(0,0,0,.5); padding: 2px 8px; border-radius: 4px; }
 @keyframes viq-fixed {
   0%   { opacity: 0; }
   4%   { opacity: 1; }

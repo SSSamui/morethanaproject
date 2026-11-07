@@ -102,7 +102,8 @@ body.fs .fs-compose:focus-within, body.fs .fs-compose:hover { opacity: 1; }
 /* dm-* names: plain "top" would clash with the page header's .top class */
 .dm-rtl { left: 100%; }          /* movement comes from app.js frame(), which pauses with the video */
 .dm-ltr { right: 100%; }
-.dm-top, .dm-bottom { left: 50%; transform: translateX(-50%); max-width: 94%; overflow: hidden; text-overflow: ellipsis; }
+.dm-top, .dm-bottom, .dm-cc { left: 50%; transform: translateX(-50%); max-width: 94%; overflow: hidden; text-overflow: ellipsis; }
+.dm-cc { background: rgba(0,0,0,.5); padding: 2px 8px; }   /* readable over the picture */
 .dm-mine { box-shadow: 0 0 0 1.5px rgba(255,255,255,.75); }
 
 .compose { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
@@ -285,11 +286,11 @@ body.compact .tagchip { max-width: 74px; }
 
 /* 📝 summary: card on the video when it ends, label in the list */
 .sumcard { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6;
-  width: min(92%, 520px); max-height: 80%; overflow-y: auto; background: rgba(13,15,20,.92); color: var(--text);
+  width: min(94%, 680px); max-height: 80%; overflow-y: auto; background: rgba(13,15,20,.92); color: var(--text);
   border: 1px solid var(--gold); border-radius: 14px; padding: 10px 14px 4px; box-shadow: 0 8px 30px rgba(0,0,0,.6); }
-.sumcard .sum-head { display: flex; justify-content: space-between; align-items: center; color: var(--gold); font-size: 15px; }
+.sumcard .sum-head { display: flex; justify-content: space-between; align-items: center; color: var(--gold); font-size: 18px; }
 .sumcard .sum-head button { background: none; border: 0; color: var(--muted); font-size: 18px; padding: 2px 6px; }
-.sumcard p { margin: 6px 0 8px; font-size: 15px; line-height: 1.45; }
+.sumcard p { margin: 8px 0 10px; font-size: clamp(18px, 4.8vw, 26px); line-height: 1.45; }
 .sumcard .who { font-weight: 700; }
 .sumtag { color: var(--gold); font-size: 12px; font-weight: 700; margin-right: 6px; }
 .ai .note.sub { margin: 4px 0 0; font-size: 13px; }

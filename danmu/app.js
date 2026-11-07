@@ -25,12 +25,14 @@
   ];
   const MODES = [
     { id: 'rtl', label: '⬅ Scroll' }, { id: 'ltr', label: '➡ Scroll' },
-    { id: 'top', label: '⬆ Top' },    { id: 'bottom', label: '⬇ Bottom' }
+    { id: 'top', label: '⬆ Top' },    { id: 'bottom', label: '⬇ Bottom' },
+    { id: 'cc', label: '⬇ Above CC' }   // just above YouTube's captions, so both can be read
   ];
   const DURATIONS = [2, 3, 5, 8, 10, 15];
+  const AI_POS = { mode: 'cc', duration: 10 };   // where AI social cues show, and for how long (seconds)
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '19';
+  const APP_VERSION = '20';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
@@ -79,7 +81,7 @@
   let lastSec = -1, filter = 'all', editing = null;
   let pollTimer = null, tickTimer = null;
   const live = new Set();        // on-screen danmu animations (paused with the video)
-  const lanes = { top: [], bottom: [] };
+  const lanes = { top: [], bottom: [], cc: [] };
   let danmuOn = lsGet(DANMU_ON_KEY, true);
   let viewTag = lsGet(VIEW_TAG_KEY, '*');      // which comment tag to show: '*' all, '' untagged, or a tag
   let feedTag = lsGet(FEED_TAG_KEY, '');       // home page: only videos with this video tag ('' = all)
@@ -478,7 +480,7 @@
   }
 
   // ── Floating danmu ─────────────────────────────────────────────────────────
-  function clearDanmu() { live.forEach(d => d.el.remove()); live.clear(); $('overlay').innerHTML = ''; lanes.top = []; lanes.bottom = []; }
+  function clearDanmu() { live.forEach(d => d.el.remove()); live.clear(); $('overlay').innerHTML = ''; lanes.top = []; lanes.bottom = []; lanes.cc = []; }
 
   // Danmu are moved by our own frame loop, not the browser's animation engine (which doesn't
   // run on some Android phones, e.g. with page zoom). Their clock only advances while the video
@@ -511,6 +513,8 @@
     const W = overlay.clientWidth, H = overlay.clientHeight;
     if (!W || !H) return;
     const st = Object.assign({}, DEFAULT_STYLE, r.style || {});
+    // AI danmu saved with the first defaults (top, 6 s) now show above the captions, longer
+    if (st.ai && st.mode === 'top' && Number(st.duration) === 6) Object.assign(st, AI_POS);
     const font = FONTS.find(f => f.id === st.font) || FONTS[0];
     const scale = clamp(W / 640, 0.82, 1.25);       // phones slightly smaller (still readable), big screens bigger
     const px = Math.round(((SIZES.find(z => z.id === st.size) || SIZES[1]).px) * scale);
@@ -531,14 +535,17 @@
     overlay.appendChild(el);
 
     let d;
-    if (mode === 'top' || mode === 'bottom') {
-      const ts = mode === 'top' ? topSafe() : 6;
-      const laneH = Math.round(px * 1.5), maxL = Math.max(1, Math.floor((H * 0.42 - ts) / laneH)), now = Date.now();
+    if (mode === 'top' || mode === 'bottom' || mode === 'cc') {
+      // cc: start just above the captions, at the bottom of the picture (not of the black bars around it)
+      const vidH = W / H > (isShort ? 9 / 16 : 16 / 9) ? H : W / (isShort ? 9 / 16 : 16 / 9);
+      const ts = mode === 'top' ? topSafe() : mode === 'cc' ? Math.round((H - vidH) / 2 + vidH * 0.16) : 6;
+      const laneH = Math.round(px * (mode === 'cc' ? 1.7 : 1.5)), now = Date.now();
+      const maxL = Math.max(1, Math.floor(((mode === 'cc' ? vidH * 0.78 : H * 0.42) - (mode === 'cc' ? 0 : ts)) / laneH));
       const L = lanes[mode];
       let i = L.findIndex((until, k) => k < maxL && until <= now);
       if (i === -1) i = L.length < maxL ? L.length : L.indexOf(Math.min(...L.slice(0, maxL)));
       L[i] = now + dur;
-      el.style[mode] = (ts + i * laneH) + 'px';
+      el.style[mode === 'cc' ? 'bottom' : mode] = (ts + i * laneH) + 'px';
       if (el.offsetWidth > W * 0.92) el.style.fontSize = Math.max(10, Math.floor(px * W * 0.92 / el.offsetWidth)) + 'px';
       el.style.opacity = '0';
       d = { el, scroll: false, dur, t: 0 };
@@ -1250,7 +1257,7 @@
     const base = Date.now();
     const made = list.map((d, i) => ({
       user_id: u.id, client_id: base + i, time_sec: d.time_sec, text: d.text, is_summary: !!d.summary,
-      style: { font: 'default', size: 'm', color: catColor(d.category), mode: 'top', duration: 6, anon: false, tag: d.category, ai: true, character: d.character || undefined },
+      style: Object.assign({ font: 'default', size: 'm', color: catColor(d.category), anon: false }, AI_POS, { tag: d.category, ai: true, character: d.character || undefined }),
       profiles: { display_name: u.name, color: u.color }, name_to: [], visible_to: visibleTo
     }));
     $('ai-save').disabled = true; $('ai-msg').className = 'note'; $('ai-msg').textContent = 'Saving…';

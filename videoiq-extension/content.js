@@ -37,7 +37,8 @@
     { id: 'rtl',    label: '⬅ Scroll right → left' },
     { id: 'ltr',    label: '➡ Scroll left → right' },
     { id: 'top',    label: '⬆ Stay on top' },
-    { id: 'bottom', label: '⬇ Stay on bottom' }
+    { id: 'bottom', label: '⬇ Stay on bottom' },
+    { id: 'cc',     label: '⬇ Just above captions' }
   ];
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = [
@@ -915,7 +916,7 @@
     const st  = curStyle();
     const opt = (list, cur, lbl) => list.map(o =>
       '<option value="' + escH(o.id) + '"' + (o.id === cur ? ' selected' : '') + '>' + escH(lbl(o)) + '</option>').join('');
-    const fixed = st.mode === 'top' || st.mode === 'bottom';
+    const fixed = isFixed(st.mode);
     return `
       <div class="viq-style-bar" id="viq-style-bar">
         <div class="viq-style-row">
@@ -953,7 +954,7 @@
         anon:     !!curStyle().anon,
         nameTo:   curStyle().nameTo || null
       };
-      g('viq-st-dur').classList.toggle('hidden', mode !== 'top' && mode !== 'bottom');
+      g('viq-st-dur').classList.toggle('hidden', !isFixed(mode));
       if (editStyle) editStyle = next;               // saved with the danmu you're editing
       else { settings.danmuStyle = next; save(); }   // default — stays until the next change
       updateStyleSample();
@@ -994,7 +995,7 @@
     if (!g('viq-st-font')) return;
     g('viq-st-font').value = st.font; g('viq-st-size').value = st.size; g('viq-st-color').value = st.color;
     g('viq-st-mode').value = st.mode; g('viq-st-dur').value = String(st.duration);
-    g('viq-st-dur').classList.toggle('hidden', st.mode !== 'top' && st.mode !== 'bottom');
+    g('viq-st-dur').classList.toggle('hidden', !isFixed(st.mode));
     const nv = g('viq-st-namevis');
     nv.value = !st.anon ? 'all' : st.nameTo ? 'one' : 'none';
     nv.options[2].textContent = st.anon && st.nameTo ? '🔒 Name: only ' + st.nameTo.name : '🔒 Name: only one person…';
@@ -1535,11 +1536,14 @@
 
   // ── FLOATING DANMU ────────────────────────────────────────────────────────────
   // Lanes for top/bottom danmu so simultaneous ones stack instead of overlapping
-  const fixedLanes = { top: [], bottom: [] };
+  const fixedLanes = { top: [], bottom: [], cc: [] };
+  function isFixed(m) { return m === 'top' || m === 'bottom' || m === 'cc'; }
 
   function launchFloat(entry, opts) {
     if (!danmuContainer) return;
     const st   = Object.assign({}, DEFAULT_STYLE, entry.style || {});
+    // AI danmu saved with the first defaults (top, 6 s) show above the captions, longer (as on the website)
+    if (st.ai && st.mode === 'top' && Number(st.duration) === 6) Object.assign(st, { mode: 'cc', duration: 10 });
     const font = FONTS.find(f => f.id === st.font) || FONTS[0];
     const px   = (SIZES.find(z => z.id === st.size) || SIZES[1]).px;
     const mode = MODES.some(m => m.id === st.mode) ? st.mode : 'rtl';
@@ -1556,7 +1560,7 @@
     el.style.fontSize   = px + 'px';
 
     let lifeMs;
-    if (mode === 'top' || mode === 'bottom') {
+    if (isFixed(mode)) {
       const lanes  = fixedLanes[mode];
       const now    = Date.now();
       const laneH  = Math.round(px * 1.6);
@@ -1565,7 +1569,9 @@
       if (lane === -1) lane = lanes.length < maxL ? lanes.length
                               : lanes.indexOf(Math.min(...lanes.slice(0, maxL)));
       lanes[lane] = now + dur * 1000;
-      el.style[mode] = (8 + lane * laneH) + 'px';
+      // cc: start above YouTube's captions (they sit in the bottom ~15% of the player)
+      const base = mode === 'cc' ? Math.round((danmuContainer.clientHeight || 360) * 0.17) : 8;
+      el.style[mode === 'cc' ? 'bottom' : mode] = (base + lane * laneH) + 'px';
       el.style.animationDuration = dur + 's';
       lifeMs = dur * 1000;
     } else {
@@ -1573,7 +1579,7 @@
       lifeMs = 7000;
     }
     danmuContainer.appendChild(el);
-    if (mode === 'top' || mode === 'bottom') {
+    if (isFixed(mode)) {
       // narrow players (Shorts): shrink a fixed danmu so the whole text fits
       const room = danmuContainer.clientWidth * 0.9;
       if (room > 0 && el.scrollWidth > room) el.style.fontSize = Math.max(11, Math.floor(px * room / el.scrollWidth)) + 'px';
