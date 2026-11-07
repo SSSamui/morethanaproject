@@ -30,13 +30,15 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '18';
+  const APP_VERSION = '19';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
   const DEFAULT_CTAGS = ['emotion', 'conversation'];
   const RECENT_CTAGS_KEY = 'viq_web_recent_ctags', VIEW_TAG_KEY = 'viq_web_view_tag', FEED_TAG_KEY = 'viq_web_feed_tag';
   const tagOf = r => (r.style && r.style.tag) || '';
+  const charOf = r => (r.style && r.style.character) || '';     // who an AI danmu is about, e.g. "Tom"
+  const sameChar = (a, b) => a.toLowerCase() === b.toLowerCase();
   const ANON = { name: '🙈 Anonymous', color: '#9ca3af' };
   const isMine = r => { const u = me(); return !!(u && r.user_id === u.id); };
   // How a danmu's author appears to ME: {name, color, hidden, revealed, note}
@@ -82,7 +84,8 @@
   let viewTag = lsGet(VIEW_TAG_KEY, '*');      // which comment tag to show: '*' all, '' untagged, or a tag
   let feedTag = lsGet(FEED_TAG_KEY, '');       // home page: only videos with this video tag ('' = all)
   let videoTagRows = [];                       // tags of the open video: [{tag, added_by}]
-  const matchesView = r => viewTag === '*' || tagOf(r) === viewTag;
+  let viewChar = '';                           // only danmu about this character ('' = everyone); per video
+  const matchesView = r => (viewTag === '*' || tagOf(r) === viewTag) && (!viewChar || sameChar(charOf(r), viewChar));
   let showNames = lsGet(NAMES_KEY, true);   // "[Lin] text" vs just "text" (viewer's choice)
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -316,6 +319,7 @@
     $('stage-msg').classList.add('hidden');
     if (changed) {
       rows = []; pending.clear(); lastSec = -1; clearDanmu(); cancelEdit(); hideSummary();
+      viewChar = ''; updateViewBtn();
       $('video-title').textContent = '';
       renderList();
     }
@@ -379,7 +383,7 @@
   // ── Summary card: the video's summaries (📝 danmu) when it ends ──────────
   let sumTimer = 0;
   function showSummary(ms) {
-    const list = rows.filter(r => r.is_summary);
+    const list = rows.filter(r => r.is_summary && (!viewChar || !charOf(r) || sameChar(charOf(r), viewChar)));
     if (!list.length || !danmuOn) return;
     const card = $('sumcard');
     card.innerHTML = '<div class="sum-head"><b>📝 Summary</b><button type="button" id="sum-x" title="Close">✕</button></div>' +
@@ -519,7 +523,8 @@
     el.className = 'dm dm-' + mode + (u && r.user_id === u.id ? ' dm-mine' : '');
     // name shows if the viewer wants names AND the writer didn't hide it from this viewer
     const showName = showNames && !a.hidden && !a.mineAnon;
-    el.textContent = (showName ? '[' + a.name + (a.revealed ? ' 🔒' : '') + '] ' : '') + r.text;
+    const who = a.name + (charOf(r) ? ' · ' + charOf(r) : '');
+    el.textContent = (showName ? '[' + who + (a.revealed ? ' 🔒' : '') + '] ' : '') + r.text;
     el.style.color = st.color || r.profiles?.color || '#ffffff';
     el.style.fontFamily = font.css + ',' + EMOJI_FALLBACK;
     el.style.fontSize = px + 'px';
@@ -794,8 +799,8 @@
     $('sheet-bg').classList.remove('hidden');
     const body = $('sheet-body');
     body.innerHTML =
-      '<div class="picker-list">' + items.map((it, i) =>
-        '<button type="button" class="tag' + (it.value === current ? ' active' : '') + '" data-i="' + i + '">' + esc(it.label) +
+      '<div class="picker-list">' + items.map((it, i) => it.heading ? '<div class="picker-h">' + esc(it.heading) + '</div>' :
+        '<button type="button" class="tag' + ((it.active ?? it.value === current) ? ' active' : '') + '" data-i="' + i + '">' + esc(it.label) +
         (it.count !== undefined ? ' <span class="n">' + it.count + '</span>' : '') + '</button>').join('') + '</div>' +
       (allowNew ? '<div class="picker-new"><input id="pick-new" type="text" maxlength="30" placeholder="' + esc(newPlaceholder || 'New tag') + '" autocapitalize="off">' +
                   '<button class="primary" id="pick-add">Add</button></div>' : '');
@@ -838,8 +843,8 @@
   // Which comment tag to show on the video (and in the list)
   function updateViewBtn() {
     const b = $('tag-view');
-    b.textContent = viewTag === '*' ? '#' : '#' + (viewTag || 'no tag');
-    b.classList.toggle('on', viewTag !== '*');
+    b.textContent = [viewTag === '*' ? '' : '#' + (viewTag || 'no tag'), viewChar ? '👤' + viewChar : ''].filter(Boolean).join(' ') || '#';
+    b.classList.toggle('on', viewTag !== '*' || !!viewChar);
   }
   $('tag-view').onclick = () => {
     const counts = countTags(rows);
@@ -848,7 +853,21 @@
     const items = [{ value: '*', label: 'All danmu', count: rows.length }]
       .concat(tags.map(t => ({ value: t, label: '#' + t, count: counts.get(t) || 0 })));
     if (counts.get('')) items.push({ value: '', label: 'No tag', count: counts.get('') });
+    items.forEach(it => { it.active = it.value === viewTag; });
+    // Characters the AI danmu are about: watch one character's description
+    const chars = new Map();
+    rows.forEach(r => { const c = charOf(r); if (!c) return; const k = [...chars.keys()].find(x => sameChar(x, c)) || c; chars.set(k, (chars.get(k) || 0) + 1); });
+    if (chars.size || viewChar) {
+      items.push({ heading: '👤 Character' }, { value: '\u0000', label: 'Everyone', active: !viewChar });
+      [...chars.keys()].sort((a, b) => chars.get(b) - chars.get(a)).forEach(c =>
+        items.push({ value: '\u0000' + c, label: '👤 ' + c, count: chars.get(c), active: !!viewChar && sameChar(viewChar, c) }));
+    }
     openPicker({ title: '# Show danmu with tag', current: viewTag, items, onPick: v => {
+      if (v.startsWith('\u0000')) {
+        viewChar = v.slice(1);
+        updateViewBtn(); renderList(); clearDanmu();
+        return toast(viewChar ? 'Showing only danmu about ' + viewChar : 'Showing danmu about everyone');
+      }
       viewTag = v; lsSet(VIEW_TAG_KEY, v);
       updateViewBtn(); renderList(); clearDanmu();
       toast(v === '*' ? 'Showing all danmu' : 'Showing only ' + (v ? '#' + v : 'danmu without a tag'));
@@ -913,7 +932,7 @@
     $('del-mine').textContent = '🗑 Delete all mine (' + mineCount + ')';
     const people = new Set(rows.map(r => r.user_id)).size;
     $('list-title').textContent = (rows.length ? '💬 ' + rows.length + ' danmu · ' + people + (people === 1 ? ' person' : ' people') : 'Danmu') +
-      (viewTag === '*' ? '' : ' · showing ' + (viewTag ? '#' + viewTag : 'no tag'));
+      (viewTag === '*' ? '' : ' · showing ' + (viewTag ? '#' + viewTag : 'no tag')) + (viewChar ? ' · 👤 ' + viewChar : '');
     if (!items.length) {
       list.innerHTML = '<div class="empty">' + (rows.length ? (viewTag === '*' ? 'Nothing here.' : 'No danmu with ' + (viewTag ? '#' + esc(viewTag) : 'no tag') + ' here. Tap # on the video to show all.') : 'No danmu on this video yet — be the first!') + '</div>';
       return;
@@ -928,7 +947,8 @@
         '<span class="body">' + (r.is_summary ? '<span class="sumtag">📝 Summary</span>' : '') +
           '<span class="who" style="color:' + esc(a.color) + '"' + (a.tip ? ' title="' + esc(a.tip) + '"' : '') + '>' + esc(a.name) +
           (a.note ? '<span class="lock">' + esc(a.note) + '</span>' : '') + '</span>' +
-          (tagOf(r) && tagOf(r) !== 'summary' ? '<span class="ctag">#' + esc(tagOf(r)) + '</span>' : '') + esc(r.text) + '</span>' +
+          (tagOf(r) && tagOf(r) !== 'summary' ? '<span class="ctag">#' + esc(tagOf(r)) + '</span>' : '') +
+          (charOf(r) ? '<span class="ctag char">👤 ' + esc(charOf(r)) + '</span>' : '') + esc(r.text) + '</span>' +
         '<span class="acts">' + (mine
           ? '<button data-a="edit" title="Edit">✎</button><button data-a="del" title="Delete">✕</button>'
           : a.hidden ? '' : '<button data-a="reply" title="Reply">↩</button>') + '</span></div>';
@@ -1021,8 +1041,9 @@
       '',
       ...(level ? ['Reading level: ' + level.name + ' — ' + level.desc, 'Follow this length and wording for EVERY danmu (it overrides any other length).', ''] : []),
       'Answer with ONLY a JSON array (no other text), one object per danmu, in time order:',
-      '[{"time":"0:12","category":"' + (cats[0] || structs[0] || { name: 'emotion' }).name + '","text":"…"}]',
+      '[{"time":"0:12","category":"' + (cats[0] || structs[0] || { name: 'emotion' }).name + '","character":"Tom","text":"…"}]',
       '"time" is the moment in the video as m:ss. "category" is one of: ' + cats.concat(structs).map(c => c.name).join(', ') + '.',
+      '"character" is the person the danmu is about: their name if it is said, otherwise a short description ("boy in red"). Use exactly the same spelling for the same person every time. Leave it "" if the danmu is about no one in particular (and for the general summary).',
       ...(withSummary ? [
         'At the END of the array add ONE more object: {"time":"end","category":"summary","text":"…"}. Its text is the summary of the whole video:',
         aiGuide.summary || 'The key point of the video in 1–3 short sentences.',
@@ -1050,20 +1071,21 @@
     const structNames = new Set((aiGuide?.structs || []).map(c => c.name));
     const out = [], known = new Set((aiGuide?.cats || []).map(c => c.name).concat([...structNames]));
     let end = 0; try { end = Math.floor(player.getDuration() || 0); } catch { /* not ready */ }
-    const add = (t, cat, text) => {
+    const add = (t, cat, text, who) => {
       cat = C.normTag(cat || ''); text = String(text || '').replace(/^["“]|["”]$/g, '').trim();
       const summary = cat === 'summary' || /^end$/i.test(String(t || '').trim());
       const sec = summary ? end : parseTime(t);
       if (sec === null || !text) return;
       // a structure's summary sentence keeps the structure as its tag
-      out.push({ time_sec: sec, category: summary && !structNames.has(cat) ? 'summary' : cat, text: text.slice(0, 500), summary });
+      out.push({ time_sec: sec, category: summary && !structNames.has(cat) ? 'summary' : cat, text: text.slice(0, 500), summary,
+                 character: String(who || '').replace(/\s+/g, ' ').trim().slice(0, 40) });
     };
     const a = raw.indexOf('['), b = raw.lastIndexOf(']');
     if (a >= 0 && b > a) {
       try {
         const arr = JSON.parse(raw.slice(a, b + 1));
         if (Array.isArray(arr) && arr.some(x => x && typeof x === 'object')) {
-          arr.forEach(x => x && add(x.time ?? x.time_sec ?? x.t ?? x.timestamp, x.category ?? x.tag ?? x.type, x.text ?? x.danmu ?? x.comment));
+          arr.forEach(x => x && add(x.time ?? x.time_sec ?? x.t ?? x.timestamp, x.category ?? x.tag ?? x.type, x.text ?? x.danmu ?? x.comment, x.character ?? x.person ?? x.who ?? x.name));
           return out.sort((p, q) => p.summary - q.summary || p.time_sec - q.time_sec);
         }
       } catch { /* not JSON → read lines */ }
@@ -1076,7 +1098,8 @@
       let rest = m[2].trim(), cat = '';
       const c = rest.match(/^(?:\[([^\]]{1,30})\]|\(([^)]{1,30})\)|\*{0,2}([A-Za-z][\w -]{0,29}?)\*{0,2}\s*:)\s*(.+)$/);
       if (c && (c[1] || c[2] || known.has(C.normTag(c[3])))) { cat = c[1] || c[2] || c[3]; rest = c[4]; }
-      add(m[1], cat, rest.replace(/^[-–—:]\s*/, ''));
+      const w = rest.match(/^\{([^}]{1,40})\}\s*(.+)$/);         // "0:12 [emotion] {Tom} sad 7/10"
+      add(m[1], cat, (w ? w[2] : rest).replace(/^[-–—:]\s*/, ''), w ? w[1] : '');
     });
     return out.sort((p, q) => p.summary - q.summary || p.time_sec - q.time_sec);
   }
@@ -1204,7 +1227,8 @@
       aiParsed = raw.trim() ? parseAiAnswer(raw) : [];
       $('ai-preview').innerHTML = aiParsed.map((d, i) =>
         '<label><input type="checkbox" data-i="' + i + '" checked><span class="t">' + (d.summary ? '📝 end' : fmt(d.time_sec)) + '</span><span>' +
-        (d.category ? '<span class="cat" style="color:' + catColor(d.category) + '">#' + esc(d.category) + '</span>' : '') + esc(d.text) + '</span></label>').join('');
+        (d.category ? '<span class="cat" style="color:' + catColor(d.category) + '">#' + esc(d.category) + '</span>' : '') +
+        (d.character ? '<span class="cat">👤 ' + esc(d.character) + '</span>' : '') + esc(d.text) + '</span></label>').join('');
       $('ai-preview').querySelectorAll('input').forEach(inp => inp.onchange = countSel);
       countSel();
       $('ai-msg').textContent = raw.trim() && !aiParsed.length ? 'No danmu found. The answer should be a JSON list or lines starting with a time (0:12 …).' : '';
@@ -1226,7 +1250,7 @@
     const base = Date.now();
     const made = list.map((d, i) => ({
       user_id: u.id, client_id: base + i, time_sec: d.time_sec, text: d.text, is_summary: !!d.summary,
-      style: { font: 'default', size: 'm', color: catColor(d.category), mode: 'top', duration: 6, anon: false, tag: d.category, ai: true },
+      style: { font: 'default', size: 'm', color: catColor(d.category), mode: 'top', duration: 6, anon: false, tag: d.category, ai: true, character: d.character || undefined },
       profiles: { display_name: u.name, color: u.color }, name_to: [], visible_to: visibleTo
     }));
     $('ai-save').disabled = true; $('ai-msg').className = 'note'; $('ai-msg').textContent = 'Saving…';
