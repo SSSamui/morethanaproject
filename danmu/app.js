@@ -30,7 +30,7 @@
   const DURATIONS = [2, 3, 5, 8, 10, 15];
   const EMOJIS = ['😀','😂','🤣','😊','😍','🥰','😎','🤩','😮','😱','🤯','🤔','😐','🙄','😴','😢','😭','😡',
                   '😤','😨','😳','🥺','😅','🤗','👍','👎','👏','🙏','❤️','💔','🔥','💯','🎉','✨','❓','❗'];
-  const APP_VERSION = '17';
+  const APP_VERSION = '18';
   // anon: the WRITER hides their name on this danmu; nameTo {id,name}: … except for this one person
   // tag: the comment tag this danmu is saved under ('' = no tag), e.g. "emotion"
   const DEFAULT_STYLE = { font: 'default', size: 'm', color: null, mode: 'rtl', duration: 5, anon: false, nameTo: null, tag: '' };
@@ -385,7 +385,9 @@
     card.innerHTML = '<div class="sum-head"><b>📝 Summary</b><button type="button" id="sum-x" title="Close">✕</button></div>' +
       list.map(r => {
         const a = author(r), showName = showNames && !a.hidden && !a.mineAnon;
-        return '<p>' + (showName && list.length > 1 ? '<span class="who" style="color:' + esc(a.color) + '">' + esc(a.name) + '</span> ' : '') + esc(r.text) + '</p>';
+        const tag = tagOf(r) && tagOf(r) !== 'summary' ? tagOf(r) : '';   // a structure's summary sentence
+        return '<p>' + (tag ? '<span class="ctag">#' + esc(tag) + '</span>' : '') +
+          (showName && list.length > 1 && !tag && !(r.style && r.style.ai) ? '<span class="who" style="color:' + esc(a.color) + '">' + esc(a.name) + '</span> ' : '') + esc(r.text) + '</p>';
       }).join('');
     card.classList.remove('hidden');
     $('sum-x').onclick = hideSummary;
@@ -926,7 +928,7 @@
         '<span class="body">' + (r.is_summary ? '<span class="sumtag">📝 Summary</span>' : '') +
           '<span class="who" style="color:' + esc(a.color) + '"' + (a.tip ? ' title="' + esc(a.tip) + '"' : '') + '>' + esc(a.name) +
           (a.note ? '<span class="lock">' + esc(a.note) + '</span>' : '') + '</span>' +
-          (tagOf(r) && !r.is_summary ? '<span class="ctag">#' + esc(tagOf(r)) + '</span>' : '') + esc(r.text) + '</span>' +
+          (tagOf(r) && tagOf(r) !== 'summary' ? '<span class="ctag">#' + esc(tagOf(r)) + '</span>' : '') + esc(r.text) + '</span>' +
         '<span class="acts">' + (mine
           ? '<button data-a="edit" title="Edit">✎</button><button data-a="del" title="Delete">✕</button>'
           : a.hidden ? '' : '<button data-a="reply" title="Reply">↩</button>') + '</span></div>';
@@ -965,7 +967,7 @@
   // answer back. The danmu are saved as yours, tagged by category, visible to the people you pick.
   const AI_GUIDE_URL = 'ai-guide.md';
   const AI_EDIT_URL = 'https://github.com/SSSamui/morethanaproject/edit/main/danmu/ai-guide.md';
-  const AI_CATS_KEY = 'viq_web_ai_cats', AI_WHO_KEY = 'viq_web_ai_who', AI_TOOL_KEY = 'viq_web_ai_tool', AI_DRAFT_KEY = 'viq_web_ai_draft', AI_LEVEL_KEY = 'viq_web_ai_level', AI_SUM_KEY = 'viq_web_ai_summary';
+  const AI_CATS_KEY = 'viq_web_ai_cats', AI_WHO_KEY = 'viq_web_ai_who', AI_TOOL_KEY = 'viq_web_ai_tool', AI_DRAFT_KEY = 'viq_web_ai_draft', AI_LEVEL_KEY = 'viq_web_ai_level', AI_SUM_KEY = 'viq_web_ai_summary', AI_OFF_KEY = 'viq_web_ai_off';
   const AI_COLORS = ['#fbbf24', '#60a5fa', '#f472b6', '#34d399', '#a78bfa', '#fb923c', '#22d3ee', '#f87171', '#a3e635', '#e879f9', '#fde047', '#93c5fd'];
   let aiGuide = null, aiPeople = [], aiParsed = [];
 
@@ -982,15 +984,23 @@
     const items = k => (sec[find(k)] || []).map(l => l.match(/^\s*[-*]\s*\*\*(.+?)\*\*\s*[—–:-]+\s*(.+)$/))
       .filter(Boolean).map(m => ({ name: C.normTag(m[1]), desc: m[2].trim() })).filter(c => c.name);
     const text = k => (sec[find(k)] || []).join('\n').trim();
-    return { cats: items('categor'), levels: items('level'), summary: text('summary'),
+    // "### name" blocks of the Structures section: several steps about one situation + a summary sentence
+    const structs = [];
+    (sec[find('structure')] || []).forEach(l => {
+      const h = l.match(/^###\s+(.+?)\s*$/);
+      if (h) structs.push({ name: C.normTag(h[1]), lines: [] });
+      else if (structs.length) structs[structs.length - 1].lines.push(l);
+    });
+    structs.forEach(st => { st.desc = st.lines.join('\n').trim(); delete st.lines; });
+    return { cats: items('categor'), structs: structs.filter(st => st.name && st.desc), levels: items('level'), summary: text('summary'),
              instructions: text('instruction'), reference: text('reference') };
   }
   const catColor = name => {
-    const i = aiGuide ? aiGuide.cats.findIndex(c => c.name === name) : -1;
+    const i = aiGuide ? aiGuide.cats.concat(aiGuide.structs).findIndex(c => c.name === name) : -1;
     return AI_COLORS[(i < 0 ? AI_COLORS.length - 1 : i) % AI_COLORS.length];
   };
 
-  function aiPrompt(cats, level, transcript, withSummary) {
+  function aiPrompt(cats, structs, level, transcript, withSummary) {
     let title = $('video-title').textContent || '', len = 0;
     try { len = player.getDuration() || 0; } catch { /* not ready */ }
     const url = 'https://www.youtube.com/' + (isShort ? 'shorts/' + videoId : 'watch?v=' + videoId);
@@ -1001,20 +1011,22 @@
       transcript ? 'The transcript (with times) is at the end. Use it, and the video if you can watch it.'
                  : 'Watch the video at the link (both the speech and what people do).',
       '',
-      'Write danmu ONLY in these categories:',
-      ...cats.map(c => '- ' + c.name + ' — ' + c.desc),
-      '',
+      ...(cats.length ? ['Write danmu ONLY in these categories:', ...cats.map(c => '- ' + c.name + ' — ' + c.desc), ''] : []),
+      ...(structs.length ? [
+        (cats.length ? 'Also' : 'Write danmu ONLY with these structures.') + ' For each structure below, follow its steps. Every danmu of a structure has its name as "category", and its text starts with the step name (e.g. "Situation: …"), at the moment that step happens.',
+        'Its summary sentence is one more object with "time":"end" and the same "category". If the video has no fitting situation, skip that structure.',
+        ...structs.flatMap(st => ['', '### Structure: ' + st.name, st.desc]), ''] : []),
       'Rules:',
       aiGuide.instructions,
       '',
       ...(level ? ['Reading level: ' + level.name + ' — ' + level.desc, 'Follow this length and wording for EVERY danmu (it overrides any other length).', ''] : []),
       'Answer with ONLY a JSON array (no other text), one object per danmu, in time order:',
-      '[{"time":"0:12","category":"' + (cats[0] ? cats[0].name : 'emotion') + '","text":"…"}]',
-      '"time" is the moment in the video as m:ss. "category" is one of: ' + cats.map(c => c.name).join(', ') + '.',
+      '[{"time":"0:12","category":"' + (cats[0] || structs[0] || { name: 'emotion' }).name + '","text":"…"}]',
+      '"time" is the moment in the video as m:ss. "category" is one of: ' + cats.concat(structs).map(c => c.name).join(', ') + '.',
       ...(withSummary ? [
         'At the END of the array add ONE more object: {"time":"end","category":"summary","text":"…"}. Its text is the summary of the whole video:',
         aiGuide.summary || 'The key point of the video in 1–3 short sentences.',
-        '(The summary may be longer than the other danmu.)'] : []),
+        '(Summaries may be longer than the other danmu.)'] : structs.length ? ['(Summary sentences may be longer than the other danmu.)'] : []),
       '',
       '=== Reference notes (use these words, steps and rules) ===',
       aiGuide.reference,
@@ -1035,14 +1047,16 @@
   // The AI's answer → [{time_sec, category, text}]. Takes a JSON array (also inside ```json fences)
   // or lines like "0:12 [emotion] text" / "0:12 - emotion: text".
   function parseAiAnswer(raw) {
-    const out = [], known = new Set((aiGuide?.cats || []).map(c => c.name));
+    const structNames = new Set((aiGuide?.structs || []).map(c => c.name));
+    const out = [], known = new Set((aiGuide?.cats || []).map(c => c.name).concat([...structNames]));
     let end = 0; try { end = Math.floor(player.getDuration() || 0); } catch { /* not ready */ }
     const add = (t, cat, text) => {
       cat = C.normTag(cat || ''); text = String(text || '').replace(/^["“]|["”]$/g, '').trim();
       const summary = cat === 'summary' || /^end$/i.test(String(t || '').trim());
       const sec = summary ? end : parseTime(t);
       if (sec === null || !text) return;
-      out.push({ time_sec: sec, category: summary ? 'summary' : cat, text: text.slice(0, 500), summary });
+      // a structure's summary sentence keeps the structure as its tag
+      out.push({ time_sec: sec, category: summary && !structNames.has(cat) ? 'summary' : cat, text: text.slice(0, 500), summary });
     };
     const a = raw.indexOf('['), b = raw.lastIndexOf(']');
     if (a >= 0 && b > a) {
@@ -1057,7 +1071,7 @@
     raw.split(/\r?\n/).forEach(line => {
       const sm = line.replace(/\*\*/g, '').match(/^\s*(?:[-*•]\s*)?\[?summary\]?\s*[:\-–—]\s*(.+)$/i);
       if (sm) return add('end', 'summary', sm[1]);
-      const m = line.replace(/\*\*/g, '').replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').match(/^\[?(\d{1,2}(?::\d{2}){1,2})\]?\s*[-–—:]?\s*(.+)$/);
+      const m = line.replace(/\*\*/g, '').replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').match(/^\[?(\d{1,2}(?::\d{2}){1,2}|end)\]?\s*[-–—:]?\s*(.+)$/i);
       if (!m) return;
       let rest = m[2].trim(), cat = '';
       const c = rest.match(/^(?:\[([^\]]{1,30})\]|\(([^)]{1,30})\)|\*{0,2}([A-Za-z][\w -]{0,29}?)\*{0,2}\s*:)\s*(.+)$/);
@@ -1093,8 +1107,12 @@
     }
     try { aiPeople = (await C.listPeople()).filter(p => p.id !== u.id); } catch { aiPeople = []; }
 
+    // Remember what you turned OFF, so anything newly added to the guide starts ticked
     const savedCats = lsGet(AI_CATS_KEY, null), savedWho = lsGet(AI_WHO_KEY, null);
-    const catOn = c => !savedCats || savedCats.includes(c.name);
+    const off = lsGet(AI_OFF_KEY, null) || (savedCats ? aiGuide.cats.map(c => c.name).filter(n => !savedCats.includes(n)) : []);
+    const catOn = c => !off.includes(c.name);
+    const pickBox = (c, k) => '<label title="' + esc(c.desc) + '"' + (catOn(c) ? ' class="on"' : '') + '><input type="checkbox" data-k="' + k + '"' + (catOn(c) ? ' checked' : '') + '>' +
+      '<span class="dotc" style="background:' + catColor(c.name) + '"></span>' + esc(c.name) + '</label>';
     const whoOn = p => savedWho ? savedWho.includes(p.id) : true;   // first time: everyone who has an account now
     const draft = lsGet(AI_DRAFT_KEY, null);
     const tool = lsGet(AI_TOOL_KEY, 'gemini');
@@ -1103,9 +1121,9 @@
     body.innerHTML =
       '<div class="ai">' +
       '<h3>1. What should the AI comment on?</h3>' +
-      '<div class="checks" id="ai-cats">' + aiGuide.cats.map((c, i) =>
-        '<label title="' + esc(c.desc) + '"' + (catOn(c) ? ' class="on"' : '') + '><input type="checkbox" data-i="' + i + '"' + (catOn(c) ? ' checked' : '') + '>' +
-        '<span class="dotc" style="background:' + catColor(c.name) + '"></span>' + esc(c.name) + '</label>').join('') + '</div>' +
+      '<div class="checks" id="ai-cats">' + aiGuide.cats.map((c, i) => pickBox(c, 'c' + i)).join('') + '</div>' +
+      (aiGuide.structs.length ? '<p class="note sub">🧩 Structures (steps about one situation + a summary sentence)</p>' +
+        '<div class="checks" id="ai-structs">' + aiGuide.structs.map((c, i) => pickBox(c, 's' + i)).join('') + '</div>' : '') +
       '<p class="note">From your <a href="' + AI_EDIT_URL + '" target="_blank" rel="noopener">ai-guide.md</a> (tap to edit it on GitHub).</p>' +
       '<h3>2. Who can see them?</h3>' +
       '<div class="checks" id="ai-who"><label class="on"><input type="checkbox" checked disabled>' + esc(u.name) + ' (me)</label>' +
@@ -1138,9 +1156,11 @@
       body.querySelectorAll('#ai-level input').forEach(toggleLabel);
       $('ai-level-note').textContent = level.desc;
     });
-    body.querySelectorAll('#ai-cats input').forEach(inp => inp.onchange = () => {
+    const pickOf = x => (x.dataset.k[0] === 's' ? aiGuide.structs : aiGuide.cats)[+x.dataset.k.slice(1)];
+    body.querySelectorAll('#ai-cats input, #ai-structs input').forEach(inp => inp.onchange = () => {
       toggleLabel(inp);
-      lsSet(AI_CATS_KEY, [...body.querySelectorAll('#ai-cats input:checked')].map(x => aiGuide.cats[+x.dataset.i].name));
+      const now = [...body.querySelectorAll('#ai-cats input:not(:checked), #ai-structs input:not(:checked)')].map(x => pickOf(x).name);
+      lsSet(AI_OFF_KEY, now.concat(off.filter(n => !aiGuide.cats.concat(aiGuide.structs).some(c => c.name === n))));   // keep ones not in the guide right now
     });
     const saveWho = () => lsSet(AI_WHO_KEY, $('ai-all').checked ? 'all' : [...body.querySelectorAll('#ai-who input[data-i]:checked')].map(x => aiPeople[+x.dataset.i].id));
     body.querySelectorAll('#ai-who input[data-i]').forEach(inp => inp.onchange = () => { toggleLabel(inp); saveWho(); });
@@ -1158,12 +1178,13 @@
     body.querySelectorAll('#ai-tool button').forEach(b => b.onclick = () => setTool(b.dataset.t));
     setTool(tool);
 
-    const chosenCats = () => [...body.querySelectorAll('#ai-cats input:checked')].map(x => aiGuide.cats[+x.dataset.i]);
+    const chosenCats = () => [...body.querySelectorAll('#ai-cats input:checked')].map(pickOf);
+    const chosenStructs = () => [...body.querySelectorAll('#ai-structs input:checked')].map(pickOf);
     $('ai-copy').onclick = async () => {
-      const cats = chosenCats(), tr = $('ai-transcript').value.trim();
-      if (!cats.length) return toast('Pick at least one category');
+      const cats = chosenCats(), structs = chosenStructs(), tr = $('ai-transcript').value.trim();
+      if (!cats.length && !structs.length) return toast('Pick at least one category or structure');
       if (curTool === 'claude' && !tr) return toast('Claude needs the transcript: paste it in the box first', 3500);
-      const text = aiPrompt(cats, level, tr, $('ai-sum').checked);
+      const text = aiPrompt(cats, structs, level, tr, $('ai-sum').checked);
       // The prompt goes to the clipboard, and is also shown here so you can see (or copy) it yourself
       const box = $('ai-prompt'), name = curTool === 'claude' ? 'Claude' : 'Gemini';
       box.value = text; box.classList.remove('hidden'); box.scrollTop = 0;
