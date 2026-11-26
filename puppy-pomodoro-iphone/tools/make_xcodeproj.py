@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes PuppyPomodoro.xcodeproj and PuppyPomodoroLite.xcodeproj.
+"""Writes PuppyPomodoro.xcodeproj.
 
 The projects use folder references that stay in sync with the disk (Xcode 16+),
 so new .swift files in App/, Shared/, ... are picked up without editing the
@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ID_PREFIX = "com.sssamui.puppypomodoro"
-VERSION = "5.1.1"
+VERSION = "6.0.0"
 
 
 def oid(*parts):
@@ -61,10 +61,10 @@ EXTENSIONS = [
 ]
 DISPLAY = {
     "PuppyPomodoro": "Puppy Pomodoro",
-    "PorkWidget": "Pork's clock",
-    "PorkShieldConfig": "Pork's blocked-app screen",
-    "PorkShieldAction": "Pork's blocked-app buttons",
-    "PorkMonitor": "Pork's break watcher",
+    "PorkWidget": "Pork's widgets",
+    "PorkShieldConfig": "Pork's screen",
+    "PorkShieldAction": "Pork's screen buttons",
+    "PorkMonitor": "Pork's unlock check",
     "PorkReport": "Pork's screen time",
 }
 
@@ -268,4 +268,3 @@ def project(lite):
 
 
 project(lite=False)
-project(lite=True)

@@ -1,4 +1,5 @@
-// Puppy Pomodoro for iPhone — a focus clock with Pork.
+// Puppy Pomodoro for iPhone: Pork's reminders, your time in each app, and
+// Pork's diary (the unlock check).
 
 import SwiftUI
 import UserNotifications
@@ -14,8 +15,11 @@ struct PuppyPomodoroApp: App {
             ContentView()
                 .environmentObject(model)
                 .onOpenURL { url in
-                    if url.host == "hi" { model.showHi = true }
                     if url.host == "dump" { model.showDump = true }
+                    if url.host == "write" {
+                        Gate.noteStart()
+                        model.showWrite = true
+                    }
                 }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -36,13 +40,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         return true
     }
 
-    // Show Pork's messages even while the app is open.
+    // Show Pork's messages even while the app is open (not the "tap to write" one).
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if notification.request.identifier == "pork.write" {
+            completionHandler([])
+            Task { @MainActor in AppModel.shared.checkGate() }
+            return
+        }
         completionHandler([.banner, .sound, .list])
     }
 
-    // "Take a break" / "Let Pork out" buttons on the notifications.
+    // "Take a break" / "Let Pork out" buttons, and "Tap here to write to Pork".
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let s: PorkState
@@ -51,16 +60,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         case Alerts.letOutAction: s = PorkCommands.run(.release)
         default: s = PorkCommands.run(.sync)
         }
-        // Tapping one of Pork's to-do reminders opens the check-in.
-        if response.actionIdentifier == UNNotificationDefaultActionIdentifier,
-           response.notification.request.content.userInfo["open"] as? String == "checkin" {
-            Task { @MainActor in AppModel.shared.showHi = true }
-        }
-        if response.notification.request.content.userInfo["open"] as? String == "sleep" {
-            Task { @MainActor in AppModel.shared.goToSleep(true) }
-        }
-        if response.notification.request.content.userInfo["open"] as? String == "morning" {
-            Task { @MainActor in AppModel.shared.checkMorning() }
+        if response.notification.request.content.userInfo["open"] as? String == "write" {
+            Gate.noteStart()
+            Task { @MainActor in AppModel.shared.showWrite = true }
         }
         Task {
             await LiveActivities.update(s)

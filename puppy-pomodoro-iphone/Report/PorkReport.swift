@@ -1,9 +1,11 @@
-// Screen Time report for the day it's given (the app asks for yesterday):
-// the 2 distraction apps you spent the most time in, as big sticky notes
-// ("YouTube 2hr 35min"), plus total screen time and time on distractions.
-// Focus apps (picked in Settings) don't count as distractions.
-// Apple only lets this extension see the numbers; it draws them inside the
-// app's main screen and Pork's check-in. Full version only (paid account).
+// Screen Time reports drawn inside the app's Tracker tab (Apple only lets
+// this extension see the numbers):
+// - today: every app you used today, with its time (distractions red, focus
+//   apps green);
+// - yesterday: the 2 distraction apps you spent the most time in, as sticky
+//   notes, plus total screen time.
+// Colors are fixed (dark text on light paper) so they read well in Dark Mode
+// too.
 
 import DeviceActivity
 import ExtensionKit
@@ -15,32 +17,38 @@ import SwiftUI
 struct PorkReport: DeviceActivityReportExtension {
     var body: some DeviceActivityReportScene {
         TopAppsReport { TopAppsView(top: $0) }
-        YesterdayReport { YesterdayView(day: $0) }
-        SleepReport { SleepView(sleep: $0) }
         TodayReport { TodayView(day: $0) }
     }
 }
 
 extension DeviceActivityReport.Context {
     static let topApps = Self("Pork top apps")
-    static let yesterday = Self("Pork yesterday")
-    static let sleep = Self("Pork sleep")
     static let today = Self("Pork today")
 }
+
+/// Fixed colors: readable whatever the phone's Dark Mode says.
+enum Paper {
+    static let page = Color(red: 1.0, green: 0.98, blue: 0.94)
+    static let ink = Color(red: 0.13, green: 0.10, blue: 0.08)
+    static let muted = Color(red: 0.38, green: 0.34, blue: 0.30)
+    static let red = Color(red: 0.80, green: 0.18, blue: 0.14)
+    static let green = Color(red: 0.13, green: 0.52, blue: 0.25)
+}
+
+/// Your focus apps, saved by the app in the shared App Group.
+private func focusAppTokens() -> Set<ApplicationToken> {
+    guard let data = PorkGroup.defaults.data(forKey: "focusApps"),
+          let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
+    else { return [] }
+    return selection.applicationTokens
+}
+
+// MARK: - yesterday's top distractions
 
 struct TopApps {
     var total: TimeInterval = 0
     var distraction: TimeInterval = 0
     var apps: [(name: String, time: TimeInterval)] = []
-}
-
-/// Your focus apps, saved by the app in the shared App Group.
-private func focusAppTokens() -> Set<ApplicationToken> {
-    let group = (Bundle.main.object(forInfoDictionaryKey: "PorkAppGroup") as? String) ?? "group.com.sssamui.puppypomodoro"
-    guard let data = UserDefaults(suiteName: group)?.data(forKey: "focusApps"),
-          let selection = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
-    else { return [] }
-    return selection.applicationTokens
 }
 
 struct TopAppsReport: DeviceActivityReportScene {
@@ -85,11 +93,14 @@ struct TopAppsView: View {
                     note(title: "No distractions yesterday 🎉", time: nil, color: colors[0], tilt: -1)
                 }
             }
-            Text("📱 Yesterday: \(Self.text(top.total)) screen time · \(Self.text(top.distraction)) on distractions")
+            Text("📱 Yesterday: \(Dur.text(top.total)) screen time · \(Dur.text(top.distraction)) on distractions")
                 .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Paper.ink)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 6)
+        .padding(12)
+        .background(Paper.page)
+        .environment(\.colorScheme, .light)
     }
 
     private func note(title: String, time: TimeInterval?, color: Color, tilt: Double) -> some View {
@@ -98,158 +109,34 @@ struct TopAppsView: View {
                 .font(.system(.title3, design: .rounded).weight(.bold))
                 .lineLimit(2)
             if let time {
-                Text(Self.text(time))
+                Text(Dur.text(time))
                     .font(.system(.title, design: .rounded).weight(.heavy))
             }
         }
-        .foregroundStyle(.black.opacity(0.85))
+        .foregroundStyle(Paper.ink)
         .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
         .background(color, in: RoundedRectangle(cornerRadius: 5))
         .shadow(color: .black.opacity(0.2), radius: 4, x: 1, y: 3)
         .rotationEffect(.degrees(tilt))
     }
-
-    /// 2hr 35min, 4hr, 12min
-    static func text(_ t: TimeInterval) -> String {
-        let mins = Int(t / 60)
-        let h = mins / 60, m = mins % 60
-        if h == 0 { return "\(m)min" }
-        return m == 0 ? "\(h)hr" : "\(h)hr \(m)min"
-    }
 }
 
-// MARK: - yesterday's summary (morning screen)
+// MARK: - today: every app, with its time
+
+struct AppTime {
+    var name: String
+    var time: TimeInterval
+    var focus: Bool
+    var token: ApplicationToken?
+}
 
 struct DaySummary {
     var total: TimeInterval = 0
     var play: TimeInterval = 0
-    var apps: [(name: String, time: TimeInterval, focus: Bool)] = []
-    var promise: DayPlan?
+    var apps: [AppTime] = []
+    var others = 0          // apps used but not listed (too many to show)
 }
-
-struct YesterdayReport: DeviceActivityReportScene {
-    let context: DeviceActivityReport.Context = .yesterday
-    let content: (DaySummary) -> YesterdayView
-
-    func makeConfiguration(representing data: DeviceActivityResults<DeviceActivityData>) async -> DaySummary {
-        let focus = focusAppTokens()
-        var perApp: [String: (TimeInterval, Bool)] = [:]
-        var sum = DaySummary()
-        for await device in data {
-            for await segment in device.activitySegments {
-                sum.total += segment.totalActivityDuration
-                for await category in segment.categories {
-                    for await app in category.applications {
-                        let isFocus = app.application.token.map { focus.contains($0) } ?? false
-                        if !isFocus { sum.play += app.totalActivityDuration }
-                        let name = app.application.localizedDisplayName ?? "An app"
-                        perApp[name] = ((perApp[name]?.0 ?? 0) + app.totalActivityDuration, isFocus)
-                    }
-                }
-            }
-        }
-        sum.apps = perApp.sorted { $0.value.0 > $1.value.0 }.prefix(10).map { (name: $0.key, time: $0.value.0, focus: $0.value.1) }
-        sum.promise = DayPlans.yesterday()
-        return sum
-    }
-}
-
-struct YesterdayView: View {
-    let day: DaySummary
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading) {
-                    Text("Screen time").font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                    Text(Dur.text(day.total)).font(.system(.largeTitle, design: .rounded).weight(.bold))
-                }
-                Spacer()
-                VStack(alignment: .trailing) {
-                    Text("Play time").font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                    Text(Dur.text(day.play)).font(.system(.title2, design: .rounded).weight(.bold))
-                }
-            }
-            if let promise = day.promise {
-                let kept = day.play <= TimeInterval(promise.promiseMin * 60)
-                Text(kept
-                     ? "✅ You kept your promise to Pork (\(Dur.text(TimeInterval(promise.promiseMin * 60))))."
-                     : "🥺 You promised Pork \(Dur.text(TimeInterval(promise.promiseMin * 60))), and played \(Dur.text(day.play - TimeInterval(promise.promiseMin * 60))) more.")
-                    .font(.subheadline.weight(.semibold))
-            }
-            let longest = day.apps.first?.time ?? 1
-            ForEach(Array(day.apps.enumerated()), id: \.offset) { _, app in
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack {
-                        Text(app.name).font(.subheadline.weight(.medium))
-                        if app.focus { Text("focus").font(.caption2.bold()).foregroundStyle(.green) }
-                        Spacer()
-                        Text(Dur.text(app.time)).font(.subheadline).monospacedDigit().foregroundStyle(.secondary)
-                    }
-                    GeometryReader { g in
-                        Capsule().fill(app.focus ? Color.green : Color(red: 0.85, green: 0.26, blue: 0.23))
-                            .frame(width: max(4, g.size.width * app.time / max(longest, 1)))
-                    }
-                    .frame(height: 6)
-                }
-            }
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-// MARK: - sleep (morning screen)
-
-struct SleepInfo {
-    var sleep: Date?
-    var wake: Date?
-}
-
-struct SleepReport: DeviceActivityReportScene {
-    let context: DeviceActivityReport.Context = .sleep
-    let content: (SleepInfo) -> SleepView
-
-    func makeConfiguration(representing data: DeviceActivityResults<DeviceActivityData>) async -> SleepInfo {
-        var marks: [UseMark] = []
-        for await device in data {
-            for await segment in device.activitySegments {
-                let start = segment.dateInterval.start
-                if segment.totalActivityDuration > 60 {
-                    marks.append(UseMark(start: start, end: start.addingTimeInterval(min(3600, segment.totalActivityDuration))))
-                }
-                if let pickup = segment.firstPickup {
-                    marks.append(UseMark(start: pickup, end: pickup))
-                }
-            }
-        }
-        let guess = SleepGuess.find(marks)
-        return SleepInfo(sleep: guess?.sleep, wake: guess?.wake)
-    }
-}
-
-struct SleepView: View {
-    let sleep: SleepInfo
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Text("😴").font(.largeTitle)
-            if let down = sleep.sleep, let up = sleep.wake {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Phone down around \(Dur.clock(down)) · up at \(Dur.clock(up))")
-                        .font(.subheadline.weight(.semibold))
-                    Text("About \(Dur.text(up.timeIntervalSince(down))) of sleep")
-                        .font(.title3.bold())
-                }
-            } else {
-                Text("Pork couldn't tell when you slept last night.").font(.subheadline)
-            }
-            Spacer(minLength: 0)
-        }
-    }
-}
-
-// MARK: - today (Pork's board)
 
 struct TodayReport: DeviceActivityReportScene {
     let context: DeviceActivityReport.Context = .today
@@ -258,64 +145,82 @@ struct TodayReport: DeviceActivityReportScene {
     func makeConfiguration(representing data: DeviceActivityResults<DeviceActivityData>) async -> DaySummary {
         let focus = focusAppTokens()
         var sum = DaySummary()
-        var perApp: [String: (TimeInterval, Bool)] = [:]
+        var perApp: [String: AppTime] = [:]
         for await device in data {
             for await segment in device.activitySegments {
                 sum.total += segment.totalActivityDuration
                 for await category in segment.categories {
                     for await app in category.applications {
-                        let isFocus = app.application.token.map { focus.contains($0) } ?? false
+                        let token = app.application.token
+                        let isFocus = token.map { focus.contains($0) } ?? false
                         if !isFocus { sum.play += app.totalActivityDuration }
                         let name = app.application.localizedDisplayName ?? "An app"
-                        perApp[name] = ((perApp[name]?.0 ?? 0) + app.totalActivityDuration, isFocus)
+                        var row = perApp[name] ?? AppTime(name: name, time: 0, focus: isFocus, token: token)
+                        row.time += app.totalActivityDuration
+                        perApp[name] = row
                     }
                 }
             }
         }
-        sum.apps = perApp.filter { !$0.value.1 }.sorted { $0.value.0 > $1.value.0 }.prefix(6)
-            .map { (name: $0.key, time: $0.value.0, focus: false) }
-        sum.promise = DayPlans.current()
+        let used = perApp.values.filter { $0.time >= 60 }.sorted { $0.time > $1.time }
+        sum.apps = Array(used.prefix(TodayView.maxRows))
+        sum.others = max(0, used.count - TodayView.maxRows)
         return sum
     }
 }
 
 struct TodayView: View {
+    static let maxRows = 12
     let day: DaySummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .firstTextBaseline, spacing: 18) {
                 VStack(alignment: .leading) {
-                    Text("Distractions today").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    Text("Distractions today").font(.caption.weight(.bold)).foregroundStyle(Paper.muted)
                     Text(Dur.text(day.play)).font(.system(.largeTitle, design: .rounded).weight(.heavy))
-                        .foregroundStyle(Color(red: 0.85, green: 0.26, blue: 0.23))
+                        .foregroundStyle(Paper.red)
                 }
                 VStack(alignment: .leading) {
-                    Text("Useful").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    Text("Focus apps").font(.caption.weight(.bold)).foregroundStyle(Paper.muted)
                     Text(Dur.text(day.total - day.play)).font(.system(.title2, design: .rounded).weight(.bold))
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Paper.green)
                 }
             }
-            if let promise = day.promise {
-                let left = TimeInterval(promise.promiseMin * 60) - day.play
-                Text(left >= 0 ? "🤞 \(Dur.text(left)) of today's promise left" : "🥺 \(Dur.text(-left)) over today's promise")
-                    .font(.subheadline.weight(.semibold))
+            if day.apps.isEmpty {
+                Text("No app used for a minute yet today 🎉").font(.subheadline).foregroundStyle(Paper.ink)
             }
             let most = day.apps.first?.time ?? 1
             ForEach(Array(day.apps.enumerated()), id: \.offset) { _, app in
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack {
-                        Text(app.name).font(.subheadline.weight(.semibold))
+                    HStack(spacing: 8) {
+                        if let token = app.token {
+                            Label(token).labelStyle(.iconOnly).frame(width: 22, height: 22)
+                        }
+                        Text(app.name).font(.subheadline.weight(.semibold)).lineLimit(1)
+                            .foregroundStyle(Paper.ink)
+                        if app.focus {
+                            Text("focus").font(.caption2.bold()).foregroundStyle(Paper.green)
+                        }
                         Spacer()
                         Text(Dur.text(app.time)).font(.subheadline.weight(.bold)).monospacedDigit()
+                            .foregroundStyle(app.focus ? Paper.green : Paper.red)
                     }
                     GeometryReader { g in
-                        Capsule().fill(Color(red: 0.85, green: 0.26, blue: 0.23))
+                        Capsule().fill(app.focus ? Paper.green : Paper.red)
                             .frame(width: max(4, g.size.width * app.time / max(most, 1)))
                     }
-                    .frame(height: 7)
+                    .frame(height: 6)
                 }
             }
+            if day.others > 0 {
+                Text("+ \(day.others) more apps").font(.footnote).foregroundStyle(Paper.muted)
+            }
+            Spacer(minLength: 0)
         }
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Paper.page)
+        .environment(\.colorScheme, .light)
     }
 }

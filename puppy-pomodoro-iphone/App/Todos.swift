@@ -275,9 +275,10 @@ final class TodoStore: ObservableObject {
         needsAccess = !Todos.hasAccess
         event = Todos.currentEvent()
         dayEvents = Todos.todayEvents()
+        Alerts.scheduleEvents(dayEvents.filter { !$0.allDay }.map { (title: $0.title, start: $0.start, location: $0.location) })
         guard !needsAccess else { return }
         snapshot = await Todos.load(PorkStore.load().settings)
-        // for Pork's reminders, the paw screen and the plan widget (they can't read Reminders)
+        // for the plan widget (it can't read Reminders)
         PorkStore.defaults.set(snapshot.preview, forKey: "todoPreview")
         Todos.savePlan(snapshot)
     }

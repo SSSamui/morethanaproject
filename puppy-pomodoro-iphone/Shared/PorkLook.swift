@@ -9,11 +9,10 @@ extension Color {
     static let porkBreak = Color(red: 0.231, green: 0.490, blue: 0.847) // blue: break
     static let porkOver = Color(red: 0.851, green: 0.263, blue: 0.231)  // red: break is over
     static let porkWall = Color(red: 0.965, green: 0.906, blue: 0.812)
-    static let porkSleep = Color(red: 0.36, green: 0.31, blue: 0.62)    // indigo: sleep time
 }
 
 struct PorkMoment {
-    enum Kind { case idle, focus, extra, rest, over, bedtime, sleep, pickup, pickupLong }
+    enum Kind { case idle, focus, extra, rest, over }
 
     var kind: Kind
     var paused = false
@@ -23,7 +22,6 @@ struct PorkMoment {
     var carry: TimeInterval = 0
     var bonusEveryMin = 5
     var lateBy: TimeInterval = 0 // known only in the app; widgets show "door"
-    var todayMin: Int?           // distraction minutes today (this pick-up)
 
     /// From the saved state, as it will be at `date`.
     init(_ state: PorkState, at date: Date = Date()) {
@@ -52,7 +50,7 @@ struct PorkMoment {
 
     /// From the Live Activity data. `stale` means its time has passed.
     init(phase: String, paused: Bool, target: Date, pausedLeft: TimeInterval,
-         carry: TimeInterval, bonusEveryMin: Int, stale: Bool, wake: Date? = nil, todayMin: Int? = nil) {
+         carry: TimeInterval, bonusEveryMin: Int, stale: Bool) {
         self.paused = paused
         self.target = target
         self.pausedLeft = pausedLeft
@@ -63,14 +61,9 @@ struct PorkMoment {
         case "focus": kind = (paused ? pausedLeft <= 0 : passed) ? .extra : .focus
         case "break": kind = passed ? .over : .rest
         case "overtime": kind = .over
-        case "sleep": kind = .sleep
-        case "bedtime": kind = passed ? .sleep : .bedtime
-        case "pickup": kind = stale ? .pickupLong : .pickup
         default: kind = .idle
         }
         if kind == .over, phase == "overtime" { lateBy = Date().timeIntervalSince(target) }
-        if kind == .sleep, phase == "bedtime", let wake { self.target = wake }
-        self.todayMin = todayMin
     }
 
     var color: Color {
@@ -80,9 +73,6 @@ struct PorkMoment {
         case .extra: return .porkBonus
         case .rest: return .porkBreak
         case .over: return .porkOver
-        case .sleep, .bedtime: return .porkSleep
-        case .pickup: return .porkBonus
-        case .pickupLong: return .porkOver
         }
     }
 
@@ -94,10 +84,6 @@ struct PorkMoment {
         case .extra: return "Extra focus" + p
         case .rest: return "Break" + p
         case .over: return "Break is over!"
-        case .sleep: return "Sleep 🌙"
-        case .bedtime: return "Time to sleep 🌙"
-        case .pickup: return "📱 This pick-up"
-        case .pickupLong: return "📱 Pork wants you back"
         }
     }
 
@@ -108,18 +94,12 @@ struct PorkMoment {
         case .extra: return "Pork is earning treats 🦴 · 1 every \(bonusEveryMin) min"
         case .rest: return "Pork is waiting by the door 🚪"
         case .over: return lateBy > 0 && lateBy < paceSeconds ? "Can we go out? 🥺" : "Woof! Let me out! 🐾"
-        case .sleep: return "Pork is asleep · up at \(Dur.clock(target))"
-        case .bedtime: return "Bedtime at \(Dur.clock(target)) · Pork is getting sleepy"
-        case .pickup: return todayMin.map { "Today \(Dur.text(TimeInterval($0 * 60))) · Pork waits by the door" } ?? "Pork waits by the door"
-        case .pickupLong: return "Woof! Pork is scratching the door 🐾"
         }
     }
 
     var pose: Pose {
         switch kind {
-        case .idle, .focus, .extra, .sleep, .bedtime: return .sleep
-        case .pickup: return .wait
-        case .pickupLong: return .door
+        case .idle, .focus, .extra: return .sleep
         case .rest: return .wait
         case .over: return lateBy > 0 && lateBy < paceSeconds ? .pace : .door
         }
@@ -139,10 +119,6 @@ struct PorkMoment {
             return paused ? Text("+" + PorkClock.text(pausedLeft)) : Text("+") + Text(target, style: .timer)
         case .over:
             return Text("−") + Text(target, style: .timer)
-        case .sleep, .bedtime:
-            return Text(timerInterval: Date()...max(Date(), target), countsDown: true)
-        case .pickup, .pickupLong:
-            return Text(target, style: .timer)
         }
     }
 
@@ -155,8 +131,6 @@ struct PorkMoment {
         case .focus, .rest: return "\(max(1, Int(ceil(target.timeIntervalSince(now) / 60))))m"
         case .extra: return "+\(max(1, Int(ceil(now.timeIntervalSince(target) / 60))))m"
         case .over: return "−\(max(1, Int(ceil(now.timeIntervalSince(target) / 60))))m"
-        case .sleep, .bedtime: return Dur.text(max(0, target.timeIntervalSince(now)))
-        case .pickup, .pickupLong: return Dur.text(max(0, now.timeIntervalSince(target)))
         }
     }
 }

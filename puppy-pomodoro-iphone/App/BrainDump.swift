@@ -1,5 +1,5 @@
 // "Tell Pork…": get a thought out of your head in 2 seconds. It goes to the
-// Reminders list "Inbox"; sort it later into school / routine / fun.
+// Reminders list "Inbox"; sort it later into school or routine.
 
 import SwiftUI
 import UserNotifications
@@ -65,7 +65,6 @@ struct InboxSorter: View {
                     HStack(spacing: 6) {
                         sortButton("📚", st.schoolList, item)
                         sortButton("🔁", st.routineList, item)
-                        sortButton("🎈", st.funList, item)
                         Button("✓") { todos.complete(item) }.buttonStyle(.bordered)
                     }
                     .font(.caption)
@@ -83,24 +82,6 @@ struct InboxSorter: View {
     }
 }
 
-enum InboxReminder {
-    /// Sunday 6 pm: "Sort Pork's inbox".
-    static func schedule() {
-        let content = UNMutableNotificationContent()
-        content.title = "Sort Pork's inbox 💭"
-        content.body = "Give this week's thoughts a home: school, routine or fun. Takes 2 minutes."
-        content.userInfo = ["open": "board"]
-        var when = DateComponents()
-        when.weekday = 1
-        when.hour = 18
-        when.minute = 0
-        UNUserNotificationCenter.current().add(UNNotificationRequest(
-            identifier: "pork.inboxSort", content: content,
-            trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true)))
-    }
-}
-
-/// Pork jumps for joy when a to-do is done.
 struct Celebration: View {
     var body: some View {
         VStack(spacing: 8) {

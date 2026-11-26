@@ -90,38 +90,6 @@ enum Alerts {
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "pork.now", content: content, trigger: nil))
     }
 
-    static let pawIDs = (1...8).map { "pork.paw.\($0)" }
-
-    /// After 10 minutes on distractions: Pork's paw prints walk onto the
-    /// screen, one more every 15 seconds, for 2 minutes.
-    static func paws(after delay: TimeInterval = 0) {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: pawIDs)
-        for k in 1...8 {
-            let content = UNMutableNotificationContent()
-            content.title = String(repeating: "🐾", count: k * 2)
-            content.body = k < 8 ? "Pork is walking onto your screen…" : "Pork's paws cover the screen. Time to put the phone down? 🐾"
-            content.userInfo = ["open": "checkin"]
-            center.add(UNNotificationRequest(
-                identifier: pawIDs[k - 1], content: content,
-                trigger: UNTimeIntervalNotificationTrigger(timeInterval: max(1, delay + Double(k) * 15), repeats: false)))
-        }
-    }
-
-    /// After a long stretch on the phone: water and a stretch (not a block).
-    static func bodyCheck(after delay: TimeInterval) {
-        let content = UNMutableNotificationContent()
-        content.title = "Pork is thirsty 💧"
-        content.body = "45 minutes on the phone. Drink some water and stand up for a minute? Pork will stretch with you."
-        UNUserNotificationCenter.current().add(UNNotificationRequest(
-            identifier: "pork.body", content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: max(1, delay), repeats: false)))
-    }
-
-    static func cancelPaws() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: pawIDs)
-    }
-
     /// A message right now.
     static func say(_ title: String, _ body: String) {
         let content = UNMutableNotificationContent()
@@ -131,36 +99,39 @@ enum Alerts {
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "pork.say." + title, content: content, trigger: nil))
     }
 
-    /// Every morning at 8: "Good morning! Make today's promise to Pork."
-    static func scheduleMorning() {
+    /// Pork's unlock screen: "Tap here to write to Pork" (opens the diary box).
+    static func writeTap() {
         let content = UNMutableNotificationContent()
-        content.title = "Good morning! ☀️"
-        content.body = "Pork is waiting for today's promise: how much play time today, and when do we sleep?"
-        content.interruptionLevel = .passive // silent: it waits on the Lock Screen until you pick up the phone
-        content.userInfo = ["open": "morning"]
-        var when = DateComponents()
-        when.hour = DayPlans.wakeHour
-        when.minute = 0
-        UNUserNotificationCenter.current().add(UNNotificationRequest(
-            identifier: "pork.morning", content: content,
-            trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true)))
+        content.title = "✏️ Tap here to write to Pork"
+        content.body = DiaryLevel.ask(Gate.settings.level) + " Then your apps open 🐾"
+        content.userInfo = ["open": "write"]
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "pork.write", content: content, trigger: nil))
     }
 
-    /// Tonight at bedtime: "Time to sleep 🌙".
-    static func scheduleBedtime(_ plan: DayPlan, now: Date = Date()) {
-        let cal = Calendar.current
-        var at = cal.startOfDay(for: now).addingTimeInterval(TimeInterval(plan.bedtime * 60))
-        if at <= now { at = at.addingTimeInterval(24 * 3600) }
-        let content = UNMutableNotificationContent()
-        content.title = "Bedtime 🌙"
-        let done = DoneToday.count
-        content.body = (done > 0 ? "You finished \(done) thing\(done == 1 ? "" : "s") today 🐾 " : "")
-            + "Pork is going to sleep. Open Pork to see how much sleep you'll get. Good night!"
-        content.sound = .default
-        content.userInfo = ["open": "sleep"]
-        UNUserNotificationCenter.current().add(UNNotificationRequest(
-            identifier: "pork.bedtime", content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: max(1, at.timeIntervalSince(now)), repeats: false)))
+    static func clearWriteTap() {
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["pork.write"])
+    }
+
+    /// 15 minutes before each of today's events: where you should be.
+    static func scheduleEvents(_ events: [(title: String, start: Date, location: String?)], now: Date = Date()) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: (0..<12).map { "pork.event.\($0)" })
+        for (i, e) in events.filter({ $0.start.addingTimeInterval(-15 * 60) > now }).prefix(12).enumerated() {
+            let content = UNMutableNotificationContent()
+            content.title = "📅 \(e.title) at \(Dur.clock(e.start))"
+            content.body = (e.location.map { "📍 \($0) · " } ?? "") + "In 15 minutes."
+            content.sound = .default
+            let at = e.start.addingTimeInterval(-15 * 60)
+            center.add(UNNotificationRequest(
+                identifier: "pork.event.\(i)", content: content,
+                trigger: UNTimeIntervalNotificationTrigger(timeInterval: max(1, at.timeIntervalSince(now)), repeats: false)))
+        }
+    }
+
+    /// Version 6 dropped the morning, bedtime, inbox and paw messages.
+    static func removeOld() {
+        let old = ["pork.morning", "pork.bedtime", "pork.inboxSort", "pork.body"] + (1...8).map { "pork.paw.\($0)" }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: old)
     }
 
     private static func add(_ id: String, at date: Date, title: String, body: String,

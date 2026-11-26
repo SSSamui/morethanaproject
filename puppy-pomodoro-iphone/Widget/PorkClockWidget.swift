@@ -6,28 +6,8 @@ import WidgetKit
 struct PorkEntry: TimelineEntry {
     let date: Date
     let state: PorkState
-    /// After 10 pm: time to sleep; after bedtime: sleep left.
-    var night: PorkMoment? {
-        let st = state.settings
-        if let bedtime = SleepMode.bedtimeSoon(st, now: date) {
-            return PorkMoment(phase: "bedtime", paused: false, target: bedtime, pausedLeft: 0,
-                              carry: 0, bonusEveryMin: st.bonusEveryMin, stale: false)
-        }
-        if let wake = SleepMode.wake(st, now: date) {
-            return PorkMoment(phase: "sleep", paused: false, target: wake, pausedLeft: 0,
-                              carry: 0, bonusEveryMin: st.bonusEveryMin, stale: false)
-        }
-        return nil
-    }
 
-    /// Home Screen: the clock, or the night countdowns when no session runs.
-    var moment: PorkMoment {
-        let clock = PorkMoment(state, at: date)
-        return clock.kind == .idle ? (night ?? clock) : clock
-    }
-
-    /// Lock Screen: after 10 pm the bedtime / sleep countdown comes first.
-    var lockMoment: PorkMoment { night ?? moment }
+    var moment: PorkMoment { PorkMoment(state, at: date) }
 }
 
 struct PorkProvider: TimelineProvider {
@@ -60,7 +40,6 @@ struct PorkProvider: TimelineProvider {
                 break
             }
         }
-        dates += SleepMode.changes(s.settings, now: now)
         let entries = Array(Set(dates)).sorted().map { PorkEntry(date: $0, state: s) }
         completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(30 * 60))))
     }
@@ -72,7 +51,7 @@ struct PorkClockWidget: Widget {
             PorkWidgetView(entry: entry)
         }
         .configurationDisplayName("Pork")
-        .description("What you need to do, your time, and bedtime. During Focus: Pork's focus clock.")
+        .description("What you need to do. During a focus session: Pork's focus clock.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular, .accessoryInline])
     }
 }
@@ -82,7 +61,7 @@ struct PorkWidgetView: View {
     let entry: PorkEntry
 
     var body: some View {
-        let m = family.isLockScreen ? entry.lockMoment : entry.moment
+        let m = entry.moment
         Group {
             if m.kind == .idle && family != .accessoryInline && family != .accessoryCircular {
                 // No focus session: what you need to do instead of a clock.
@@ -100,12 +79,6 @@ struct PorkWidgetView: View {
                     Image(m.roomImage).resizable().scaledToFit()
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
-            case .accessoryRectangular where m.kind == .idle:
-                VStack(alignment: .leading) {
-                    Text(PorkPause.isOn ? "⏸ Pork is paused" : "📱 Distractions").font(.caption2.bold())
-                    Text(TodayUsage.text()).font(.title3.bold())
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
             case .accessoryRectangular:
                 HStack {
                     VStack(alignment: .leading) {
@@ -116,14 +89,12 @@ struct PorkWidgetView: View {
                 }
             case .accessoryCircular:
                 VStack(spacing: 0) {
-                    Text(m.kind == .bedtime || m.kind == .sleep ? "🌙" : "🐾").font(.caption2)
+                    Text("🐾").font(.caption2)
                     Text(m.short).font(.caption.bold()).minimumScaleFactor(0.6)
                 }
             case .accessoryInline:
-                if m.kind == .bedtime || m.kind == .sleep {
-                    Text(m.kind == .bedtime ? "🌙 Sleep in " : "😴 Sleep left ") + m.timer
-                } else if m.kind == .idle {
-                    Text("📱 " + TodayUsage.text())
+                if m.kind == .idle {
+                    Text(PlanCache.load().items.first.map { "📝 " + $0.title } ?? "🐾 Pork")
                 } else {
                     Text("🐾 \(m.label) · \(m.short)")
                 }

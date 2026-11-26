@@ -1,6 +1,7 @@
 // What the screen shows. The timer itself lives in PorkStore (shared with the
 // widgets and Screen Time extensions); this keeps a copy for SwiftUI.
 
+import FamilyControls
 import SwiftUI
 import WidgetKit
 
@@ -9,13 +10,13 @@ final class AppModel: ObservableObject {
     static let shared = AppModel()
 
     @Published private(set) var state = PorkStore.load()
-    @Published var showHi = false
-    @Published var showMorning = false
-    @Published var funFirst = false     // the check-in opens with "something fun instead?"
+    @Published var showWrite = false    // the diary box (the unlock check)
     @Published var showDump = false     // "Tell Pork…"
+    @Published var showFocus = false    // the focus clock
     @Published var celebrating = false  // a to-do was just finished
     @Published var toast: String?
     @Published var releasingUntil = Date.distantPast // door animation after "let Pork out"
+    @Published var diaryTick = 0        // the diary changed
 
     private var toastTask: Task<Void, Never>?
 
@@ -31,90 +32,53 @@ final class AppModel: ObservableObject {
     }
 
     func becameActive() {
+        // Screen Time is on whenever it's allowed (the tracker and the unlock check need it).
+        ScreenTime.isOn = AuthorizationCenter.shared.authorizationStatus == .approved
         let s = PorkCommands.run(.sync)
+        ScreenTime.cleanUpOldRules()
+        Alerts.removeOld()
         PorkCommands.apply(s) // also catches up after changes made from the blocked-app screen
-        #if !LITE
-        ScreenTime.scheduleNight(s.settings)
-        #endif
         setState(s)
         Task { await LiveActivities.update(s) }
         Alerts.requestPermission()
-        Alerts.scheduleMorning()
-        InboxReminder.schedule()
-        Nudges.recordUse()
-        LockWatcher.shared.update(s)
-        #if !LITE
-        ScreenTime.scheduleMorning()
-        ScreenTime.checkPromise()
-        ScreenTime.applyRules() // a 1-day change may have run out
-        #endif
-        checkMorning()
+        Gate.apply()
+        Gate.scheduleDay()
+        checkGate()
+        diaryTick += 1
     }
 
-    /// After 8 am with no promise yet: the morning screen comes first.
-    func checkMorning() {
-        if DayPlans.needsPromise(DayPlans.all()) {
-            showHi = false
-            showMorning = true
+    /// Pork is asking (or you just tapped his screen): the diary box comes first.
+    func checkGate() {
+        if Gate.isAsking() || (Gate.startedAt.map { Date().timeIntervalSince($0) < 10 * 60 } ?? false) {
+            Gate.noteStart()
+            showDump = false
+            showWrite = true
         }
     }
 
-    /// Today's promise to Pork: play time and bedtime. Starts today's rules.
-    func makePromise(minutes: Int, bedtime: Int) {
-        let plan = DayPlan(day: DayPlans.dayKey(Date()), promiseMin: minutes, bedtime: bedtime, madeAt: Date())
-        DayPlans.save(plan)
-        SleepMode.end()
-        updateSettings {
-            $0.nightStart = bedtime   // after bedtime only focus apps, until morning
-            $0.nightOn = true
-        }
-        Alerts.scheduleBedtime(plan)
-        #if !LITE
-        ScreenTime.startPromise(plan)
-        #endif
-    }
-
-    /// "I'm going to sleep" / "I'm up": the sleep countdown on the screen
-    /// and the Lock Screen.
-    func goToSleep(_ on: Bool) {
-        on ? SleepMode.start() : SleepMode.end()
-        WidgetCenter.shared.reloadAllTimelines()
-        let s = state
-        Task { await LiveActivities.update(s) }
-        objectWillChange.send()
+    /// The diary box was filled in (or "Not now"): apps open.
+    func gatePassed() {
+        Alerts.clearWriteTap()
+        diaryTick += 1
+        LockWatcher.shared.update(state)
+        Task { await DiaryExport.write() }
     }
 
     /// ▶︎ on a sticky note: a focus session for this to-do. Its time is
     /// counted under the project; apps and websites are limited only now.
     func workOn(_ item: TodoItem) {
         send(.startTask(id: item.id, title: item.title))
-        UserDefaults.standard.set("focus", forKey: "tab")
+        showFocus = true
         show("Focusing on “\(item.title)” 🐾")
     }
 
     /// A to-do is done: Pork jumps for joy.
     func celebrate() {
         withAnimation(.spring) { celebrating = true }
-        if let plan = DayPlans.current() { Alerts.scheduleBedtime(plan) } // tonight's message counts it
         Task {
             try? await Task.sleep(nanoseconds: 2_200_000_000)
             withAnimation { celebrating = false }
         }
-    }
-
-    /// ⏸ Pause 30 min (on) / Resume (off).
-    func pause(_ on: Bool) {
-        #if !LITE
-        on ? ScreenTime.pause(minutes: 30) : ScreenTime.resumeAll()
-        #else
-        on ? PorkPause.start(minutes: 30) : PorkPause.end()
-        #endif
-        if on { Alerts.cancelPaws() }
-        WidgetCenter.shared.reloadAllTimelines()
-        let s = state
-        Task { await LiveActivities.update(s) }
-        objectWillChange.send()
-        show(on ? "Paused for 30 min. Pork will be back 🐾" : "Pork is back 🐾")
     }
 
     func updateSettings(_ change: (inout PorkSettings) -> Void) {

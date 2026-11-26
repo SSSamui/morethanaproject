@@ -41,7 +41,7 @@ struct PorkSettings: Codable, Equatable {
         "books.google.com", "openlibrary.org", "archive.org", "gutenberg.org",
         "libbyapp.com", "overdrive.com", "learning.oreilly.com",
         "sssamui.github.io/morethanaproject/danmu",
-        // school, work and everyday tools (also allowed late at night)
+        // school, work and everyday tools
         "instructure.com",                                   // Canvas
         "joinhandshake.com",                                 // Handshake
         "slack.com",
@@ -60,29 +60,14 @@ struct PorkSettings: Codable, Equatable {
     var sound = true
     var focusSites = PorkSettings.defaultFocusSites
 
-    // "Pork says hi" when you pick up the phone
-    var hiEnabled = true
-    var hiSeconds = 60
-    var hiGraceMin = 15
-    var hiAlbum = "Pork"
-    var hiMuted = false
+    var hiAlbum = "Pork"                  // Pork's photos in Photos: one shows after you write
 
-    // To-dos from Reminders and the check-in reminders
+    // To-dos from Reminders
     var schoolList = "school 2026 fall"   // homework and projects: next 7 days
     var routineList = "routine"           // everyday jobs: shown for today only
-    var nudgeMin = 5                      // Pork reminder after this many minutes on distractions
-    var notesMin = 10                     // to-dos + screen time after this many minutes
-    var pauseOnLock = true                // the focus clock stops while the phone is locked
-    var funList = "fun"                   // links to do in spare time instead of distractions
-    var wakeWeekday = 8 * 60 + 30         // get up at 8:30 am on weekdays
-    var wakeWeekend = 10 * 60 + 30        // and 10:30 am on weekends
-    var pawsOn = true                     // after 10 min on distractions: Pork's paws walk onto the screen
+    var funList = "fun"                   // (kept for older lists; not shown)
     var inboxList = "Inbox"               // "Tell Pork…": thoughts to sort later
-
-    // Late at night only focus apps and sites open (minutes after midnight)
-    var nightOn = true
-    var nightStart = 0      // 12:00 am
-    var nightEnd = 6 * 60   // 6:00 am
+    var pauseOnLock = true                // the focus clock stops while the phone is locked
 
     init() {}
 
@@ -94,48 +79,12 @@ struct PorkSettings: Codable, Equatable {
         bonusEveryMin = try c.decodeIfPresent(Int.self, forKey: .bonusEveryMin) ?? d.bonusEveryMin
         sound = try c.decodeIfPresent(Bool.self, forKey: .sound) ?? d.sound
         focusSites = try c.decodeIfPresent([String].self, forKey: .focusSites) ?? d.focusSites
-        hiEnabled = try c.decodeIfPresent(Bool.self, forKey: .hiEnabled) ?? d.hiEnabled
-        hiSeconds = try c.decodeIfPresent(Int.self, forKey: .hiSeconds) ?? d.hiSeconds
-        hiGraceMin = try c.decodeIfPresent(Int.self, forKey: .hiGraceMin) ?? d.hiGraceMin
         hiAlbum = try c.decodeIfPresent(String.self, forKey: .hiAlbum) ?? d.hiAlbum
-        hiMuted = try c.decodeIfPresent(Bool.self, forKey: .hiMuted) ?? d.hiMuted
-        nightOn = try c.decodeIfPresent(Bool.self, forKey: .nightOn) ?? d.nightOn
-        nightStart = try c.decodeIfPresent(Int.self, forKey: .nightStart) ?? d.nightStart
-        nightEnd = try c.decodeIfPresent(Int.self, forKey: .nightEnd) ?? d.nightEnd
         schoolList = try c.decodeIfPresent(String.self, forKey: .schoolList) ?? d.schoolList
         routineList = try c.decodeIfPresent(String.self, forKey: .routineList) ?? d.routineList
-        nudgeMin = try c.decodeIfPresent(Int.self, forKey: .nudgeMin) ?? d.nudgeMin
-        notesMin = try c.decodeIfPresent(Int.self, forKey: .notesMin) ?? d.notesMin
         pauseOnLock = try c.decodeIfPresent(Bool.self, forKey: .pauseOnLock) ?? d.pauseOnLock
         funList = try c.decodeIfPresent(String.self, forKey: .funList) ?? d.funList
-        wakeWeekday = try c.decodeIfPresent(Int.self, forKey: .wakeWeekday) ?? d.wakeWeekday
-        wakeWeekend = try c.decodeIfPresent(Int.self, forKey: .wakeWeekend) ?? d.wakeWeekend
-        pawsOn = try c.decodeIfPresent(Bool.self, forKey: .pawsOn) ?? d.pawsOn
         inboxList = try c.decodeIfPresent(String.self, forKey: .inboxList) ?? d.inboxList
-    }
-
-    /// Is `date` inside the late-night hours? (They may cross midnight, like 11 pm–7 am.)
-    func isNight(_ date: Date = Date(), calendar: Calendar = .current) -> Bool {
-        guard nightOn, nightStart != nightEnd else { return false }
-        let c = calendar.dateComponents([.hour, .minute], from: date)
-        let m = (c.hour ?? 0) * 60 + (c.minute ?? 0)
-        return nightStart < nightEnd ? (m >= nightStart && m < nightEnd) : (m >= nightStart || m < nightEnd)
-    }
-
-    /// If it's sleep time now (after bedtime, or after "I'm going to sleep"),
-    /// when to get up.
-    func wakeIfSleeping(now: Date = Date(), bedtime: Int?, sleptAt: Date?, upAt: Date?) -> Date? {
-        SleepPlan.wakeIfSleeping(now: now, bedtime: bedtime, sleptAt: sleptAt, upAt: upAt,
-                                 weekday: wakeWeekday, weekend: wakeWeekend)
-    }
-
-    /// "6:00 am" style text for a time of night.
-    static func timeText(_ minutes: Int) -> String {
-        var c = DateComponents()
-        c.hour = minutes / 60
-        c.minute = minutes % 60
-        let date = Calendar.current.date(from: c) ?? Date()
-        return DateFormatter.localizedString(from: date, dateStyle: .none, timeStyle: .short)
     }
 
     /// Keeps numbers in range and tidies the focus-site list.
@@ -144,12 +93,6 @@ struct PorkSettings: Codable, Equatable {
         s.focusMin = min(180, max(1, focusMin))
         s.breakMin = min(60, max(1, breakMin))
         s.bonusEveryMin = min(60, max(1, bonusEveryMin))
-        s.hiSeconds = min(600, max(5, hiSeconds))
-        s.hiGraceMin = min(240, max(0, hiGraceMin))
-        s.nightStart = min(24 * 60 - 1, max(0, nightStart))
-        s.nightEnd = min(24 * 60 - 1, max(0, nightEnd))
-        s.nudgeMin = min(60, max(1, nudgeMin))
-        s.notesMin = min(120, max(s.nudgeMin + 1, notesMin))
         s.schoolList = schoolList.trimmingCharacters(in: .whitespaces)
         s.routineList = routineList.trimmingCharacters(in: .whitespaces)
         var seen = Set<String>()
@@ -192,8 +135,7 @@ struct PorkState: Codable {
     var treats: [Treat] = []
     var lastReward: Reward?
     var settings = PorkSettings()
-    var hiAllowedUntil: Date?    // Pork won't say hi again before this
-    var taskID: String?          // the to-do this focus session is for
+        var taskID: String?          // the to-do this focus session is for
     var taskTitle: String?
     var workingSince: Date?      // focus time on the task not counted yet
 
@@ -212,7 +154,6 @@ struct PorkState: Codable {
         treats = try c.decodeIfPresent([Treat].self, forKey: .treats) ?? []
         lastReward = try c.decodeIfPresent(Reward.self, forKey: .lastReward)
         settings = try c.decodeIfPresent(PorkSettings.self, forKey: .settings) ?? PorkSettings()
-        hiAllowedUntil = try c.decodeIfPresent(Date.self, forKey: .hiAllowedUntil)
         taskID = try c.decodeIfPresent(String.self, forKey: .taskID)
         taskTitle = try c.decodeIfPresent(String.self, forKey: .taskTitle)
         workingSince = try c.decodeIfPresent(Date.self, forKey: .workingSince)

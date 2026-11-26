@@ -1,5 +1,8 @@
-// The main screen: Pork's board (the outside brain) and the Focus tab (the
-// pomodoro clock, also started from the Mac's Study Focus).
+// The main screen: three tabs.
+// - 📝 Reminder: the event you should be at, sticky notes from Reminders.
+// - ⏱ Tracker: your time in each app today.
+// - 📔 Diary: what you wrote each time you picked up the phone.
+// The focus clock (for later, with the Mac) opens from the ⏱ button.
 
 import SwiftUI
 
@@ -7,74 +10,110 @@ struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showSettings = false
     @ObservedObject private var todos = TodoStore.shared
-    @AppStorage("tab") private var tab = "board"
+    @AppStorage("tab6") private var tab = "reminder"
+
+    var body: some View {
+        TabView(selection: $tab) {
+            page("📝 Reminder") { ReminderTab(todos: todos) }
+                .tabItem { Label("Reminder", systemImage: "note.text") }
+                .tag("reminder")
+            page("⏱ Tracker") { TrackerTab() }
+                .tabItem { Label("Tracker", systemImage: "chart.bar.fill") }
+                .tag("tracker")
+            page("📔 Diary") { DiaryTab() }
+                .tabItem { Label("Diary", systemImage: "book.closed.fill") }
+                .tag("diary")
+        }
+        .tint(.porkFocus)
+        .task { await todos.refresh() }
+        .sheet(isPresented: $showSettings) { SettingsView().environmentObject(model) }
+        .sheet(isPresented: $model.showDump) { BrainDumpSheet(todos: todos).environmentObject(model) }
+        .sheet(isPresented: $model.showFocus) { FocusSheet().environmentObject(model) }
+        .fullScreenCover(isPresented: $model.showWrite) { WriteView().environmentObject(model) }
+        .overlay {
+            if model.celebrating { Celebration() }
+        }
+        .overlay(alignment: .top) {
+            if let toast = model.toast {
+                Text(toast)
+                    .font(.callout.weight(.semibold))
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onTapGesture { model.toast = nil }
+            }
+        }
+        .animation(.spring, value: model.toast)
+    }
+
+    private func page<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+        NavigationStack {
+            content()
+                .safeAreaInset(edge: .bottom) { FocusBar() }
+                .navigationTitle(title)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button { model.showFocus = true } label: { Image(systemName: "timer") }
+                            .accessibilityLabel("Focus clock")
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { showSettings = true } label: { Image(systemName: "gearshape") }
+                            .accessibilityLabel("Settings")
+                    }
+                }
+        }
+    }
+}
+
+/// While a focus session runs: a small bar with the clock (tap to open it).
+struct FocusBar: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        if model.state.phase != .idle {
+            TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                let s = model.state.advanced(to: ctx.date)
+                let m = PorkMoment(s, at: ctx.date)
+                Button { model.showFocus = true } label: {
+                    HStack {
+                        Image(m.porkImage).resizable().scaledToFit().frame(width: 40, height: 30)
+                        Text(m.label).font(.subheadline.bold())
+                        Spacer()
+                        Text(PorkClock.display(s, ctx.date)).font(.headline.monospacedDigit())
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .foregroundStyle(.white)
+                    .background(m.color, in: Capsule())
+                    .padding(.horizontal, 16).padding(.bottom, 6)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+/// The focus clock with Pork, and the treat jar.
+struct FocusSheet: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    Picker("", selection: $tab) {
-                        Text("🐾 Board").tag("board")
-                        Text("⏱ Focus").tag("focus")
+                    TimelineView(.periodic(from: .now, by: 0.25)) { context in
+                        PorkScreen(now: context.date)
                     }
-                    .pickerStyle(.segmented)
-                    // a focus session running (for example from the Mac): show the clock first
-                    if tab == "focus" || model.state.phase != .idle {
-                        TimelineView(.periodic(from: .now, by: 0.25)) { context in
-                            PorkScreen(now: context.date)
-                        }
-                    }
-                    if tab == "board" {
-                        BoardView(todos: todos)
-                    } else {
-                        TreatJarView()
-                    }
-                    #if !LITE
-                    if !ScreenTime.isOn {
-                        Button { showSettings = true } label: {
-                            Label("Turn on blocking so only focus apps and sites open while you focus",
-                                  systemImage: "lock.shield")
-                                .font(.footnote)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                    #endif
+                    TreatJarView()
                 }
                 .padding(16)
             }
             .background(Color(.systemGroupedBackground))
-            .fullScreenCover(isPresented: $model.showMorning) {
-                MorningView().environmentObject(model)
-            }
-            .refreshable { await todos.refresh() }
-            .task { await todos.refresh() }
-            .navigationTitle("🐾 Pork")
+            .navigationTitle("⏱ Focus clock")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
-                        .accessibilityLabel("Settings")
-                }
-            }
-            .sheet(isPresented: $showSettings) { SettingsView() }
-            .sheet(isPresented: $model.showDump) { BrainDumpSheet(todos: todos) }
-            .overlay {
-                if model.celebrating { Celebration() }
-            }
-            .fullScreenCover(isPresented: $model.showHi) { PorkHiView() }
-            .overlay(alignment: .top) {
-                if let toast = model.toast {
-                    Text(toast)
-                        .font(.callout.weight(.semibold))
-                        .padding(.horizontal, 16).padding(.vertical, 10)
-                        .background(.regularMaterial, in: Capsule())
-                        .padding(.top, 8)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                        .onTapGesture { model.toast = nil }
-                }
-            }
-            .animation(.spring, value: model.toast)
+            .toolbar { Button("Done") { dismiss() } }
         }
     }
 }
@@ -259,84 +298,5 @@ struct ControlsView: View {
             }
         }
         .tint(color)
-    }
-}
-
-/// Today's promise to Pork, on the main screen.
-struct PromiseCard: View {
-    @EnvironmentObject private var model: AppModel
-
-    var body: some View {
-        if let plan = DayPlans.current() {
-            HStack(spacing: 12) {
-                Text("🤞").font(.largeTitle)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Today's promise to Pork").font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                    Text("\(Dur.text(TimeInterval(plan.promiseMin * 60))) of play · bedtime \(PorkSettings.timeText(plan.bedtime))")
-                        .font(.headline)
-                    #if !LITE
-                    Text("Played \(Dur.text(TimeInterval(ScreenTime.playUsedToday * 60))) so far")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    #endif
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(14)
-            .background(Color(red: 1.0, green: 0.95, blue: 0.62), in: RoundedRectangle(cornerRadius: 6))
-            .foregroundStyle(.black.opacity(0.85))
-            .rotationEffect(.degrees(-1))
-        }
-    }
-}
-
-/// After bedtime: how much sleep is left. In the evening: "I'm going to sleep".
-struct SleepCard: View {
-    @EnvironmentObject private var model: AppModel
-
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { ctx in
-            let st = model.state.settings
-            if model.state.phase == .idle, let wake = SleepMode.wake(st, now: ctx.date) {
-                VStack(spacing: 6) {
-                    Text("😴 Sleep time").font(.headline)
-                    Text(PorkClock.text(wake.timeIntervalSince(ctx.date)))
-                        .font(.system(size: 56, weight: .heavy, design: .rounded))
-                        .monospacedDigit()
-                    Text("of sleep left · up at \(Dur.clock(wake))\(SleepPlan.isWeekend(wake) ? " (weekend)" : "")")
-                        .font(.subheadline)
-                    Button("I'm up ☀️") { model.goToSleep(false) }
-                        .buttonStyle(.bordered).tint(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(18)
-                .foregroundStyle(.white)
-                .background(Color.porkSleep, in: RoundedRectangle(cornerRadius: 20))
-            } else if let bedtime = SleepMode.bedtimeSoon(st, now: ctx.date) {
-                VStack(spacing: 6) {
-                    Text("🌙 Time to sleep in").font(.headline)
-                    Text(PorkClock.text(bedtime.timeIntervalSince(ctx.date)))
-                        .font(.system(size: 56, weight: .heavy, design: .rounded))
-                        .monospacedDigit()
-                    Text("Bedtime \(Dur.clock(bedtime)) · your promise to Pork").font(.subheadline)
-                    Button("I'm going to sleep now 🌙") { model.goToSleep(true) }
-                        .buttonStyle(.bordered).tint(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(18)
-                .foregroundStyle(.white)
-                .background(Color.porkSleep.opacity(0.85), in: RoundedRectangle(cornerRadius: 20))
-            } else if model.state.phase == .idle, isEvening(ctx.date) {
-                Button { model.goToSleep(true) } label: {
-                    Label("I'm going to sleep 🌙", systemImage: "moon.zzz.fill")
-                        .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
-                }
-                .buttonStyle(.borderedProminent).tint(.porkSleep)
-            }
-        }
-    }
-
-    private func isEvening(_ now: Date) -> Bool {
-        let h = Calendar.current.component(.hour, from: now)
-        return h >= 21 || h < 6
     }
 }

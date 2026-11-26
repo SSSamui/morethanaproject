@@ -13,9 +13,27 @@
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>Your to-dos from Reminders show as sticky notes, and you can check them off.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>The event on now in your Calendar shows as a big sticky note.</string>
+	<string>The event on now in your Calendar shows as a big sticky note, and Pork reminds you 15 minutes before.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Pork's photos and videos play from the album you pick when you pick up your phone.</string>
+	<string>After you write in Pork's diary, one of Pork's photos from the album you pick says thank you.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo for Pork's diary instead of writing a sentence.</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.com.sssamui.puppypomodoro</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerName</key>
+			<string>Pork Diary</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

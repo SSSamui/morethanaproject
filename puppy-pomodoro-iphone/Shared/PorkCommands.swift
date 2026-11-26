@@ -74,9 +74,6 @@ enum PorkCommands {
         case .settings(let settings):
             s.settings = settings.cleaned()
             changed = true
-            #if !LITE
-            ScreenTime.scheduleNight(s.settings)
-            #endif
         case .clearTreats:
             s.treats = []
             changed = true
@@ -101,9 +98,7 @@ enum PorkCommands {
 
     /// Bring everything outside the app in line with the state.
     static func apply(_ s: PorkState) {
-        #if !LITE
         ScreenTime.apply(s)
-        #endif
         Alerts.schedule(s)
         WidgetCenter.shared.reloadAllTimelines()
         PorkHooks.changed(s)
